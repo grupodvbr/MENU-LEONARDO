@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Painel Financeiro - Grupo DV</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
       margin: 0;
-      padding: 10px;
+      padding: 15px;
     }
     h1 {
       text-align: center;
-      font-size: 1.5em;
-      margin: 10px 0 20px;
+      margin-bottom: 20px;
     }
     .filtros {
       display: flex;
       flex-direction: column;
-      gap: 10px;
       align-items: center;
+      gap: 10px;
       margin-bottom: 20px;
     }
     .filtros label {
@@ -38,24 +37,28 @@
       border: 1px solid #ccc;
       width: 100%;
     }
-    .filtros select[multiple] {
-      height: 120px;
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
     .empresa-box {
       background: #fff;
       margin: 20px auto;
       padding: 15px;
       border-radius: 10px;
-      max-width: 100%;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      max-width: 800px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
     }
     h2 {
       text-align: center;
-      font-size: 1.2em;
     }
     ul {
       padding-left: 20px;
-      font-size: 0.95em;
     }
     strong {
       display: block;
@@ -69,15 +72,6 @@
       height: auto !important;
       margin: 20px auto;
     }
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
   </style>
 </head>
 <body>
@@ -87,15 +81,17 @@
 <div class="filtros">
   <label>
     Data Início:
-    <input type="date" id="dataInicio">
+    <input type="date" id="dataInicio" />
   </label>
   <label>
     Data Fim:
-    <input type="date" id="dataFim">
+    <input type="date" id="dataFim" />
   </label>
   <label>
-    Empresas:
-    <select id="empresaFiltro" multiple></select>
+    Empresa:
+    <select id="empresaFiltro">
+      <option value="">Todas</option>
+    </select>
   </label>
   <button onclick="aplicarFiltro()">Filtrar</button>
 </div>
@@ -129,8 +125,6 @@ async function carregarDados() {
 
     const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
     const select = document.getElementById("empresaFiltro");
-    select.innerHTML = "";
-
     empresas.forEach(emp => {
       const option = document.createElement("option");
       option.value = emp;
@@ -148,15 +142,15 @@ async function carregarDados() {
 function aplicarFiltro() {
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
-  const empresasSelecionadas = Array.from(document.getElementById("empresaFiltro").selectedOptions).map(opt => opt.value);
+  const empresaSelecionada = document.getElementById("empresaFiltro").value;
 
   const painel = document.getElementById("painel");
   painel.innerHTML = "";
 
   const dadosFiltrados = dados.filter(item => {
-    const dentroData = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
-    const dentroEmpresa = (empresasSelecionadas.length === 0 || empresasSelecionadas.includes(item.Empresa));
-    return dentroData && dentroEmpresa;
+    const dataOk = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
+    const empresaOk = !empresaSelecionada || item.Empresa === empresaSelecionada;
+    return dataOk && empresaOk;
   });
 
   const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
