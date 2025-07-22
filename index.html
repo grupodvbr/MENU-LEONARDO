@@ -1,56 +1,112 @@
 <!DOCTYPE html>
-<div class="filtros" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
-  <div style="display: flex; flex-direction: column;">
-    <label for="dataInicio">Data Início:</label>
-    <input type="date" id="dataInicio">
-  </div>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Financeiro iFood</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 20px;
+      color: #333;
+    }
 
-  <div style="display: flex; flex-direction: column;">
-    <label for="dataFim">Data Fim:</label>
-    <input type="date" id="dataFim">
-  </div>
+    h2 {
+      color: #c0392b;
+      text-align: center;
+    }
 
-  <div style="display: flex; flex-direction: column;">
-    <label for="empresaFiltro">Empresa:</label>
-    <select id="empresaFiltro">
-      <option value="">Todas</option>
-      <option value="PADARIA DELÍCIA">PADARIA DELÍCIA</option>
-      <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
-      <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
-    </select>
-  </div>
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
 
-  <div>
-    <button onclick="filtrar()">🔍 Filtrar</button>
-  </div>
-</div>
+    .filtros label {
+      font-weight: bold;
+    }
 
+    .filtros input,
+    .filtros select,
+    .filtros button {
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filtros button {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .painel {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .painel strong {
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📊 Resumo Financeiro iFood</h2>
+
+  <div class="filtros">
+    <div>
+      <label for="dataInicio">📅 Data Início:</label>
+      <input type="date" id="dataInicio">
+    </div>
+
+    <div>
+      <label for="dataFim">📅 Data Fim:</label>
+      <input type="date" id="dataFim">
+    </div>
+
+    <div>
+      <label for="empresaFiltro">🏪 Empresa:</label>
+      <select id="empresaFiltro">
+        <option value="">Todas</option>
+        <option value="PADARIA DELÍCIA">PADARIA DELÍCIA</option>
+        <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
+        <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
+      </select>
+    </div>
+
+    <div>
+      <button onclick="filtrar()">🔍 Filtrar</button>
+    </div>
+  </div>
 
   <div id="resultados"></div>
 
   <script>
-    const url =
-      'https://script.google.com/macros/s/AKfycby-el1ljDKhaYl236G3xSccyF6YLkyKUHqtt6Ob_GaPTOcEdHUGbPFYla8wFV4Qg64NBg/exec';
+    const url = 'https://script.google.com/macros/s/AKfycby-el1ljDKhaYl236G3xSccyF6YLkyKUHqtt6Ob_GaPTOcEdHUGbPFYla8wFV4Qg64NBg/exec'; // Substitua aqui pela URL gerada no Apps Script
 
     let dados = [];
 
     async function carregarDados() {
       const res = await fetch(url);
-      const texto = await res.text();
-      const json = JSON.parse(texto.substring(47).slice(0, -2));
-      const linhas = json.table.rows;
-
-      dados = linhas.map(l => {
-        return {
-          empresa: l.c[0]?.v || "",
-          data: new Date(l.c[1]?.f || l.c[1]?.v),
-          bruto: parseFloat(l.c[2]?.v || 0),
-          liquido: parseFloat(l.c[3]?.v || 0),
-          taxa: parseFloat(l.c[4]?.v || 0),
-          repassado: parseFloat(l.c[5]?.v || 0),
-          areceber: parseFloat(l.c[6]?.v || 0),
-        };
-      });
+      const json = await res.json();
+      dados = json.map(l => ({
+        empresa: l.empresa,
+        data: new Date(l.data),
+        bruto: parseFloat(l.bruto || 0),
+        liquido: parseFloat(l.liquido || 0),
+        taxa: parseFloat(l.taxa || 0),
+        repassado: parseFloat(l.repassado || 0),
+        areceber: parseFloat(l.areceber || 0),
+      }));
 
       filtrar(); // exibe tudo ao carregar
     }
@@ -70,7 +126,7 @@
       const porEmpresa = {};
       filtrados.forEach(d => {
         if (!porEmpresa[d.empresa]) {
-          porEmpresa[d.empresa] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0, areceber: 0, total: 0 };
+          porEmpresa[d.empresa] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0, areceber: 0 };
         }
         porEmpresa[d.empresa].bruto += d.bruto;
         porEmpresa[d.empresa].liquido += d.liquido;
@@ -80,15 +136,15 @@
       });
 
       let html = '';
-      for (const [empresa, dados] of Object.entries(porEmpresa)) {
+      for (const [empresa, d] of Object.entries(porEmpresa)) {
         html += `
           <div class="painel">
             <h3>${empresa}</h3>
-            💰 <strong>Bruto:</strong> R$ ${dados.bruto.toFixed(2)}<br>
-            💸 <strong>Líquido:</strong> R$ ${dados.liquido.toFixed(2)}<br>
-            📉 <strong>Taxa:</strong> R$ ${dados.taxa.toFixed(2)}<br>
-            ✅ <strong>Já repassado:</strong> R$ ${dados.repassado.toFixed(2)}<br>
-            🕐 <strong>A receber:</strong> R$ ${dados.areceber.toFixed(2)}
+            💰 <strong>Bruto:</strong> R$ ${d.bruto.toFixed(2)}<br>
+            💸 <strong>Líquido:</strong> R$ ${d.liquido.toFixed(2)}<br>
+            📉 <strong>Taxa:</strong> R$ ${d.taxa.toFixed(2)}<br>
+            ✅ <strong>Já repassado:</strong> R$ ${d.repassado.toFixed(2)}<br>
+            🕐 <strong>A receber:</strong> R$ ${d.areceber.toFixed(2)}
           </div>
         `;
       }
