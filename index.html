@@ -2,158 +2,104 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel Financeiro iFood</title>
+  <title>Painel Financeiro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 20px;
-      color: #333;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
     }
 
-    h2 {
-      color: #c0392b;
-      text-align: center;
-    }
-
-    .filtros {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .filtros label {
-      font-weight: bold;
-    }
-
-    .filtros input,
-    .filtros select,
-    .filtros button {
-      padding: 10px;
-      font-size: 16px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .filtros button {
-      background-color: #c0392b;
+    header {
+      background-color: #2c3e50;
       color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
 
-    .painel {
-      background: #fff;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      max-width: 1200px;
+      margin: auto;
     }
 
-    .painel strong {
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      background-color: #f0f8ff;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 20px;
       color: #2c3e50;
+    }
+
+    .icon {
+      font-size: 40px;
+      color: #2980b9;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 500px) {
+      header {
+        font-size: 20px;
+      }
+
+      .card h2 {
+        font-size: 18px;
+      }
+
+      .icon {
+        font-size: 32px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h2>📊 Resumo Financeiro iFood</h2>
+  <header>Painel de Análise Financeira</header>
 
-  <div class="filtros">
-    <div>
-      <label for="dataInicio">📅 Data Início:</label>
-      <input type="date" id="dataInicio">
-    </div>
+  <div class="container">
 
-    <div>
-      <label for="dataFim">📅 Data Fim:</label>
-      <input type="date" id="dataFim">
-    </div>
+    <a class="card" href="https://link-para-meta-faturamento.com" target="_blank">
+      <div class="icon">📈</div>
+      <h2>Meta de Faturamento</h2>
+    </a>
 
-    <div>
-      <label for="empresaFiltro">🏪 Empresa:</label>
-      <select id="empresaFiltro">
-        <option value="">Todas</option>
-        <option value="PADARIA DELÍCIA">PADARIA DELÍCIA</option>
-        <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
-        <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
-      </select>
-    </div>
+    <a class="card" href="https://link-para-vendas-delivery.com" target="_blank">
+      <div class="icon">🚚</div>
+      <h2>Vendas Delivery</h2>
+    </a>
 
-    <div>
-      <button onclick="filtrar()">🔍 Filtrar</button>
-    </div>
+    <a class="card" href="https://link-para-cancelamentos.com" target="_blank">
+      <div class="icon">❌</div>
+      <h2>Cancelamentos</h2>
+    </a>
+
+    <a class="card" href="https://link-para-conciliacao.com" target="_blank">
+      <div class="icon">💳</div>
+      <h2>Conciliação</h2>
+    </a>
+
   </div>
-
-  <div id="resultados"></div>
-
-  <script>
-    const url = 'https://script.google.com/macros/s/AKfycby-el1ljDKhaYl236G3xSccyF6YLkyKUHqtt6Ob_GaPTOcEdHUGbPFYla8wFV4Qg64NBg/exec'; // Substitua aqui pela URL gerada no Apps Script
-
-    let dados = [];
-
-    async function carregarDados() {
-      const res = await fetch(url);
-      const json = await res.json();
-      dados = json.map(l => ({
-        empresa: l.empresa,
-        data: new Date(l.data),
-        bruto: parseFloat(l.bruto || 0),
-        liquido: parseFloat(l.liquido || 0),
-        taxa: parseFloat(l.taxa || 0),
-        repassado: parseFloat(l.repassado || 0),
-        areceber: parseFloat(l.areceber || 0),
-      }));
-
-      filtrar(); // exibe tudo ao carregar
-    }
-
-    function filtrar() {
-      const inicio = new Date(document.getElementById('dataInicio').value);
-      const fim = new Date(document.getElementById('dataFim').value);
-      const empresa = document.getElementById('empresaFiltro').value;
-
-      const filtrados = dados.filter(l => {
-        const dentroDoPeriodo = (!isNaN(inicio) ? l.data >= inicio : true) &&
-                                (!isNaN(fim) ? l.data <= fim : true);
-        const mesmaEmpresa = empresa ? l.empresa === empresa : true;
-        return dentroDoPeriodo && mesmaEmpresa;
-      });
-
-      const porEmpresa = {};
-      filtrados.forEach(d => {
-        if (!porEmpresa[d.empresa]) {
-          porEmpresa[d.empresa] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0, areceber: 0 };
-        }
-        porEmpresa[d.empresa].bruto += d.bruto;
-        porEmpresa[d.empresa].liquido += d.liquido;
-        porEmpresa[d.empresa].taxa += d.taxa;
-        porEmpresa[d.empresa].repassado += d.repassado;
-        porEmpresa[d.empresa].areceber += d.areceber;
-      });
-
-      let html = '';
-      for (const [empresa, d] of Object.entries(porEmpresa)) {
-        html += `
-          <div class="painel">
-            <h3>${empresa}</h3>
-            💰 <strong>Bruto:</strong> R$ ${d.bruto.toFixed(2)}<br>
-            💸 <strong>Líquido:</strong> R$ ${d.liquido.toFixed(2)}<br>
-            📉 <strong>Taxa:</strong> R$ ${d.taxa.toFixed(2)}<br>
-            ✅ <strong>Já repassado:</strong> R$ ${d.repassado.toFixed(2)}<br>
-            🕐 <strong>A receber:</strong> R$ ${d.areceber.toFixed(2)}
-          </div>
-        `;
-      }
-
-      document.getElementById('resultados').innerHTML = html || "Nenhum resultado encontrado.";
-    }
-
-    carregarDados();
-  </script>
 
 </body>
 </html>
