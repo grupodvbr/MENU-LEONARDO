@@ -2,109 +2,213 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel Financeiro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Financeiro - Grupo DV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f6f9;
+      padding: 10px;
     }
-
-    header {
-      background-color: #2c3e50;
+    h1 {
+      text-align: center;
+      font-size: 1.5em;
+      margin: 10px 0 20px;
+    }
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .filtros label {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9em;
+    }
+    .filtros input, .filtros select, .filtros button {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    .filtros select[multiple] {
+      height: 120px;
+    }
+    .empresa-box {
+      background: #fff;
+      margin: 20px auto;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 100%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      font-size: 1.2em;
+    }
+    ul {
+      padding-left: 20px;
+      font-size: 0.95em;
+    }
+    strong {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1.1em;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+      margin: 20px auto;
+    }
+    button {
+      background-color: #007bff;
       color: white;
-      padding: 20px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      letter-spacing: 1px;
+      cursor: pointer;
+      border: none;
     }
-
-    .container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      background-color: #f0f8ff;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 20px;
-      color: #2c3e50;
-    }
-
-    .icon {
-      font-size: 40px;
-      color: #2980b9;
-      margin-bottom: 10px;
-    }
-
-    @media (max-width: 500px) {
-      header {
-        font-size: 20px;
-      }
-
-      .card h2 {
-        font-size: 18px;
-      }
-
-      .icon {
-        font-size: 32px;
-      }
+    button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
 
-  <header>Painel de Análise Financeira</header>
+<h1>📊 Painel Financeiro — Grupo DV</h1>
 
-  <div class="container">
+<div class="filtros">
+  <label>
+    Data Início:
+    <input type="date" id="dataInicio">
+  </label>
+  <label>
+    Data Fim:
+    <input type="date" id="dataFim">
+  </label>
+  <label>
+    Empresas:
+    <select id="empresaFiltro" multiple></select>
+  </label>
+  <button onclick="aplicarFiltro()">Filtrar</button>
+</div>
 
-    <a class="card" href="https://grupodvbr.github.io/RESUMO-TRANSA-ES-FINANCEIRAS/" target="_blank">
-      <div class="icon">📈</div>
-      <h2>Resumo de transações financeiras</h2>
-    </a>
+<div id="painel"></div>
 
-    <a class="card" href="https://link-para-cancelamentos.com" target="_blank">
-      <div class="icon">❌</div>
-      <h2>Cancelamentos</h2>
-    </a>
+<script>
+const url = 'https://script.google.com/macros/s/AKfycby6vC319wyGAp18EpXVJ4FnyTWaR561jksR_x6tjd_OwR3N0tAH_cKfA_KWjzTudFDV/exec';
 
-    <a class="card" href="https://grupodvbr.github.io/RESUMO-DELIVERY/" target="_blank">
-      <div class="icon">🚚</div>
-      <h2>Vendas Delivery</h2>
-    </a>
+const emojis = {
+  "DINHEIRO": "💵",
+  "CRÉDITO": "💳",
+  "DÉBITO": "🏦",
+  "PIX": "💲",
+  "ONLINE": "💻",
+  "CREDIÁRIO": "📋",
+  "VOUCHER": "🎫",
+  "BONIFICAÇÃO": "🎁",
+  "CONSUMO INTERNO": "👔",
+  "BOLETO": "📃",
+  "MARKETING": "📣",
+  "OUTROS": "🗂"
+};
 
-    <a class="card" href="https://link-para-meta-faturamento.com" target="_blank">
-      <div class="icon">📊</div>
-      <h2>Meta de Faturamento</h2>
-    </a>
+let dados = [];
 
-    <a class="card" href="https://link-para-conciliacao.com" target="_blank">
-      <div class="icon">💳</div>
-      <h2>Conciliações</h2>
-    </a>
+async function carregarDados() {
+  try {
+    const resposta = await fetch(url);
+    dados = await resposta.json();
 
-  </div>
+    const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
+    const select = document.getElementById("empresaFiltro");
+    select.innerHTML = "";
+
+    empresas.forEach(emp => {
+      const option = document.createElement("option");
+      option.value = emp;
+      option.textContent = emp;
+      select.appendChild(option);
+    });
+
+    aplicarFiltro();
+  } catch (e) {
+    document.getElementById("painel").innerHTML = "Erro ao carregar dados.";
+    console.error(e);
+  }
+}
+
+function aplicarFiltro() {
+  const inicio = document.getElementById("dataInicio").value;
+  const fim = document.getElementById("dataFim").value;
+  const empresasSelecionadas = Array.from(document.getElementById("empresaFiltro").selectedOptions).map(opt => opt.value);
+
+  const painel = document.getElementById("painel");
+  painel.innerHTML = "";
+
+  const dadosFiltrados = dados.filter(item => {
+    const dentroData = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
+    const dentroEmpresa = (empresasSelecionadas.length === 0 || empresasSelecionadas.includes(item.Empresa));
+    return dentroData && dentroEmpresa;
+  });
+
+  const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
+
+  empresas.forEach(emp => {
+    const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
+    const total = dadosEmpresa.reduce((s, i) => s + parseFloat(i.Valor), 0);
+
+    let box = document.createElement("div");
+    box.className = "empresa-box";
+
+    let html = `<h2>${emp}</h2><ul>`;
+    dadosEmpresa.forEach(item => {
+      const emoji = emojis[item.Categoria.toUpperCase()] || "📌";
+      html += `<li>${emoji} ${item.Categoria}: R$ ${parseFloat(item.Valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</li>`;
+    });
+    html += `</ul><strong>Total: R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>`;
+    box.innerHTML = html;
+
+    const canvas = document.createElement("canvas");
+    box.appendChild(canvas);
+    painel.appendChild(box);
+
+    desenharGrafico(canvas, dadosEmpresa);
+  });
+
+  if (empresas.length === 0) {
+    painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado para os filtros selecionados.</p>";
+  }
+}
+
+function desenharGrafico(canvas, dadosEmpresa) {
+  new Chart(canvas.getContext("2d"), {
+    type: 'pie',
+    data: {
+      labels: dadosEmpresa.map(e => `${emojis[e.Categoria.toUpperCase()] || "📌"} ${e.Categoria}`),
+      datasets: [{
+        data: dadosEmpresa.map(e => parseFloat(e.Valor)),
+        backgroundColor: dadosEmpresa.map((_, i) => `hsl(${i * 30}, 70%, 60%)`)
+      }]
+    },
+    options: {
+      plugins: {
+        title: { display: true, text: "Distribuição por Categoria" },
+        legend: { position: "bottom" }
+      }
+    }
+  });
+}
+
+carregarDados();
+</script>
 
 </body>
 </html>
