@@ -2,9 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Análise Financeira</title>
+  <title>Análise Financeira - Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
   <style>
     body {
       margin: 0;
@@ -34,161 +33,51 @@
       50% { transform: scale(1.05); opacity: 0.9; }
       100% { transform: scale(1); opacity: 1; }
     }
-    header {
-      background-color: white;
-      color: #2c3e50;
-      padding: 20px 40px;
+    .login-box {
+      margin-top: 100px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      border-bottom: 1px solid #ccc;
+      padding: 20px;
     }
-    .logo-left { flex: 1; display: flex; align-items: center; }
-    .logo-left img { height: 40px; }
-    .title-center { flex: 2; text-align: center; }
-    .title-center h1 { font-size: 24px; margin: 0; font-weight: bold; }
-    .spacer { flex: 1; }
-    .container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
+    .login-box h2 {
+      margin-bottom: 10px;
     }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-      text-decoration: none;
-      color: inherit;
+    .login-box input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      width: 250px;
     }
-    .card:hover {
-      transform: translateY(-5px);
-      background-color: #f0f8ff;
+    .login-box button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
-    .card h2 { margin: 0; font-size: 20px; color: #2c3e50; }
-    .icon { font-size: 40px; color: #2980b9; margin-bottom: 10px; }
-    @media (max-width: 500px) {
-      header { flex-direction: column; text-align: center; }
-      .logo-left, .spacer { display: none; }
-      .title-center { flex: 1; }
-      .card h2 { font-size: 18px; }
-      .icon { font-size: 32px; }
+    .hidden {
+      display: none;
     }
-    #login-section { padding: 30px; }
-    video { border-radius: 10px; margin-top: 20px; }
-    #status { margin-top: 15px; font-weight: bold; }
   </style>
 </head>
 <body>
+
+  <!-- Splash -->
   <div id="splash">
     <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   </div>
 
-  <div id="login-section">
-    <h2>Bem-vindo, Leonardo</h2>
-    <p>Digite seu e-mail e aproxime o rosto da câmera para entrar</p>
-    <input type="email" id="email" placeholder="Seu email" />
-    <button onclick="iniciarReconhecimento()">Entrar</button>
-    <br>
-    <video id="video" width="320" height="240" autoplay muted></video>
-    <p id="status">Aguardando reconhecimento...</p>
+  <!-- Login -->
+  <div class="login-box">
+    <h2>Bem-vindo, Leonardo Henrique</h2>
+    <p>Digite sua senha para continuar:</p>
+    <input type="password" id="senha" placeholder="Senha" />
+    <button onclick="verificarSenha()">Entrar</button>
+    <p id="mensagem"></p>
   </div>
 
-  <div id="painel" style="display:none">
-    <header>
-      <div class="logo-left">
-        <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-      </div>
-      <div class="title-center">
-        <h1>Análise Financeira</h1>
-      </div>
-      <div class="spacer"></div>
-    </header>
-
-    <div class="container">
-      <a class="card" href="index.resumofinanceiro.html">
-        <div class="icon">📈</div>
-        <h2>Resumo Financeiro</h2>
-      </a>
-      <a class="card" href="index.cancelamentos.html">
-        <div class="icon">❌</div>
-        <h2>Cancelamentos</h2>
-      </a>
-      <a class="card" href="index.delivery.html">
-        <div class="icon">🚚</div>
-        <h2>Vendas Delivery</h2>
-      </a>
-      <a class="card" href="index.meta.html">
-        <div class="icon">📊</div>
-        <h2>Meta de Faturamento</h2>
-      </a>
-      <a class="card" href="index.conciliacao.html">
-        <div class="icon">💳</div>
-        <h2>Conciliações</h2>
-      </a>
-    </div>
-  </div>
-
+  <!-- Script Splash -->
   <script>
-    const emailPermitido = "souzanalbert58@gmail.com";
-    let referencia = null;
-    const status = document.getElementById("status");
-    const video = document.getElementById("video");
-
-    async function carregarModelos() {
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-    }
-
-    async function iniciarReconhecimento() {
-      const email = document.getElementById("email").value.trim().toLowerCase();
-      if (email !== emailPermitido) {
-        alert("Email não autorizado");
-        return;
-      }
-      status.textContent = "Carregando modelos...";
-      await carregarModelos();
-
-      navigator.mediaDevices.getUserMedia({ video: {} })
-        .then(stream => video.srcObject = stream)
-        .catch(err => status.textContent = "Erro ao acessar câmera");
-
-      video.addEventListener('play', async () => {
-        const canvas = faceapi.createCanvasFromMedia(video);
-        document.body.append(canvas);
-        const displaySize = { width: video.width, height: video.height };
-        faceapi.matchDimensions(canvas, displaySize);
-
-        if (!referencia) {
-          await new Promise(r => setTimeout(r, 2000));
-          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-          if (!detection) {
-            status.textContent = "Rosto não detectado";
-            return;
-          }
-          referencia = detection.descriptor;
-          status.textContent = "Rosto registrado. Validando...";
-        }
-
-        const intervalo = setInterval(async () => {
-          const result = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-          if (!result) return;
-          const distancia = faceapi.euclideanDistance(referencia, result.descriptor);
-          if (distancia < 0.45) {
-            clearInterval(intervalo);
-            status.textContent = "Acesso liberado";
-            document.getElementById("login-section").style.display = "none";
-            document.getElementById("painel").style.display = "block";
-          }
-        }, 1000);
-      });
-    }
-
     window.addEventListener('load', () => {
       const splash = document.getElementById('splash');
       setTimeout(() => {
@@ -197,5 +86,30 @@
       }, 1000);
     });
   </script>
+
+  <!-- Script Verifica senha -->
+  <script>
+    async function verificarSenha() {
+      const senha = document.getElementById("senha").value;
+      const mensagem = document.getElementById("mensagem");
+      mensagem.textContent = "Verificando...";
+
+      try {
+        const resposta = await fetch("https://script.google.com/macros/s/AKfycbyoidlqOsQwjMJo8TYh-qippPo6CzW8dZyqJQKEZ2sOk1PtLmZSBHOfBKoZ9YzPmHEy0w/exec" + encodeURIComponent(senha));
+        const dados = await resposta.json();
+
+        if (dados.autorizado) {
+          mensagem.textContent = "Acesso autorizado. Redirecionando...";
+          setTimeout(() => window.location.href = "painel.html", 1000);
+        } else {
+          mensagem.textContent = "Senha incorreta.";
+        }
+      } catch (erro) {
+        mensagem.textContent = "Erro na verificação.";
+        console.error(erro);
+      }
+    }
+  </script>
+
 </body>
 </html>
