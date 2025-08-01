@@ -47,17 +47,15 @@
       font-weight: bold;
       cursor: pointer;
     }
-   .resumo-linha {
-  background: white;
-  padding: 15px 20px;
-  border-radius: 16px;
-  margin-bottom: 16px;
-  line-height: 1.6;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eee;
-}
-e-height: 1.6;
-}
+    .resumo-linha {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      border: 1px solid #eee;
+    }
     .resumo-linha strong { display: block; font-size: 1.1em; margin-bottom: 4px; }
     .total-box select#empresaResumo {
       margin-top: 5px;
@@ -112,19 +110,10 @@ e-height: 1.6;
       </select>
     </div>
     <h3>💰 Totais por Plataforma</h3>
-    <div class="total-line">
-      <span>iFood</span>
-      <span id="total-ifood">R$ 0,00</span>
-    </div>
-    <div class="total-line">
-      <span>Delivery Much</span>
-      <span id="total-dm">R$ 0,00</span>
-    </div>
+    <div class="total-line"><span>iFood</span><span id="total-ifood">R$ 0,00</span></div>
+    <div class="total-line"><span>Delivery Much</span><span id="total-dm">R$ 0,00</span></div>
     <hr />
-    <div class="total-line">
-      <strong>Total Geral</strong>
-      <strong id="total-geral">R$ 0,00</strong>
-    </div>
+    <div class="total-line"><strong>Total Geral</strong><strong id="total-geral">R$ 0,00</strong></div>
   </div>
 
   <div class="chart-box">
@@ -184,7 +173,7 @@ e-height: 1.6;
       </select>
     </div>
     <div>
-      <button onclick="atualizarResumoEmpresa()">Filtrar Resumo</button>
+      <button onclick="atualizarResumoEmpresa(); filtrarGrafico()">Filtrar Resumo</button>
     </div>
   </div>
 
@@ -254,15 +243,31 @@ function atualizarTotais() {
 }
 
 function filtrarGrafico() {
+  const mesInicio = document.getElementById("mesInicio").value;
+  const mesFim = document.getElementById("mesFim").value;
+  const empresa = document.getElementById("empresa").value;
+  const plataforma = document.getElementById("plataforma").value;
+
   const agrupado = {};
+
   dados.forEach(d => {
+    const mesDado = d.data.split("-")[1];
+    if ((mesInicio && mesDado < mesInicio) || 
+        (mesFim && mesDado > mesFim) || 
+        (empresa !== "todas" && d.empresa !== empresa) ||
+        (plataforma !== "todas" && d.plataforma !== plataforma)) {
+      return;
+    }
+
     const data = d.data;
     const bruto = parseFloat(d.bruto || 0);
     const label = new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     agrupado[label] = (agrupado[label] || 0) + bruto;
   });
+
   const labels = Object.keys(agrupado).sort();
   const valores = labels.map(d => agrupado[d]);
+
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
     type: 'line',
@@ -312,11 +317,10 @@ function atualizarResumoEmpresa() {
     const emp = d.empresa;
     const plat = d.plataforma;
     if (!resumoPorEmpresa[emp]) resumoPorEmpresa[emp] = {};
-    if (!resumoPorEmpresa[emp][plat]) resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0 };
+    if (!resumoPorEmpresa[emp][plat]) resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0 };
     resumoPorEmpresa[emp][plat].bruto += parseFloat(d.bruto || 0);
     resumoPorEmpresa[emp][plat].liquido += parseFloat(d.liquido || 0);
     resumoPorEmpresa[emp][plat].taxa += parseFloat(d.taxa || 0);
-    resumoPorEmpresa[emp][plat].repassado += parseFloat(d.repassado || 0);
   });
 
   const resumo = document.getElementById("resumo-empresas");
