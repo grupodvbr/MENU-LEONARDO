@@ -38,11 +38,18 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
 
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
     iframe {
       width: 100%;
-      height: 800px;
-      border: none;
-      margin-bottom: 30px;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
     }
   </style>
 </head>
@@ -56,10 +63,12 @@
     <p>As páginas abaixo são exibidas conforme o conteúdo original de cada painel:</p>
   </div>
 
-  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
-  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
-  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
-  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
-  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
+  <div class="grid">
+    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
+    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
+    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
+    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
+    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
+  </div>
 </body>
 </html>
