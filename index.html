@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vendas Delivery</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Painel Financeiro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: white;
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
     }
+
     #splash {
       position: fixed;
       top: 0;
@@ -26,164 +24,166 @@
       z-index: 9999;
       transition: opacity 0.5s ease;
     }
+
     #splash img {
       width: 150px;
       animation: pulse 1.5s infinite;
     }
+
     @keyframes pulse {
       0% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.05); opacity: 0.9; }
       100% { transform: scale(1); opacity: 1; }
     }
+
     header {
-      background-color: white;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #ccc;
-    }
-    header img {
-      height: 50px;
-      margin-right: 20px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6em;
-      font-weight: bold;
-    }
-    .container {
+      background-color: #2c3e50;
+      color: white;
       padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
-    .filtros {
+
+    .menu-categorias {
+      background-color: white;
+      border-bottom: 1px solid #ccc;
+      padding: 10px 20px;
+    }
+
+    .menu-categorias ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-      align-items: end;
+      gap: 15px;
+      justify-content: center;
     }
-    .filtros label {
-      font-weight: bold;
-    }
-    .filtros input,
-    .filtros select,
-    .filtros button {
-      padding: 10px;
+
+    .menu-categorias li a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: 600;
+      padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1em;
+      transition: background 0.3s;
     }
-    .filtros > div {
-      flex: 1 1 200px;
+
+    .menu-categorias li a:hover {
+      background-color: #f0f0f0;
     }
-    .filtros button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      max-width: 1200px;
+      margin: auto;
     }
-    .filtros button:hover {
-      background-color: #0056b3;
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      color: inherit;
     }
-    .empresa-box {
-      background: #d0f0d5;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+
+    .card:hover {
+      transform: translateY(-5px);
+      background-color: #f0f8ff;
     }
-    .empresa-box h2 {
-      margin: 0 0 10px;
-      font-size: 1.1em;
-    }
-    .empresa-box ul {
-      list-style: none;
-      padding-left: 0;
+
+    .card h2 {
       margin: 0;
-      font-size: 0.95em;
+      font-size: 20px;
+      color: #2c3e50;
     }
-    .empresa-box li {
-      margin-bottom: 4px;
-    }
-    .grafico-desktop {
-      display: none;
-    }
-    .resumo-box {
-      margin-top: 30px;
-    }
-    .resumo-linha {
-      background: #eaffea;
-      padding: 10px;
-      border-radius: 8px;
+
+    .icon {
+      font-size: 40px;
+      color: #2980b9;
       margin-bottom: 10px;
-      line-height: 1.6;
     }
-    .resumo-linha strong {
-      display: block;
-      font-size: 1.1em;
-      margin-bottom: 4px;
-    }
-    @media (min-width: 768px) {
-      .grafico-desktop {
-        display: block;
-        margin-top: 15px;
+
+    @media (max-width: 500px) {
+      header {
+        font-size: 20px;
       }
-      canvas {
-        max-width: 100%;
-        margin: 0 auto;
+
+      .card h2 {
+        font-size: 18px;
+      }
+
+      .icon {
+        font-size: 32px;
       }
     }
   </style>
 </head>
 <body>
 
-<div id="splash">
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-</div>
-
-<header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Vendas Delivery</h1>
-</header>
-
-<div class="container">
-  <div class="filtros">
-    <div>
-      <label for="dataInicio">Data Início:</label>
-      <input type="date" id="dataInicio" />
-    </div>
-    <div>
-      <label for="dataFim">Data Fim:</label>
-      <input type="date" id="dataFim" />
-    </div>
-    <div>
-      <label for="empresaFiltro">Empresa:</label>
-      <select id="empresaFiltro">
-        <option value="">Todas</option>
-      </select>
-    </div>
-    <div>
-      <button onclick="aplicarFiltro()">Filtrar</button>
-    </div>
-    <div>
-      <button id="exportar" onclick="exportarPDF()">📄 Exportar PDF</button>
-    </div>
-    <div>
-      <button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button>
-    </div>
+  <!-- Tela de entrada -->
+  <div id="splash">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   </div>
 
-  <div id="painel"></div>
-</div>
+  <header>Painel de Análise Financeira</header>
 
-<script>
-window.addEventListener('load', () => {
-  const splash = document.getElementById('splash');
-  setTimeout(() => {
-    splash.style.opacity = '0';
-    setTimeout(() => splash.style.display = 'none', 500);
-  }, 1000);
-});
-</script>
+  <!-- Menu de Categorias -->
+  <nav class="menu-categorias">
+    <ul>
+      <li><a href="#">📦 Todos</a></li>
+      <li><a href="#">📈 Financeiro</a></li>
+      <li><a href="#">❌ Cancelamentos</a></li>
+      <li><a href="#">🚚 Delivery</a></li>
+      <li><a href="#">📊 Metas</a></li>
+      <li><a href="#">💳 Conciliações</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <a class="card" href="https://grupodvbr.github.io/RESUMO-TRANSA-ES-FINANCEIRAS/" target="_blank">
+      <div class="icon">📈</div>
+      <h2>Resumo de transações financeiras</h2>
+    </a>
+
+    <a class="card" href="https://link-para-cancelamentos.com" target="_blank">
+      <div class="icon">❌</div>
+      <h2>Cancelamentos</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/RESUMO-DELIVERY/" target="_blank">
+      <div class="icon">🚚</div>
+      <h2>Vendas Delivery</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/resumo-de-meta/" target="_blank">
+      <div class="icon">📊</div>
+      <h2>Meta de Faturamento</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/CONCILIA-O-DE-CART-ES-E-BANC-RIA/" target="_blank">
+      <div class="icon">💳</div>
+      <h2>Conciliações</h2>
+    </a>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splash');
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.style.display = 'none', 500);
+      }, 1000);
+    });
+  </script>
 
 </body>
 </html>
