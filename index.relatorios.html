@@ -92,7 +92,7 @@
 </head>
 <body>
   <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <img src="321cb5c5-c200-4a06-b296-14a187d3778b.png" alt="Logo">
     <h1>Relatório Consolidado</h1>
   </header>
 
@@ -118,25 +118,53 @@
       }
 
       const urls = [
-        `https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html`,
-        `https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html`,
-        `https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html`,
-        `https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html`,
-        `https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html`
+        'https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.json',
+        'https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.json',
+        'https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.json',
+        'https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.json',
+        'https://grupodvbr.github.io/MENU-LEONARDO/index.meta.json'
       ];
 
       relatorio.innerHTML = '<p>Carregando dados...</p>';
 
       try {
-        const resultados = await Promise.all(urls.map(async url => {
-          const text = await fetch(url).then(r => r.text());
-          const div = document.createElement('div');
-          div.innerHTML = text;
-          const bloco = div.querySelector('.relatorio');
-          return bloco ? bloco.innerHTML : '';
-        }));
+        const dados = await Promise.all(urls.map(url => fetch(url).then(r => r.json())));
 
-        relatorio.innerHTML = resultados.join('') || '<p>Nenhum dado encontrado para o período selecionado.</p>';
+        const [entradas, delivery, cancelamentos, conciliacoes, metas] = dados;
+
+        let html = '';
+
+        if (entradas.length) {
+          html += `<div class='bloco'><h2>Resumo de Entradas</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Categoria</th><th>Total</th></tr></thead><tbody>`;
+          entradas.forEach(e => html += `<tr><td>${e.empresa}</td><td>${e.categoria}</td><td>${e.total}</td></tr>`);
+          html += '</tbody></table></div>';
+        }
+
+        if (delivery.length) {
+          html += `<div class='bloco'><h2>Vendas Delivery</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Plataforma</th><th>Total</th></tr></thead><tbody>`;
+          delivery.forEach(d => html += `<tr><td>${d.empresa}</td><td>${d.plataforma}</td><td>${d.total}</td></tr>`);
+          html += '</tbody></table></div>';
+        }
+
+        if (cancelamentos.length) {
+          html += `<div class='bloco'><h2>Cancelamentos</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Motivo</th><th>Valor</th></tr></thead><tbody>`;
+          cancelamentos.forEach(c => html += `<tr><td>${c.empresa}</td><td>${c.motivo}</td><td>${c.valor}</td></tr>`);
+          html += '</tbody></table></div>';
+        }
+
+        if (conciliacoes.length) {
+          html += `<div class='bloco'><h2>Conciliações</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Status</th><th>Valor</th></tr></thead><tbody>`;
+          conciliacoes.forEach(c => html += `<tr><td>${c.empresa}</td><td>${c.status}</td><td>${c.valor}</td></tr>`);
+          html += '</tbody></table></div>';
+        }
+
+        if (metas.length) {
+          html += `<div class='bloco'><h2>Metas de Receita</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Previsto</th><th>Realizado</th></tr></thead><tbody>`;
+          metas.forEach(m => html += `<tr><td>${m.empresa}</td><td>${m.previsto}</td><td>${m.realizado}</td></tr>`);
+          html += '</tbody></table></div>';
+        }
+
+        relatorio.innerHTML = html || '<p>Nenhum dado encontrado para o período selecionado.</p>';
       } catch (e) {
         alert('Erro ao carregar os dados.');
         console.error(e);
