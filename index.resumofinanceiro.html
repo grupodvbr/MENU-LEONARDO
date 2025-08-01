@@ -150,23 +150,18 @@ window.onload = () => {
 };
 
 async function carregarDados() {
-  try {
-    const resposta = await fetch(url);
-    dados = await resposta.json();
-    const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
-    const select = document.getElementById("empresaFiltro");
-    select.innerHTML = '<option value="">Todas</option>';
-    empresas.forEach(emp => {
-      const option = document.createElement("option");
-      option.value = emp;
-      option.textContent = emp;
-      select.appendChild(option);
-    });
-    aplicarFiltro();
-  } catch (e) {
-    document.getElementById("painel").innerHTML = "Erro ao carregar dados.";
-    console.error(e);
-  }
+  const resposta = await fetch(url);
+  dados = await resposta.json();
+  const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
+  const select = document.getElementById("empresaFiltro");
+  select.innerHTML = '<option value="">Todas</option>';
+  empresas.forEach(emp => {
+    const option = document.createElement("option");
+    option.value = emp;
+    option.textContent = emp;
+    select.appendChild(option);
+  });
+  aplicarFiltro();
 }
 
 function aplicarFiltro() {
@@ -237,7 +232,6 @@ function aplicarFiltro() {
 
 function desenharGrafico(canvas, agrupado) {
   if (window.innerWidth < 768) return;
-
   const categorias = Object.keys(agrupado);
   const valores = Object.values(agrupado);
   const cores = categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`);
@@ -245,9 +239,8 @@ function desenharGrafico(canvas, agrupado) {
   new Chart(canvas.getContext("2d"), {
     type: 'bar',
     data: {
-      labels: categorias,
+      labels: categorias.map(() => ''), // Remove nomes do eixo X
       datasets: [{
-        label: 'Total por Modalidade',
         data: valores,
         backgroundColor: cores
       }]
@@ -259,7 +252,10 @@ function desenharGrafico(canvas, agrupado) {
       },
       responsive: true,
       scales: {
-        x: { ticks: { maxRotation: 90, minRotation: 45 } },
+        x: {
+          ticks: { display: false },
+          grid: { display: false }
+        },
         y: { beginAtZero: true }
       }
     }
