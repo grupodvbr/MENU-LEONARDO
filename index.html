@@ -150,6 +150,14 @@
 </head>
 <body>
 
+  <!-- Proteção extra para garantir que menu não apareça sem login -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector("header")?.style.setProperty("display", "none", "important");
+      document.querySelector(".container")?.style.setProperty("display", "none", "important");
+    });
+  </script>
+
   <!-- Splash -->
   <div id="splash">
     <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems" />
@@ -232,7 +240,7 @@
     }
   </script>
 
-  
+ 
   <script>
     const SENHA_CORRETA = atob("MTAyMDQ3");
 
