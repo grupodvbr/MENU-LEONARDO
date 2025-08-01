@@ -67,6 +67,10 @@
 </head>
 <body>
 
+<!-- ... seu <head> e estilos continuam iguais ... -->
+
+<body>
+
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   <h1>Cancelamentos</h1>
@@ -97,7 +101,16 @@ async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
+  definirDataAnterior();
   filtrarCancelamentos();
+}
+
+function definirDataAnterior() {
+  const inputData = document.getElementById("data");
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+  const iso = ontem.toISOString().split('T')[0];
+  inputData.value = iso;
 }
 
 function popularEmpresas() {
