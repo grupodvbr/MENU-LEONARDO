@@ -277,16 +277,20 @@ for (const cat in agrupado) {
   }
 }
 
-function desenharGrafico(canvas, dadosEmpresa) {
+function desenharGrafico(canvas, agrupado) {
   if (window.innerWidth < 768) return;
+
+  const categorias = Object.keys(agrupado);
+  const valores = Object.values(agrupado);
+  const labels = categorias.map(cat => `${emojis[cat] || "📌"} ${cat}`);
 
   new Chart(canvas.getContext("2d"), {
     type: 'pie',
     data: {
-      labels: dadosEmpresa.map(e => `${emojis[e.Categoria.toUpperCase()] || "📌"} ${e.Categoria}`),
+      labels: labels,
       datasets: [{
-        data: dadosEmpresa.map(e => parseFloat(e.Valor)),
-        backgroundColor: dadosEmpresa.map((_, i) => `hsl(${i * 30}, 70%, 60%)`)
+        data: valores,
+        backgroundColor: categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`)
       }]
     },
     options: {
@@ -297,6 +301,7 @@ function desenharGrafico(canvas, dadosEmpresa) {
     }
   });
 }
+
 
 function exportarPDF() {
   const painel = document.getElementById("painel");
