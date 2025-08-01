@@ -160,6 +160,11 @@ function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function formatarDataBR(dataISO) {
+  const [ano, mes, dia] = dataISO.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
 function preencherFiltros() {
   const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
   const selectEmpresa = document.getElementById('filtroEmpresa');
@@ -213,13 +218,18 @@ function aplicarFiltros() {
     totalGeral += subtotal;
 
     const titulo = document.createElement("h2");
-    titulo.textContent = `📅 ${primeiraData} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
+    titulo.textContent = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
     divGrupo.appendChild(titulo);
 
     grupo.forEach(c => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "item-cancelamento";
-      itemDiv.innerHTML = `<p> ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>`;
+
+      const [nomeItem, valorInfo] = c.item.split(" – ");
+      itemDiv.innerHTML = `
+        <p> ${nomeItem}</p>
+        <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
+      `;
       divGrupo.appendChild(itemDiv);
     });
 
@@ -248,7 +258,7 @@ function exibirRanking(listaItens) {
 
   ranking.forEach((item, index) => {
     const linha = document.createElement("p");
-    linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${item.data})`;
+    linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${formatarDataBR(item.data)})`;
     container.appendChild(linha);
   });
 
@@ -269,7 +279,7 @@ function enviarWhatsapp() {
     mensagem += `\n\n🏢 *${empresa}*`;
     itens.forEach(c => {
       subtotal += c.valor;
-      mensagem += `\n ${c.item} - 💸 ${formatarMoeda(c.valor)} - ${c.data}`;
+      mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
     });
     mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
   });
