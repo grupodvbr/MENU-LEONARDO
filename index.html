@@ -129,6 +129,8 @@
 
       try {
         const resposta = await fetch("https://script.google.com/macros/s/AKfycbwGJ8oTTaESTd9uh2w2vNAjHlVNEYBgvMsdsjw5mlKjpic5fm87kM-avrE8dWXCqfrhIA/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
+
+        if (!resposta.ok) throw new Error("Erro na requisição");
         const dados = await resposta.json();
 
         if (dados.autorizado) {
@@ -141,7 +143,7 @@
         }
       } catch (erro) {
         mensagem.textContent = "Erro na verificação.";
-        console.error(erro);
+        console.error("Erro na verificação:", erro);
       }
     }
   </script>
