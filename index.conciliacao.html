@@ -6,11 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
+    html, body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
       margin: 0;
       padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow-x: hidden;
     }
     header {
       background-color: white;
@@ -32,8 +35,8 @@
     }
     .container {
       padding: 20px;
-      max-width: 1200px;
-      margin: auto;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     .filtros {
       margin-bottom: 20px;
@@ -45,6 +48,7 @@
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
+      min-width: 150px;
     }
     #btnWhats {
       background-color: #25d366;
@@ -68,7 +72,7 @@
       padding: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
       flex: 1;
-      min-width: 400px;
+      min-width: 320px;
     }
   </style>
 </head>
@@ -82,11 +86,11 @@
 <div class="container">
   <div class="filtros">
     <div>
-      <label for="data">Data:</label>
+      <label for="data">Data:</label><br>
       <input type="date" id="data" onchange="filtrar()">
     </div>
     <div>
-      <label for="empresa">Empresa:</label>
+      <label for="empresa">Empresa:</label><br>
       <select id="empresa" onchange="filtrar()">
         <option value="todas">Todas</option>
       </select>
@@ -102,7 +106,7 @@
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbx_rp7Whh8dvZ6L4TqT7zm8cWo9qPLS5-ILdc9UwVXxy_cS4qh3MyTHTBAafKZ8oY20Eg/exec"; // Substitua com sua URL do Google Apps Script
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbx_rp7Whh8dvZ6L4TqT7zm8cWo9qPLS5-ILdc9UwVXxy_cS4qh3MyTHTBAafKZ8oY20Eg/exec";
 let dados = [];
 
 async function carregarDados() {
