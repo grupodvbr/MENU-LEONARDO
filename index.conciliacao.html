@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Conciliações</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,16 +14,19 @@
     }
     header {
       background-color: white;
-      padding: 20px 20px 10px;
+      padding: 20px;
       border-bottom: 1px solid #ccc;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     header img {
       height: 60px;
-      margin-bottom: 5px;
     }
     header h1 {
-      margin: 5px 0 0;
+      flex: 1;
+      text-align: center;
+      margin: 0;
       font-size: 1.6em;
       font-weight: bold;
     }
@@ -205,12 +208,12 @@ function enviarWhatsapp() {
 
   if (!filtrados.length) return alert("Nenhum dado para enviar.");
 
-  let mensagem = `📊 *Conciliações ${dataBR}*\\n\\n`;
+  let mensagem = `📊 *Conciliações ${dataBR}*\n\n`;
   filtrados.forEach(d => {
-    mensagem += `*${d.empresa}*\\n• % Conciliado: ${d.percentual.toFixed(1)}%\\n• Valor pendente: R$ ${d.valor.toFixed(2)}\\n\\n`;
+    mensagem += `*${d.empresa}*\n• % Conciliado: ${d.percentual.toFixed(1)}%\n• Valor pendente: R$ ${d.valor.toFixed(2)}\n\n`;
   });
 
-  const numero = "5577999761436"; // Altere aqui
+  const numero = "5577999761436";
   const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
   window.open(link, "_blank");
 }
