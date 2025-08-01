@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Vendas Delivery</title>
+  <title>📦 Vendas Delivery - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -40,36 +40,6 @@
       margin: auto;
     }
 
-    .chart-box, .total-box, .resumo-box {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-
-    .chart-box canvas {
-      max-width: 100%;
-      height: 300px;
-    }
-
-    .total-box h3, .resumo-box h3 {
-      margin-top: 0;
-      font-size: 1.2em;
-      color: #2c3e50;
-    }
-
-    .total-line {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      font-size: 1.1em;
-    }
-
-    .total-line strong {
-      font-weight: bold;
-    }
-
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -82,7 +52,7 @@
       font-weight: bold;
     }
 
-    .filters select, .filters input[type="month"] {
+    .filters select, .filters input {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
@@ -103,27 +73,42 @@
       cursor: pointer;
     }
 
-    .resumo-linha {
-      background: #eaffea;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      line-height: 1.6;
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
 
-    .resumo-linha strong {
-      display: block;
-      font-size: 1.1em;
-      margin-bottom: 4px;
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #2c3e50;
     }
 
-    .total-box select#empresaResumo,
-    .total-box select#mesResumo {
-      margin-top: 5px;
-      margin-left: 10px;
-      padding: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.05em;
+      padding: 4px 0;
+    }
+
+    .chart-box {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .chart-box h3 {
+      margin-top: 0;
+    }
+
+    .chart-box canvas {
+      max-width: 100%;
+      height: 300px;
     }
 
     @media (max-width: 600px) {
@@ -131,8 +116,9 @@
         flex-direction: column;
         text-align: center;
       }
+
       header img {
-        margin: 0 0 10px;
+        margin-bottom: 10px;
       }
     }
   </style>
@@ -141,86 +127,50 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>📦 Vendas Delivery</h1>
+  <h1>📦 Vendas Delivery - Grupo DV</h1>
 </header>
 
 <div class="container">
-  <div class="total-box">
-    <div style="float:right">
-      <label for="mesResumo">Mês:</label>
-      <select id="mesResumo" onchange="atualizarTotais()">
-        <option value="">Todos</option>
-        <option value="01">Janeiro</option>
-        <option value="02">Fevereiro</option>
-        <option value="03">Março</option>
-        <option value="04">Abril</option>
-        <option value="05">Maio</option>
-        <option value="06">Junho</option>
-        <option value="07">Julho</option>
-        <option value="08">Agosto</option>
-        <option value="09">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
-      </select>
-      <br>
-      <label for="empresaResumo">Empresa:</label>
-      <select id="empresaResumo" onchange="atualizarTotais()">
+  <div class="filters">
+    <div>
+      <label for="mes">Mês:</label>
+      <input type="month" id="mes">
+    </div>
+    <div>
+      <label for="empresa">Empresa:</label>
+      <select id="empresa">
         <option value="">Todas</option>
       </select>
     </div>
-    <h3>💰 Totais por Plataforma</h3>
-    <div class="total-line">
-      <span>iFood</span>
-      <span id="total-ifood">R$ 0,00</span>
-    </div>
-    <div class="total-line">
-      <span>Delivery Much</span>
-      <span id="total-dm">R$ 0,00</span>
-    </div>
-    <hr />
-    <div class="total-line">
-      <strong>Total Geral</strong>
-      <strong id="total-geral">R$ 0,00</strong>
-    </div>
-  </div>
-
-  <div class="chart-box">
-    <h3>📈 Vendas Brutas por Mês</h3>
-    <canvas id="graficoVendas"></canvas>
-  </div>
-
-  <div class="filters">
     <div>
-      <label for="mesInicio">Mês Início</label>
-      <input type="month" id="mesInicio">
-    </div>
-    <div>
-      <label for="mesFim">Mês Fim</label>
-      <input type="month" id="mesFim">
-    </div>
-    <div>
-      <label for="empresa">Empresa</label>
-      <select id="empresa">
-        <option value="todas">Todas</option>
-      </select>
-    </div>
-    <div>
-      <label for="plataforma">Plataforma</label>
+      <label for="plataforma">Plataforma:</label>
       <select id="plataforma">
-        <option value="todas">Todas</option>
+        <option value="">Todas</option>
         <option value="iFood">iFood</option>
         <option value="Delivery Much">Delivery Much</option>
       </select>
     </div>
     <div>
-      <button onclick="atualizarResumoEmpresa()">Filtrar Resumo</button>
+      <button onclick="filtrarDados()">Filtrar</button>
     </div>
   </div>
 
-  <div class="resumo-box">
-    <h3>🏪 Resumo por Empresa</h3>
-    <div id="resumo-empresas"></div>
+  <div class="card" id="totaisCard">
+    <h2>💰 Totais por Plataforma</h2>
+    <div class="total-line"><span>iFood</span><span id="totalIfood">R$ 0,00</span></div>
+    <div class="total-line"><span>Delivery Much</span><span id="totalDM">R$ 0,00</span></div>
+    <hr>
+    <div class="total-line"><strong>Total Geral</strong><strong id="totalGeral">R$ 0,00</strong></div>
+  </div>
+
+  <div class="chart-box">
+    <h3>📈 Evolução das Vendas</h3>
+    <canvas id="graficoVendas"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>🏪 Resumo por Empresa</h2>
+    <div id="resumoEmpresas"></div>
   </div>
 </div>
 
@@ -229,99 +179,116 @@ const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG1
 let dados = [];
 let chart;
 
-function setDefaultDates() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth(); // mês atual (0–11)
-  const mesAnterior = new Date(ano, mes - 1, 1);
-  const mesFormatado = mesAnterior.toISOString().slice(0, 7); // yyyy-mm
-
-  document.getElementById("mesInicio").value = mesFormatado;
-  document.getElementById("mesFim").value = mesFormatado;
-  document.getElementById("mesResumo").value = (mesAnterior.getMonth() + 1).toString().padStart(2, '0');
-}
-
 async function carregarDados() {
-  setDefaultDates();
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
-  filtrarGrafico();
-  atualizarTotais();
-  atualizarResumoEmpresa();
+  definirMesAtual();
+  filtrarDados();
 }
 
 function popularEmpresas() {
-  const select = document.getElementById("empresa");
-  const selectResumo = document.getElementById("empresaResumo");
   const empresas = [...new Set(dados.map(d => d.empresa))];
-  empresas.forEach(empresa => {
-    const opt1 = document.createElement("option");
-    opt1.value = empresa;
-    opt1.textContent = empresa;
-    select.appendChild(opt1);
-
-    const opt2 = document.createElement("option");
-    opt2.value = empresa;
-    opt2.textContent = empresa;
-    selectResumo.appendChild(opt2);
+  const select = document.getElementById("empresa");
+  empresas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    select.appendChild(opt);
   });
 }
 
-function atualizarTotais() {
-  const mes = document.getElementById("mesResumo").value;
-  const empresa = document.getElementById("empresaResumo").value;
-  let totalIfood = 0;
-  let totalDM = 0;
+function definirMesAtual() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = (hoje.getMonth()).toString().padStart(2, '0');
+  document.getElementById("mes").value = `${ano}-${mes}`;
+}
 
-  dados.forEach(d => {
-    const mesDado = d.data.split("-")[1];
-    if ((mes && mes !== mesDado) || (empresa && d.empresa !== empresa)) return;
+function filtrarDados() {
+  const mesFiltro = document.getElementById("mes").value;
+  const empresa = document.getElementById("empresa").value;
+  const plataforma = document.getElementById("plataforma").value;
 
+  const filtrado = dados.filter(d => {
+    const mesDado = d.data?.slice(0, 7);
+    return (!mesFiltro || mesDado === mesFiltro) &&
+           (!empresa || d.empresa === empresa) &&
+           (!plataforma || d.plataforma === plataforma);
+  });
+
+  mostrarTotais(filtrado);
+  mostrarGrafico(filtrado);
+  mostrarResumo(filtrado);
+}
+
+function mostrarTotais(lista) {
+  let totalIfood = 0, totalDM = 0;
+  lista.forEach(d => {
     const bruto = parseFloat(d.bruto || 0);
     if (d.plataforma === "iFood") totalIfood += bruto;
     if (d.plataforma === "Delivery Much") totalDM += bruto;
   });
 
-  document.getElementById("total-ifood").textContent = "R$ " + totalIfood.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-  document.getElementById("total-dm").textContent = "R$ " + totalDM.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-  document.getElementById("total-geral").textContent = "R$ " + (totalIfood + totalDM).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById("totalIfood").textContent = formatar(totalIfood);
+  document.getElementById("totalDM").textContent = formatar(totalDM);
+  document.getElementById("totalGeral").textContent = formatar(totalIfood + totalDM);
 }
 
-function filtrarGrafico() {
+function mostrarResumo(lista) {
   const agrupado = {};
-  dados.forEach(d => {
-    const data = d.data;
-    const bruto = parseFloat(d.bruto || 0);
-    const label = new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    agrupado[label] = (agrupado[label] || 0) + bruto;
+  lista.forEach(d => {
+    const emp = d.empresa;
+    const plat = d.plataforma;
+    if (!agrupado[emp]) agrupado[emp] = {};
+    if (!agrupado[emp][plat]) agrupado[emp][plat] = 0;
+    agrupado[emp][plat] += parseFloat(d.bruto || 0);
   });
 
-  const labels = Object.keys(agrupado).sort();
-  const valores = labels.map(d => agrupado[d]);
+  const div = document.getElementById("resumoEmpresas");
+  div.innerHTML = "";
+  for (let emp in agrupado) {
+    const bloco = document.createElement("div");
+    bloco.innerHTML = `<strong>${emp}</strong>`;
+    for (let plat in agrupado[emp]) {
+      bloco.innerHTML += `<br>• ${plat}: ${formatar(agrupado[emp][plat])}`;
+    }
+    bloco.style.marginBottom = "15px";
+    div.appendChild(bloco);
+  }
+}
+
+function mostrarGrafico(lista) {
+  const porDia = {};
+  lista.forEach(d => {
+    const dia = d.data?.split("-").reverse().join("/");
+    const valor = parseFloat(d.bruto || 0);
+    porDia[dia] = (porDia[dia] || 0) + valor;
+  });
+
+  const labels = Object.keys(porDia).sort();
+  const valores = labels.map(d => porDia[d]);
 
   if (chart) chart.destroy();
-  chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
+  const ctx = document.getElementById("graficoVendas").getContext("2d");
+  chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
       datasets: [{
-        label: 'Valor Bruto por Dia',
+        label: 'Vendas Brutas por Dia',
         data: valores,
-        borderColor: '#2980b9',
-        backgroundColor: 'rgba(41,128,185,0.1)',
-        borderWidth: 2,
+        fill: true,
+        borderColor: '#388e3c',
+        backgroundColor: 'rgba(56, 142, 60, 0.1)',
         tension: 0.3,
-        pointRadius: 4,
-        fill: true
+        pointRadius: 4
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
       scales: {
         y: {
-          beginAtZero: false,
           ticks: {
             callback: value => 'R$ ' + value.toLocaleString('pt-BR')
           }
@@ -331,60 +298,8 @@ function filtrarGrafico() {
   });
 }
 
-function atualizarResumoEmpresa() {
-  const mesInicio = document.getElementById("mesInicio").value;
-  const mesFim = document.getElementById("mesFim").value;
-  const empresa = document.getElementById("empresa").value;
-  const plataforma = document.getElementById("plataforma").value;
-
-  const filtrados = dados.filter(d => {
-    const mesDado = d.data.substring(0, 7); // yyyy-mm
-    return (!mesInicio || mesDado >= mesInicio) &&
-           (!mesFim || mesDado <= mesFim) &&
-           (empresa === "todas" || d.empresa === empresa) &&
-           (plataforma === "todas" || d.plataforma === plataforma);
-  });
-
-  const resumoPorEmpresa = {};
-
-  filtrados.forEach(d => {
-    const emp = d.empresa;
-    const plat = d.plataforma;
-
-    if (!resumoPorEmpresa[emp]) resumoPorEmpresa[emp] = {};
-    if (!resumoPorEmpresa[emp][plat]) {
-      resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0 };
-    }
-
-    const bruto = parseFloat(d.bruto || 0);
-    const liquido = parseFloat(d.liquido || 0);
-    const taxa = parseFloat(d.taxa || 0);
-    const repassado = parseFloat(d.repassado || 0);
-
-    resumoPorEmpresa[emp][plat].bruto += bruto;
-    resumoPorEmpresa[emp][plat].liquido += liquido;
-    resumoPorEmpresa[emp][plat].taxa += taxa;
-    resumoPorEmpresa[emp][plat].repassado += repassado;
-  });
-
-  const resumo = document.getElementById("resumo-empresas");
-  resumo.innerHTML = "";
-  for (const emp in resumoPorEmpresa) {
-    const div = document.createElement("div");
-    div.className = "resumo-linha";
-    div.innerHTML = `<strong>${emp}</strong>`;
-    for (const plat in resumoPorEmpresa[emp]) {
-      const val = resumoPorEmpresa[emp][plat];
-      const perc = (val.taxa / val.bruto) * 100 || 0;
-      div.innerHTML += `
-        <br><u>${plat}</u><br>
-        💰 Bruto: R$ ${val.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
-        💵 Líquido: R$ ${val.liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
-        📉 Investimento (${perc.toFixed(2)}%): R$ ${val.taxa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
-      `;
-    }
-    resumo.appendChild(div);
-  }
+function formatar(valor) {
+  return "R$ " + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
 
 carregarDados();
