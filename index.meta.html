@@ -184,12 +184,11 @@ function formatarDataBR(dataISO) {
 
 function preencherDataOntem() {
   const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
-  const inicio = new Date(ano, mes - 1, 1);
-  const fim = new Date(ano, mes, 0);
-  document.getElementById("dataInicio").value = inicio.toISOString().split("T")[0];
-  document.getElementById("dataFim").value = fim.toISOString().split("T")[0];
+  const ontem = new Date(hoje);
+  ontem.setDate(hoje.getDate() - 1);
+  const dataFormatada = ontem.toISOString().split("T")[0];
+  document.getElementById("dataInicio").value = dataFormatada;
+  document.getElementById("dataFim").value = dataFormatada;
 }
 
 async function carregarMetas() {
