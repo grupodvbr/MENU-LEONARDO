@@ -14,21 +14,27 @@
 
     header {
       background-color: white;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
+      padding: 20px 0;
       border-bottom: 1px solid #ccc;
+      text-align: center;
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     header img {
-      height: 50px;
-      margin-right: 20px;
+      height: 60px;
+      margin-bottom: 10px;
     }
 
     header h1 {
       margin: 0;
       font-size: 1.6em;
       font-weight: bold;
+      color: #000;
     }
 
     .container {
@@ -108,192 +114,196 @@
     }
 
     @media (max-width: 600px) {
-      header {
+      .filters {
         flex-direction: column;
-        text-align: center;
       }
-      header img {
-        margin: 0 0 10px;
+
+      .btn-whatsapp {
+        float: none;
+        width: 100%;
+        margin-top: 10px;
       }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <img src="https://drive.google.com/uc?export=view&id=1jyyUNfY1Wy6i1-LArwVOn1ghxCgePQ9K" alt="Logo CB Systems">
-  <h1>📋 Cancelamentos</h1>
-</header>
+  <header>
+    <div class="header-content">
+      <img src="https://drive.google.com/uc?export=view&id=1jyyUNfY1Wy6i1-LArwVOn1ghxCgePQ9K" alt="Logo CB Systems">
+      <h1>📋 Cancelamentos</h1>
+    </div>
+  </header>
 
-<div class="container">
-  <div class="filters">
-    <input type="date" id="dataInicio">
-    <input type="date" id="dataFim">
-    <select id="filtroEmpresa"></select>
-    <input type="text" id="filtroBusca" placeholder="Buscar item...">
+  <div class="container">
+    <div class="filters">
+      <input type="date" id="dataInicio">
+      <input type="date" id="dataFim">
+      <select id="filtroEmpresa"></select>
+      <input type="text" id="filtroBusca" placeholder="Buscar item...">
+    </div>
+
+    <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
+    <div class="total-cancelado">
+      📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
+    </div>
+
+    <div id="listaCancelamentos"></div>
   </div>
 
-  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+  <script>
+    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3Ue6EuQw75QYID9jadb-KezTv8y9Mg6d8HFoKUCzcBRqzM5aMBg/exec';
+    let cancelamentos = [];
 
-  <div class="total-cancelado">
-    📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
-  </div>
-
-  <div id="listaCancelamentos"></div>
-</div>
-
-<script>
-const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3Ue6EuQw75QYID9jadb-KezTv8y9Mg6d8HFoKUCzcBRqzM5aMBg/exec';
-let cancelamentos = [];
-
-async function carregarDados() {
-  const res = await fetch(URL_SCRIPT);
-  cancelamentos = await res.json();
-  preencherFiltros();
-  aplicarFiltros();
-  preencherDataPadrao();
-}
-
-function formatarMoeda(valor) {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function formatarDataBR(dataISO) {
-  const [ano, mes, dia] = dataISO.split("-");
-  return `${dia}/${mes}/${ano}`;
-}
-
-function preencherFiltros() {
-  const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
-  const selectEmpresa = document.getElementById('filtroEmpresa');
-  selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` + 
-    empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
-}
-
-function preencherDataPadrao() {
-  const hoje = new Date();
-  const ontem = new Date(hoje);
-  ontem.setDate(hoje.getDate() - 1);
-  const formato = d => d.toISOString().split('T')[0];
-  document.getElementById("dataInicio").value = formato(ontem);
-  document.getElementById("dataFim").value = formato(ontem);
-}
-
-function aplicarFiltros() {
-  const empresaFiltro = document.getElementById('filtroEmpresa').value;
-  const busca = document.getElementById('filtroBusca').value.toLowerCase();
-  const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim = document.getElementById('dataFim').value;
-
-  const lista = document.getElementById("listaCancelamentos");
-  lista.innerHTML = "";
-  document.getElementById("rankingContainer")?.remove();
-
-  let totalGeral = 0;
-  const grupos = {};
-
-  cancelamentos.forEach(c => {
-    if (
-      (empresaFiltro && c.empresa !== empresaFiltro) ||
-      (busca && !c.item.toLowerCase().includes(busca)) ||
-      (dataInicio && c.data < dataInicio) ||
-      (dataFim && c.data > dataFim)
-    ) return;
-
-    if (!grupos[c.empresa]) grupos[c.empresa] = [];
-    grupos[c.empresa].push(c);
-  });
-
-  Object.keys(grupos).forEach(empresa => {
-    const grupo = grupos[empresa];
-    let subtotal = 0;
-
-    const divGrupo = document.createElement("div");
-    divGrupo.className = "grupo-empresa";
-
-    const primeiraData = grupo[0]?.data || "";
-    grupo.forEach(c => subtotal += c.valor);
-    totalGeral += subtotal;
-
-    const titulo = document.createElement("h2");
-    titulo.textContent = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
-    divGrupo.appendChild(titulo);
-
-    grupo.forEach(c => {
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "item-cancelamento";
-
-      const [nomeItem, valorInfo] = c.item.split(" – ");
-      itemDiv.innerHTML = `
-        <p> ${nomeItem}</p>
-        <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
-      `;
-      divGrupo.appendChild(itemDiv);
-    });
-
-    lista.appendChild(divGrupo);
-
-    if (empresaFiltro) {
-      exibirRanking(grupo);
+    async function carregarDados() {
+      const res = await fetch(URL_SCRIPT);
+      cancelamentos = await res.json();
+      preencherFiltros();
+      aplicarFiltros();
+      preencherDataPadrao();
     }
-  });
 
-  document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
-}
+    function formatarMoeda(valor) {
+      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
 
-function exibirRanking(listaItens) {
-  const container = document.createElement("div");
-  container.id = "rankingContainer";
-  container.className = "grupo-empresa";
-  const titulo = document.createElement("h2");
-  titulo.textContent = "🏆 Top 7 Itens Mais Caros";
-  container.appendChild(titulo);
+    function formatarDataBR(dataISO) {
+      const [ano, mes, dia] = dataISO.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
 
-  const ranking = listaItens
-    .slice()
-    .sort((a, b) => b.valor - a.valor)
-    .slice(0, 7);
+    function preencherFiltros() {
+      const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
+      const selectEmpresa = document.getElementById('filtroEmpresa');
+      selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` + 
+        empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+    }
 
-  ranking.forEach((item, index) => {
-    const linha = document.createElement("p");
-    linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${formatarDataBR(item.data)})`;
-    container.appendChild(linha);
-  });
+    function preencherDataPadrao() {
+      const hoje = new Date();
+      const ontem = new Date(hoje);
+      ontem.setDate(hoje.getDate() - 1);
+      const formato = d => d.toISOString().split('T')[0];
+      document.getElementById("dataInicio").value = formato(ontem);
+      document.getElementById("dataFim").value = formato(ontem);
+    }
 
-  document.getElementById("listaCancelamentos").prepend(container);
-}
+    function aplicarFiltros() {
+      const empresaFiltro = document.getElementById('filtroEmpresa').value;
+      const busca = document.getElementById('filtroBusca').value.toLowerCase();
+      const dataInicio = document.getElementById('dataInicio').value;
+      const dataFim = document.getElementById('dataFim').value;
 
-function enviarWhatsapp() {
-  let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
-  const agrupado = {};
+      const lista = document.getElementById("listaCancelamentos");
+      lista.innerHTML = "";
+      document.getElementById("rankingContainer")?.remove();
 
-  cancelamentos.forEach(c => {
-    if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
-    agrupado[c.empresa].push(c);
-  });
+      let totalGeral = 0;
+      const grupos = {};
 
-  Object.entries(agrupado).forEach(([empresa, itens]) => {
-    let subtotal = 0;
-    mensagem += `\n\n🏢 *${empresa}*`;
-    itens.forEach(c => {
-      subtotal += c.valor;
-      mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
-    });
-    mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
-  });
+      cancelamentos.forEach(c => {
+        if (
+          (empresaFiltro && c.empresa !== empresaFiltro) ||
+          (busca && !c.item.toLowerCase().includes(busca)) ||
+          (dataInicio && c.data < dataInicio) ||
+          (dataFim && c.data > dataFim)
+        ) return;
 
-  const telefone = "5577999761436";
-  const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-  window.open(url, "_blank");
-}
+        if (!grupos[c.empresa]) grupos[c.empresa] = [];
+        grupos[c.empresa].push(c);
+      });
 
-document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+      Object.keys(grupos).forEach(empresa => {
+        const grupo = grupos[empresa];
+        let subtotal = 0;
 
-carregarDados();
-</script>
+        const divGrupo = document.createElement("div");
+        divGrupo.className = "grupo-empresa";
+
+        const primeiraData = grupo[0]?.data || "";
+        grupo.forEach(c => subtotal += c.valor);
+        totalGeral += subtotal;
+
+        const titulo = document.createElement("h2");
+        titulo.textContent = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
+        divGrupo.appendChild(titulo);
+
+        grupo.forEach(c => {
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "item-cancelamento";
+
+          const [nomeItem, valorInfo] = c.item.split(" – ");
+          itemDiv.innerHTML = `
+            <p> ${nomeItem}</p>
+            <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
+          `;
+          divGrupo.appendChild(itemDiv);
+        });
+
+        lista.appendChild(divGrupo);
+
+        if (empresaFiltro) {
+          exibirRanking(grupo);
+        }
+      });
+
+      document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
+    }
+
+    function exibirRanking(listaItens) {
+      const container = document.createElement("div");
+      container.id = "rankingContainer";
+      container.className = "grupo-empresa";
+      const titulo = document.createElement("h2");
+      titulo.textContent = "🏆 Top 7 Itens Mais Caros";
+      container.appendChild(titulo);
+
+      const ranking = listaItens
+        .slice()
+        .sort((a, b) => b.valor - a.valor)
+        .slice(0, 7);
+
+      ranking.forEach((item, index) => {
+        const linha = document.createElement("p");
+        linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${formatarDataBR(item.data)})`;
+        container.appendChild(linha);
+      });
+
+      document.getElementById("listaCancelamentos").prepend(container);
+    }
+
+    function enviarWhatsapp() {
+      let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
+      const agrupado = {};
+
+      cancelamentos.forEach(c => {
+        if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
+        agrupado[c.empresa].push(c);
+      });
+
+      Object.entries(agrupado).forEach(([empresa, itens]) => {
+        let subtotal = 0;
+        mensagem += `\n\n🏢 *${empresa}*`;
+        itens.forEach(c => {
+          subtotal += c.valor;
+          mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
+        });
+        mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
+      });
+
+      const telefone = "5577999761436";
+      const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, "_blank");
+    }
+
+    document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+    document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+    document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+
+    carregarDados();
+  </script>
 
 </body>
 </html>
