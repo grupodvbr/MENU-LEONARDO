@@ -84,7 +84,62 @@
       background: #ccc;
     }
 
+    header {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    header img {
+      height: 70px;
+      margin-right: 20px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      margin: 0 auto;
+      font-weight: bold;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .card {
+      background: #f8f8f8;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      background-color: #eaeaea;
+    }
+
+    .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
     .hidden { display: none; }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 18px;
+      }
+    }
+
     header, .container { display: none; }
   </style>
 </head>
@@ -120,12 +175,8 @@
 
   <!-- Cabeçalho -->
   <header>
-    <div class="logo-left">
-      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-    </div>
-    <div class="title-center">
-      <h1>Análise Financeira</h1>
-    </div>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Análise Financeira</h1>
     <div class="spacer"></div>
   </header>
 
@@ -164,7 +215,7 @@
     });
   </script>
 
-  <!-- Numpad Script -->
+  <!-- Teclado Numérico -->
   <script>
     function addChar(num) {
       const input = document.getElementById("senha");
@@ -177,9 +228,9 @@
     }
   </script>
 
- 
+  <!-- Verifica Senha -->
   <script>
-    const SENHA_CORRETA = atob("MTAyMDQ3");
+    const SENHA_CORRETA = atob("MTAyMDQ3"); // senha: 102047
 
     function verificarSenha() {
       const senha = document.getElementById("senha").value;
