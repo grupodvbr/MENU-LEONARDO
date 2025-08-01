@@ -128,7 +128,7 @@
       mensagem.textContent = "Verificando...";
 
       try {
-        const resposta = await fetch("https://script.google.com/macros/s/AKfycbwGJ8oTTaESTd9uh2w2vNAjHlVNEYBgvMsdsjw5mlKjpic5fm87kM-avrE8dWXCqfrhIA/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
+        const resposta = await fetch("https://script.google.com/macros/s/AKfycbwSCw0gWjyQ2GDTGyds2YMZ2S3MLbpSAqjGxh8fklaywdrOPGSjgeQz4N1O25omrNhpPQ/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
 
         if (!resposta.ok) throw new Error("Erro na requisição");
         const dados = await resposta.json();
