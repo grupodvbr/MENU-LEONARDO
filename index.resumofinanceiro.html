@@ -267,16 +267,22 @@ function exportarPDF() {
   if (!boxes.length) return alert("Nada para exportar.");
 
   boxes.forEach((box, index) => {
-    const clone = box.cloneNode(true);
     const wrapper = document.createElement("div");
+    wrapper.style.width = "1000px";
+    wrapper.style.padding = "20px";
+    wrapper.style.background = "#fff";
+    wrapper.style.boxSizing = "border-box";
+
+    const clone = box.cloneNode(true);
+    clone.style.pageBreakAfter = "always";
     wrapper.appendChild(clone);
 
     const opt = {
-      margin: 0.3,
-      filename: `relatorio-villa-gourmet-parte-${index + 1}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      margin: 0,
+      filename: `relatorio-villa-gourmet-${index + 1}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'px', format: [1000, 700], orientation: 'landscape' }
     };
 
     html2pdf().from(wrapper).set(opt).save();
