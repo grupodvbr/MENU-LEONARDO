@@ -263,15 +263,24 @@ function desenharGrafico(canvas, agrupado) {
 }
 
 function exportarPDF() {
-  const painel = document.getElementById("painel");
-  const opt = {
-    margin: 0.3,
-    filename: 'relatorio-financeiro.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-  };
-  html2pdf().from(painel).set(opt).save();
+  const boxes = document.querySelectorAll(".empresa-box");
+  if (!boxes.length) return alert("Nada para exportar.");
+
+  boxes.forEach((box, index) => {
+    const clone = box.cloneNode(true);
+    const wrapper = document.createElement("div");
+    wrapper.appendChild(clone);
+
+    const opt = {
+      margin: 0.3,
+      filename: `relatorio-villa-gourmet-parte-${index + 1}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().from(wrapper).set(opt).save();
+  });
 }
 
 document.getElementById("enviarWhatsapp").addEventListener("click", () => {
