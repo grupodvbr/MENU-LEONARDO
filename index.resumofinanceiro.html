@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Resumo de Entradas</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: white;
+      background: #f7f7f7;
       margin: 0;
       padding: 0;
     }
@@ -25,48 +25,50 @@
       margin-right: 20px;
     }
     header h1 {
-      margin: 0;
+      margin: 0 auto;
       font-size: 1.6em;
       font-weight: bold;
+      text-align: center;
+      flex: 1;
     }
     .conteudo {
-      padding: 15px;
+      padding: 20px;
     }
     .filtros {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 10px;
-      max-width: 500px;
-      margin: 0 auto 20px;
+      margin-bottom: 20px;
+      align-items: end;
     }
     .filtros label {
-      font-size: 0.9em;
-      display: flex;
-      flex-direction: column;
+      font-weight: bold;
     }
     .filtros input,
-    .filtros select,
-    .filtros button {
+    .filtros select {
       padding: 10px;
-      font-size: 1em;
-      border-radius: 6px;
+      border-radius: 8px;
       border: 1px solid #ccc;
+      width: 100%;
     }
-    button {
-      background-color: #007bff;
-      color: white;
+    .filtros > div {
+      flex: 1 1 200px;
+    }
+    .filtros button {
+      padding: 10px 20px;
       border: none;
+      border-radius: 8px;
+      background-color: #1e1e2f;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #0056b3;
-    }
     .empresa-box {
-      background: #d0f0d5;
+      background: #eaffea;
       border-radius: 10px;
       padding: 15px;
       margin-bottom: 15px;
-      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     }
     .empresa-box h2 {
       margin: 0 0 10px;
@@ -83,11 +85,6 @@
     }
     .grafico-desktop {
       display: none;
-    }
-    #exportar {
-      margin: 0 auto 20px;
-      display: block;
-      max-width: 500px;
     }
     @media (min-width: 768px) {
       .grafico-desktop {
@@ -110,24 +107,32 @@
 
 <div class="conteudo">
   <div class="filtros">
-    <label>
-      Data Início:
+    <div>
+      <label for="dataInicio">Data Início</label>
       <input type="date" id="dataInicio" />
-    </label>
-    <label>
-      Data Fim:
+    </div>
+    <div>
+      <label for="dataFim">Data Fim</label>
       <input type="date" id="dataFim" />
-    </label>
-    <label>
-      Empresa:
+    </div>
+    <div>
+      <label for="empresaFiltro">Empresa</label>
       <select id="empresaFiltro">
         <option value="">Todas</option>
       </select>
-    </label>
-    <button onclick="aplicarFiltro()">Filtrar</button>
-    <button id="exportar" onclick="exportarPDF()">📄 Exportar PDF</button>
-    <button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button>
+    </div>
+    <div>
+      <button onclick="aplicarFiltro()">Filtrar</button>
+    </div>
+    <div>
+      <button onclick="exportarPDF()">📄 Exportar PDF</button>
+    </div>
+    <div>
+      <button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button>
+    </div>
   </div>
+  <div id="painel"></div>
+</div>
 
   <div id="painel"></div>
 </div>
