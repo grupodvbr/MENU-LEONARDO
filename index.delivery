@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vendas Delivery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    header {
+      background-color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+      font-weight: bold;
+    }<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Análise Financeira</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: white;
+    }
+
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+
+    #splash img {
+      width: 150px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    header {
+      background-color: white;
+      color: #2c3e50;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+
+    header h1 {
+      flex: 1;
+      text-align: center;
+      font-size: 24px;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      background-color: #f0f8ff;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #2c3e50;
+    }
+
+    .icon {
+      font-size: 40px;
+      color: #2980b9;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 500px) {
+      header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      header img {
+        margin: 0 0 10px;
+      }
+
+      header h1 {
+        font-size: 20px;
+        text-align: center;
+      }
+
+      .card h2 {
+        font-size: 18px;
+      }
+
+      .icon {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tela de entrada -->
+  <div id="splash">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  </div>
+
+  <!-- Cabeçalho -->
+  <header>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Análise Financeira</h1>
+  </header>
+
+  <!-- Cards -->
+  <div class="container">
+    <a class="card" href="https://grupodvbr.github.io/RESUMO-TRANSA-ES-FINANCEIRAS/" target="_blank">
+      <div class="icon">📈</div>
+      <h2>Resumo de transações financeiras</h2>
+    </a>
+
+    <a class="card" href="https://link-para-cancelamentos.com" target="_blank">
+      <div class="icon">❌</div>
+      <h2>Cancelamentos</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/RESUMO-DELIVERY/" target="_blank">
+      <div class="icon">🚚</div>
+      <h2>Vendas Delivery</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/resumo-de-meta/" target="_blank">
+      <div class="icon">📊</div>
+      <h2>Meta de Faturamento</h2>
+    </a>
+
+    <a class="card" href="https://grupodvbr.github.io/CONCILIA-O-DE-CART-ES-E-BANC-RIA/" target="_blank">
+      <div class="icon">💳</div>
+      <h2>Conciliações</h2>
+    </a>
+  </div>
+
+  <!-- Script splash -->
+  <script>
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splash');
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.style.display = 'none', 500);
+      }, 1000);
+    });
+  </script>
+
+</body>
+</html>
+
+    .container { padding: 20px; }
+    .chart-box, .total-box, .resumo-box {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .chart-box canvas { max-width: 100%; height: 300px; }
+    .total-box h3, .resumo-box h3 { margin-top: 0; }
+    .total-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1em; }
+    .total-line strong { font-weight: bold; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end; }
+    .filters label { font-weight: bold; }
+    .filters select, .filters input[type="date"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    .filters > div { flex: 1 1 200px; }
+    .filters button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #1e1e2f;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .resumo-linha {
+      background: #eaffea;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    .resumo-linha strong { display: block; font-size: 1.1em; margin-bottom: 4px; }
+    .total-box select#empresaResumo {
+      margin-top: 5px;
+      margin-left: 10px;
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1>Vendas Delivery</h1>
+</header>
+
+<div class="container">
+  <div class="total-box">
+    <div style="float:right">
+      <label for="mesResumo">Mês:</label>
+      <select id="mesResumo" onchange="atualizarTotais()">
+        <option value="">Todos</option>
+        <option value="01">Janeiro</option>
+        <option value="02">Fevereiro</option>
+        <option value="03">Março</option>
+        <option value="04">Abril</option>
+        <option value="05">Maio</option>
+        <option value="06">Junho</option>
+        <option value="07" selected>Julho</option>
+        <option value="08">Agosto</option>
+        <option value="09">Setembro</option>
+        <option value="10">Outubro</option>
+        <option value="11">Novembro</option>
+        <option value="12">Dezembro</option>
+      </select>
+      <br>
+      <label for="empresaResumo">Empresa:</label>
+      <select id="empresaResumo" onchange="atualizarTotais()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <h3>💰 Totais por Plataforma</h3>
+    <div class="total-line">
+      <span>iFood</span>
+      <span id="total-ifood">R$ 0,00</span>
+    </div>
+    <div class="total-line">
+      <span>Delivery Much</span>
+      <span id="total-dm">R$ 0,00</span>
+    </div>
+    <hr />
+    <div class="total-line">
+      <strong>Total Geral</strong>
+      <strong id="total-geral">R$ 0,00</strong>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <h3>📈 Vendas Brutas por Mês</h3>
+    <canvas id="graficoVendas"></canvas>
+  </div>
+
+  <div class="filters">
+    <div>
+      <label for="dataInicio">Data Início</label>
+      <input type="date" id="dataInicio">
+    </div>
+    <div>
+      <label for="dataFim">Data Fim</label>
+      <input type="date" id="dataFim">
+    </div>
+    <div>
+      <label for="empresa">Empresa</label>
+      <select id="empresa">
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+    <div>
+      <label for="plataforma">Plataforma</label>
+      <select id="plataforma">
+        <option value="todas">Todas</option>
+        <option value="iFood">iFood</option>
+        <option value="Delivery Much">Delivery Much</option>
+      </select>
+    </div>
+    <div>
+      <button onclick="atualizarResumoEmpresa()">Filtrar Resumo</button>
+    </div>
+  </div>
+
+  <div class="resumo-box">
+    <h3>🏪 Resumo por Empresa</h3>
+    <div id="resumo-empresas"></div>
+  </div>
+</div>
+
+<script>
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
+let dados = [];
+let chart;
+
+function setDefaultDates() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth(); // mês atual (0-11)
+
+  const inicio = new Date(ano, mes, 1); // dia 01 do mês atual
+  const fim = new Date(ano, mes, 5);    // dia 05 do mês atual
+
+  document.getElementById("dataInicio").value = inicio.toISOString().split('T')[0];
+  document.getElementById("dataFim").value = fim.toISOString().split('T')[0];
+}
+
+async function carregarDados() {
+  setDefaultDates();
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  popularEmpresas();
+  filtrarGrafico();
+  atualizarTotais();
+  atualizarResumoEmpresa();
+}
+
+function popularEmpresas() {
+  const select = document.getElementById("empresa");
+  const selectResumo = document.getElementById("empresaResumo");
+  const empresas = [...new Set(dados.map(d => d.empresa))];
+  empresas.forEach(empresa => {
+    const opt1 = document.createElement("option");
+    opt1.value = empresa;
+    opt1.textContent = empresa;
+    select.appendChild(opt1);
+
+    const opt2 = document.createElement("option");
+    opt2.value = empresa;
+    opt2.textContent = empresa;
+    selectResumo.appendChild(opt2);
+  });
+}
+
+function atualizarTotais() {
+  const mes = document.getElementById("mesResumo").value;
+  const empresa = document.getElementById("empresaResumo").value;
+  let totalIfood = 0;
+  let totalDM = 0;
+
+  dados.forEach(d => {
+    const mesDado = d.data.split("-")[1];
+    if ((mes && mes !== mesDado) || (empresa && d.empresa !== empresa)) return;
+
+    const bruto = parseFloat(d.bruto || 0);
+    if (d.plataforma === "iFood") totalIfood += bruto;
+    if (d.plataforma === "Delivery Much") totalDM += bruto;
+  });
+
+  document.getElementById("total-ifood").textContent = "R$ " + totalIfood.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById("total-dm").textContent = "R$ " + totalDM.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById("total-geral").textContent = "R$ " + (totalIfood + totalDM).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function filtrarGrafico() {
+  const agrupado = {};
+  dados.forEach(d => {
+    const data = d.data;
+    const bruto = parseFloat(d.bruto || 0);
+    const label = new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    agrupado[label] = (agrupado[label] || 0) + bruto;
+  });
+
+  const labels = Object.keys(agrupado).sort();
+  const valores = labels.map(d => agrupado[d]);
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Valor Bruto por Dia',
+        data: valores,
+        borderColor: '#2980b9',
+        backgroundColor: 'rgba(41,128,185,0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+          }
+        }
+      }
+    }
+  });
+}
+
+function atualizarResumoEmpresa() {
+  const dataInicio = document.getElementById("dataInicio").value;
+  const dataFim = document.getElementById("dataFim").value;
+  const empresa = document.getElementById("empresa").value;
+  const plataforma = document.getElementById("plataforma").value;
+
+  const filtrados = dados.filter(d => {
+    return (!dataInicio || d.data >= dataInicio) &&
+           (!dataFim || d.data <= dataFim) &&
+           (empresa === "todas" || d.empresa === empresa) &&
+           (plataforma === "todas" || d.plataforma === plataforma);
+  });
+
+  const resumoPorEmpresa = {};
+
+  filtrados.forEach(d => {
+    const emp = d.empresa;
+    const plat = d.plataforma;
+
+    if (!resumoPorEmpresa[emp]) resumoPorEmpresa[emp] = {};
+    if (!resumoPorEmpresa[emp][plat]) {
+      resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0 };
+    }
+
+    const bruto = parseFloat(d.bruto || 0);
+    const liquido = parseFloat(d.liquido || 0);
+    const taxa = parseFloat(d.taxa || 0);
+    const repassado = parseFloat(d.repassado || 0);
+
+    resumoPorEmpresa[emp][plat].bruto += bruto;
+    resumoPorEmpresa[emp][plat].liquido += liquido;
+    resumoPorEmpresa[emp][plat].taxa += taxa;
+    resumoPorEmpresa[emp][plat].repassado += repassado;
+  });
+
+  const resumo = document.getElementById("resumo-empresas");
+  resumo.innerHTML = "";
+  for (const emp in resumoPorEmpresa) {
+    const div = document.createElement("div");
+    div.className = "resumo-linha";
+    div.innerHTML = `<strong>${emp}</strong>`;
+    for (const plat in resumoPorEmpresa[emp]) {
+      const val = resumoPorEmpresa[emp][plat];
+      const perc = (val.taxa / val.bruto) * 100 || 0;
+      div.innerHTML += `
+        <br><u>${plat}</u><br>
+        💰 Bruto: R$ ${val.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+        💵 Líquido: R$ ${val.liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+        📉 Investimento (${perc.toFixed(2)}%): R$ ${val.taxa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+      `;
+    }
+    resumo.appendChild(div);
+  }
+}
+
+carregarDados();
+</script>
+
+</body>
+</html>
