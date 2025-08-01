@@ -118,31 +118,25 @@
       }
 
       const urls = [
-        `https://grupodvbr.github.io/entradas/index.json`,
-        `https://grupodvbr.github.io/delivery/index.json`,
-        `https://grupodvbr.github.io/cancelamentos/index.json`,
-        `https://grupodvbr.github.io/conciliacoes/index.json`,
-        `https://grupodvbr.github.io/metas/index.json`
+        `https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html`,
+        `https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html`,
+        `https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html`,
+        `https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html`,
+        `https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html`
       ];
 
       relatorio.innerHTML = '<p>Carregando dados...</p>';
 
       try {
-        const resultados = await Promise.all(urls.map(url => fetch(url).then(r => r.json())));
+        const resultados = await Promise.all(urls.map(async url => {
+          const text = await fetch(url).then(r => r.text());
+          const div = document.createElement('div');
+          div.innerHTML = text;
+          const bloco = div.querySelector('.relatorio');
+          return bloco ? bloco.innerHTML : '';
+        }));
 
-        let html = '';
-        for (const secao of resultados) {
-          if (!secao || !secao.colunas || !secao.linhas || secao.linhas.length === 0) continue;
-          html += `<div class="bloco">
-            <h2>${secao.titulo}</h2>
-            <table class="tabela">
-              <tr>${secao.colunas.map(col => `<th>${col}</th>`).join('')}</tr>
-              ${secao.linhas.map(l => `<tr>${l.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
-            </table>
-          </div>`;
-        }
-
-        relatorio.innerHTML = html || '<p>Nenhum dado encontrado para o período selecionado.</p>';
+        relatorio.innerHTML = resultados.join('') || '<p>Nenhum dado encontrado para o período selecionado.</p>';
       } catch (e) {
         alert('Erro ao carregar os dados.');
         console.error(e);
