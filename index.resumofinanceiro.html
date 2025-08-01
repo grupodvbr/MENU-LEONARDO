@@ -269,9 +269,24 @@ function exportarPDF() {
   boxes.forEach((box, index) => {
     const wrapper = document.createElement("div");
     wrapper.style.width = "1000px";
-    wrapper.style.padding = "20px";
+    wrapper.style.padding = "40px";
     wrapper.style.background = "#fff";
     wrapper.style.boxSizing = "border-box";
+    wrapper.style.fontFamily = 'Arial, sans-serif';
+
+    const logo = document.createElement("img");
+    logo.src = "https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png";
+    logo.style.height = "40px";
+    logo.style.display = "block";
+    logo.style.margin = "0 auto 10px";
+    wrapper.appendChild(logo);
+
+    const titulo = document.createElement("h1");
+    titulo.innerText = "Resumo de Entradas";
+    titulo.style.textAlign = "center";
+    titulo.style.fontSize = "20px";
+    titulo.style.marginBottom = "20px";
+    wrapper.appendChild(titulo);
 
     const clone = box.cloneNode(true);
     clone.style.pageBreakAfter = "always";
