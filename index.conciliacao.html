@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Conciliações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    header h1 {
+      margin: 0 auto;
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      flex: 1;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      margin-top: 0;
+    }
+    .transacao {
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .transacao:last-child {
+      border-bottom: none;
+    }
+    .filtros {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filtros select, .filtros input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      padding: 10px 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
 
+<header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1>Conciliações</h1>
+</header>
+
+<div class="container">
+  <div class="filtros">
+    <div>
+      <label for="data">Data:</label>
+      <input type="date" id="data" onchange="filtrarConciliacoes()">
+    </div>
+    <div>
+      <label for="empresa">Empresa:</label>
+      <select id="empresa" onchange="filtrarConciliacoes()">
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="btnWhats">📲 Enviar via WhatsApp</button>
+
+  <div id="conciliacoes"></div>
+</div>
+
+<script>
+const URL_SCRIPT = "COLE_AQUI_A_URL_DO_SEU_WEBAPP"; // Substitua com a URL do seu Google Apps Script que retorna JSON
+let dados = [];
+
+async function carregarDados() {
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  popularEmpresas();
+  definirDataAnterior();
+  filtrarConciliacoes();
+}
+
+function definirDataAnterior() {
+  const inputData = document.getElementById("data");
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+  const iso = ontem.toISOString().split('T')[0];
+  inputData.value = iso;
+}
+
+function popularEmpresas() {
+  const select = document.getElementById("empresa");
+  const empresas = [...new Set(dados.map(d => d.empresa))];
+  empresas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    select.appendChild(opt);
+  });
+}
+
+function filtrarConciliacoes() {
+  const data = document.getElementById("data").value;
+  const empresa = document.getElementById("empresa").value;
+  const container = document.getElementById("conciliacoes");
+  container.innerHTML = "";
+
+  const filtrados = dados.filter(d =>
+    (!data || d.data === data) &&
+    (empresa === "todas" || d.empresa === empresa)
+  );
+
+  const agrupado = {};
+  filtrados.forEach(d => {
+    if (!agrupado[d.empresa]) agrupado[d.empresa] = [];
+    agrupado[d.empresa].push(`${d.tipo} – ${d.descricao} – R$ ${parseFloat(d.valor).toFixed(2)}`);
+  });
+
+  for (const emp in agrupado) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h3>${emp}</h3>`;
+    agrupado[emp].forEach(item => {
+      const div = document.createElement("div");
+      div.className = "transacao";
+      div.textContent = item;
+      card.appendChild(div);
+    });
+    container.appendChild(card);
+  }
+}
+
+document.getElementById("btnWhats").addEventListener("click", () => {
+  const data = document.getElementById("data").value;
+  if (!data) return alert("Selecione uma data.");
+
+  const cards = document.querySelectorAll(".card");
+  if (!cards.length) return alert("Nenhum dado para enviar.");
+
+  const dataBR = data.split("-").reverse().join("/");
+  let mensagem = `📆 *Conciliações do dia ${dataBR}*\n\n`;
+
+  cards.forEach(card => {
+    const titulo = card.querySelector("h3").innerText;
+    const itens = [...card.querySelectorAll(".transacao")].map(el => `• ${el.innerText}`).join("\n");
+    mensagem += `*${titulo}*\n${itens}\n\n`;
+  });
+
+  const numero = "5577999761436"; // Altere aqui se necessário
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
+  window.open(link, "_blank");
+});
+
+carregarDados();
+</script>
+
+</body>
+</html>
