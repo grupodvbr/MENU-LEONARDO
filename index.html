@@ -45,17 +45,29 @@
       border-bottom: 1px solid #ccc;
     }
 
-    header img {
-      height: 50px;
-      margin-right: 20px;
+    .logo-left {
+      flex: 1;
+      display: flex;
+      align-items: center;
     }
 
-    header h1 {
-      flex: 1;
+    .logo-left img {
+      height: 40px;
+    }
+
+    .title-center {
+      flex: 2;
       text-align: center;
+    }
+
+    .title-center h1 {
       font-size: 24px;
       margin: 0;
       font-weight: bold;
+    }
+
+    .spacer {
+      flex: 1;
     }
 
     .container {
@@ -98,17 +110,16 @@
     @media (max-width: 500px) {
       header {
         flex-direction: column;
-        align-items: center;
         text-align: center;
       }
 
-      header img {
-        margin: 0 0 10px;
+      .logo-left,
+      .spacer {
+        display: none;
       }
 
-      header h1 {
-        font-size: 20px;
-        text-align: center;
+      .title-center {
+        flex: 1;
       }
 
       .card h2 {
@@ -123,15 +134,20 @@
 </head>
 <body>
 
-  <!-- Tela de entrada -->
+  <!-- Splash -->
   <div id="splash">
     <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   </div>
 
   <!-- Cabeçalho -->
   <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-    <h1>Análise Financeira</h1>
+    <div class="logo-left">
+      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    </div>
+    <div class="title-center">
+      <h1>Análise Financeira</h1>
+    </div>
+    <div class="spacer"></div>
   </header>
 
   <!-- Cards -->
