@@ -269,12 +269,12 @@ function enviarWhatsapp() {
     mensagem += `\n\n🏢 *${empresa}*`;
     itens.forEach(c => {
       subtotal += c.valor;
-      mensagem += `\n🧾 ${c.item} - 💸 ${formatarMoeda(c.valor)} - ${c.data}`;
+      mensagem += `\n ${c.item} - 💸 ${formatarMoeda(c.valor)} - ${c.data}`;
     });
     mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
   });
 
-  const telefone = "557799999999";
+  const telefone = "5577999761436";
   const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
   window.open(url, "_blank");
 }
