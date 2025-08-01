@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Conciliações</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,23 +35,6 @@
       max-width: 1200px;
       margin: auto;
     }
-    .card {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .card h3 {
-      margin-top: 0;
-    }
-    .transacao {
-      padding: 4px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .transacao:last-child {
-      border-bottom: none;
-    }
     .filtros {
       margin-bottom: 20px;
       display: flex;
@@ -70,7 +54,21 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      margin-bottom: 20px;
+      margin: 20px 0;
+    }
+    .graficos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+    }
+    canvas {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      flex: 1;
+      min-width: 400px;
     }
   </style>
 </head>
@@ -85,11 +83,11 @@
   <div class="filtros">
     <div>
       <label for="data">Data:</label>
-      <input type="date" id="data" onchange="filtrarConciliacoes()">
+      <input type="date" id="data" onchange="filtrar()">
     </div>
     <div>
       <label for="empresa">Empresa:</label>
-      <select id="empresa" onchange="filtrarConciliacoes()">
+      <select id="empresa" onchange="filtrar()">
         <option value="todas">Todas</option>
       </select>
     </div>
@@ -97,27 +95,29 @@
 
   <button id="btnWhats">📲 Enviar via WhatsApp</button>
 
-  <div id="conciliacoes"></div>
+  <div class="graficos">
+    <canvas id="graficoCartao"></canvas>
+    <canvas id="graficoBanco"></canvas>
+  </div>
 </div>
 
 <script>
-const URL_SCRIPT = "COLE_AQUI_A_URL_DO_SEU_WEBAPP"; // Substitua com a URL do seu Google Apps Script que retorna JSON
+const URL_SCRIPT = "COLE_AQUI_A_URL_DO_SEU_WEBAPP"; // Substitua com sua URL do Google Apps Script
 let dados = [];
 
 async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
-  definirDataAnterior();
-  filtrarConciliacoes();
+  definirDataPadrao();
+  filtrar();
 }
 
-function definirDataAnterior() {
+function definirDataPadrao() {
   const inputData = document.getElementById("data");
   const ontem = new Date();
   ontem.setDate(ontem.getDate() - 1);
-  const iso = ontem.toISOString().split('T')[0];
-  inputData.value = iso;
+  inputData.value = ontem.toISOString().split('T')[0];
 }
 
 function popularEmpresas() {
@@ -131,55 +131,96 @@ function popularEmpresas() {
   });
 }
 
-function filtrarConciliacoes() {
+function filtrar() {
   const data = document.getElementById("data").value;
   const empresa = document.getElementById("empresa").value;
-  const container = document.getElementById("conciliacoes");
-  container.innerHTML = "";
 
   const filtrados = dados.filter(d =>
     (!data || d.data === data) &&
     (empresa === "todas" || d.empresa === empresa)
   );
 
-  const agrupado = {};
+  const porEmpresa = {};
   filtrados.forEach(d => {
-    if (!agrupado[d.empresa]) agrupado[d.empresa] = [];
-    agrupado[d.empresa].push(`${d.tipo} – ${d.descricao} – R$ ${parseFloat(d.valor).toFixed(2)}`);
+    const key = `${d.empresa}_${d.tipo}`;
+    if (!porEmpresa[key]) porEmpresa[key] = { valor: 0, percentual: 0 };
+    porEmpresa[key].valor += d.valor;
+    porEmpresa[key].percentual += d.percentual;
   });
 
-  for (const emp in agrupado) {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `<h3>${emp}</h3>`;
-    agrupado[emp].forEach(item => {
-      const div = document.createElement("div");
-      div.className = "transacao";
-      div.textContent = item;
-      card.appendChild(div);
-    });
-    container.appendChild(card);
-  }
+  const cartaoLabels = [], cartaoData = [], bancoLabels = [], bancoData = [];
+
+  Object.keys(porEmpresa).forEach(key => {
+    const [empresa, tipo] = key.split("_");
+    const valor = porEmpresa[key].valor;
+    const perc = porEmpresa[key].percentual;
+    const label = `${empresa} (${perc.toFixed(1)}%)`;
+    if (tipo.toLowerCase().includes("cart")) {
+      cartaoLabels.push(label);
+      cartaoData.push(valor);
+    } else {
+      bancoLabels.push(label);
+      bancoData.push(valor);
+    }
+  });
+
+  renderChart("graficoCartao", "💳 Cartão - Não Conciliado", cartaoLabels, cartaoData);
+  renderChart("graficoBanco", "🏦 Bancária - Não Conciliado", bancoLabels, bancoData);
+}
+
+function renderChart(id, title, labels, data) {
+  const ctx = document.getElementById(id).getContext("2d");
+  if (window[id]) window[id].destroy();
+  window[id] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Valor (R$)",
+        data,
+        backgroundColor: "#3e95cd"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: title,
+          font: { size: 18 }
+        },
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: val => "R$ " + val.toLocaleString("pt-BR")
+          }
+        }
+      }
+    }
+  });
 }
 
 document.getElementById("btnWhats").addEventListener("click", () => {
   const data = document.getElementById("data").value;
-  if (!data) return alert("Selecione uma data.");
-
-  const cards = document.querySelectorAll(".card");
-  if (!cards.length) return alert("Nenhum dado para enviar.");
-
+  const empresa = document.getElementById("empresa").value;
   const dataBR = data.split("-").reverse().join("/");
-  let mensagem = `📆 *Conciliações do dia ${dataBR}*\n\n`;
 
-  cards.forEach(card => {
-    const titulo = card.querySelector("h3").innerText;
-    const itens = [...card.querySelectorAll(".transacao")].map(el => `• ${el.innerText}`).join("\n");
-    mensagem += `*${titulo}*\n${itens}\n\n`;
+  const filtrados = dados.filter(d =>
+    (!data || d.data === data) &&
+    (empresa === "todas" || d.empresa === empresa)
+  );
+
+  if (!filtrados.length) return alert("Nenhum dado para enviar.");
+
+  let mensagem = `📊 *Conciliações ${dataBR}*\n\n`;
+  filtrados.forEach(d => {
+    mensagem += `*${d.empresa}* - ${d.tipo}\n• Não conciliado: R$ ${d.valor.toFixed(2)} (${d.percentual.toFixed(1)}%)\n\n`;
   });
 
-  const numero = "5577999761436"; // Altere aqui se necessário
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
+  const numero = "5577999761436"; // Altere aqui
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
   window.open(link, "_blank");
 });
 
