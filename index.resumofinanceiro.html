@@ -13,7 +13,6 @@
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: white;
       padding: 10px 20px;
@@ -21,12 +20,10 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
-
     header img {
       height: 50px;
       margin-right: 20px;
     }
-
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -34,13 +31,11 @@
       text-align: center;
       flex: 1;
     }
-
     .conteudo {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
     }
-
     .filtros {
       display: flex;
       flex-wrap: wrap;
@@ -48,11 +43,9 @@
       margin-bottom: 20px;
       align-items: end;
     }
-
     .filtros label {
       font-weight: bold;
     }
-
     .filtros input,
     .filtros select {
       padding: 10px;
@@ -60,11 +53,9 @@
       border: 1px solid #ccc;
       width: 100%;
     }
-
     .filtros > div {
       flex: 1 1 200px;
     }
-
     .filtros button {
       padding: 10px 20px;
       border: none;
@@ -74,7 +65,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-
     .empresa-box {
       background: white;
       border-radius: 10px;
@@ -82,60 +72,42 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     }
-
     .empresa-box h2 {
       margin: 0 0 10px;
       font-size: 1.2em;
       color: #2c3e50;
     }
-
     .empresa-box ul {
       list-style: none;
       padding-left: 0;
       margin: 0;
       font-size: 0.95em;
     }
-
     .empresa-box li {
       margin-bottom: 4px;
     }
-
     .grafico-desktop {
-      display: none;
+      margin-top: 20px;
     }
-
-    @media (min-width: 768px) {
-      .empresa-box {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-      }
-
-      .empresa-conteudo {
-        flex: 1;
-      }
-
-      .grafico-desktop {
-        display: block;
-        flex: 1;
-        max-width: 60%;
-      }
-
-      canvas {
-        width: 100% !important;
-        height: auto !important;
-      }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
     }
-
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      header img {
-        margin: 0 0 10px;
-      }
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85em;
+    }
+    .legend span::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: currentColor;
     }
   </style>
 </head>
@@ -148,29 +120,12 @@
 
 <div class="conteudo">
   <div class="filtros">
-    <div>
-      <label for="dataInicio">Data Início</label>
-      <input type="date" id="dataInicio" />
-    </div>
-    <div>
-      <label for="dataFim">Data Fim</label>
-      <input type="date" id="dataFim" />
-    </div>
-    <div>
-      <label for="empresaFiltro">Empresa</label>
-      <select id="empresaFiltro">
-        <option value="">Todas</option>
-      </select>
-    </div>
-    <div>
-      <button onclick="aplicarFiltro()">Filtrar</button>
-    </div>
-    <div>
-      <button onclick="exportarPDF()">📄 Exportar PDF</button>
-    </div>
-    <div>
-      <button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button>
-    </div>
+    <div><label for="dataInicio">Data Início</label><input type="date" id="dataInicio" /></div>
+    <div><label for="dataFim">Data Fim</label><input type="date" id="dataFim" /></div>
+    <div><label for="empresaFiltro">Empresa</label><select id="empresaFiltro"><option value="">Todas</option></select></div>
+    <div><button onclick="aplicarFiltro()">Filtrar</button></div>
+    <div><button onclick="exportarPDF()">📄 Exportar PDF</button></div>
+    <div><button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button></div>
   </div>
 
   <div id="painel"></div>
@@ -178,7 +133,6 @@
 
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
-
 const emojis = {
   "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
   "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
@@ -186,7 +140,6 @@ const emojis = {
   "CATÁLOGO DELIVERY": "🛒", "IFOOD": "🍱", "DELIVERY MUCH": "🍔",
   "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂"
 };
-
 let dados = [];
 
 window.onload = () => {
@@ -200,7 +153,6 @@ async function carregarDados() {
   try {
     const resposta = await fetch(url);
     dados = await resposta.json();
-
     const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
     const select = document.getElementById("empresaFiltro");
     select.innerHTML = '<option value="">Todas</option>';
@@ -210,7 +162,6 @@ async function carregarDados() {
       option.textContent = emp;
       select.appendChild(option);
     });
-
     aplicarFiltro();
   } catch (e) {
     document.getElementById("painel").innerHTML = "Erro ao carregar dados.";
@@ -222,7 +173,6 @@ function aplicarFiltro() {
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
   const empresaSelecionada = document.getElementById("empresaFiltro").value;
-
   const painel = document.getElementById("painel");
   painel.innerHTML = "";
 
@@ -236,8 +186,13 @@ function aplicarFiltro() {
 
   empresas.forEach(emp => {
     const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
-    const total = dadosEmpresa.reduce((s, i) => s + parseFloat(i.Valor), 0);
+    const agrupado = {};
+    dadosEmpresa.forEach(item => {
+      const categoria = item.Categoria.toUpperCase();
+      agrupado[categoria] = (agrupado[categoria] || 0) + parseFloat(item.Valor);
+    });
 
+    const total = Object.values(agrupado).reduce((a, b) => a + b, 0);
     const box = document.createElement("div");
     box.className = "empresa-box";
 
@@ -245,18 +200,11 @@ function aplicarFiltro() {
     conteudo.className = "empresa-conteudo";
 
     let html = `<h2>${emp.toUpperCase()} — R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h2><ul>`;
-    const agrupado = {};
-dadosEmpresa.forEach(item => {
-  const categoria = item.Categoria.toUpperCase();
-  agrupado[categoria] = (agrupado[categoria] || 0) + parseFloat(item.Valor);
-});
-
-for (const cat in agrupado) {
-  const emoji = emojis[cat] || "📌";
-  const valor = agrupado[cat].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-  html += `<li>${emoji} ${cat}: R$ ${valor}</li>`;
-}
-
+    for (const cat in agrupado) {
+      const emoji = emojis[cat] || "📌";
+      const valor = agrupado[cat].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      html += `<li>${emoji} ${cat}: R$ ${valor}</li>`;
+    }
     html += `</ul>`;
     conteudo.innerHTML = html;
 
@@ -265,16 +213,26 @@ for (const cat in agrupado) {
     const canvas = document.createElement("canvas");
     canvasContainer.appendChild(canvas);
 
+    const legend = document.createElement("div");
+    legend.className = "legend";
+
+    Object.keys(agrupado).forEach((cat, i) => {
+      const cor = `hsl(${i * 35}, 70%, 60%)`;
+      const item = document.createElement("span");
+      item.style.color = cor;
+      item.innerHTML = `${cat}`;
+      legend.appendChild(item);
+    });
+
     box.appendChild(conteudo);
     box.appendChild(canvasContainer);
+    box.appendChild(legend);
     painel.appendChild(box);
 
-    desenharGrafico(canvas, dadosEmpresa);
+    desenharGrafico(canvas, agrupado);
   });
 
-  if (empresas.length === 0) {
-    painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado para os filtros selecionados.</p>";
-  }
+  if (empresas.length === 0) painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado para os filtros selecionados.</p>";
 }
 
 function desenharGrafico(canvas, agrupado) {
@@ -282,26 +240,31 @@ function desenharGrafico(canvas, agrupado) {
 
   const categorias = Object.keys(agrupado);
   const valores = Object.values(agrupado);
-  const labels = categorias.map(cat => `${emojis[cat] || "📌"} ${cat}`);
+  const cores = categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`);
 
   new Chart(canvas.getContext("2d"), {
-    type: 'pie',
+    type: 'bar',
     data: {
-      labels: labels,
+      labels: categorias,
       datasets: [{
+        label: 'Total por Modalidade',
         data: valores,
-        backgroundColor: categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`)
+        backgroundColor: cores
       }]
     },
     options: {
       plugins: {
-        title: { display: true, text: "Distribuição por Categoria" },
-        legend: { position: "bottom" }
+        legend: { display: false },
+        title: { display: true, text: 'Distribuição por Categoria' }
+      },
+      responsive: true,
+      scales: {
+        x: { ticks: { maxRotation: 90, minRotation: 45 } },
+        y: { beginAtZero: true }
       }
     }
   });
 }
-
 
 function exportarPDF() {
   const painel = document.getElementById("painel");
@@ -332,13 +295,11 @@ document.getElementById("enviarWhatsapp").addEventListener("click", () => {
     : `${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)}`;
 
   let mensagem = `📈 *Fechamento Diário - Financeiro* — ${dataBR}\n\n`;
-
   boxes.forEach(box => {
     const titulo = box.querySelector("h2")?.innerText;
     const itens = [...box.querySelectorAll("li")].map(li => li.innerText).join("\n");
     mensagem += `*${titulo}*\n${itens}\n\n`;
   });
-
   const numero = "5577999761436";
   const link = `https://wa.me/${numero}?text=` + encodeURIComponent(mensagem.trim());
   window.open(link, "_blank");
