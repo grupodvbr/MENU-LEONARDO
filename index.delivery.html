@@ -1,4 +1,3 @@
-<!-- CÓDIGO COMPLETO ABAIXO -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -40,7 +39,7 @@
     .total-line strong { font-weight: bold; }
     .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end; }
     .filters label { font-weight: bold; }
-    .filters select, .filters input[type="date"] {
+    .filters select, .filters input[type="month"] {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
@@ -128,12 +127,12 @@
 
   <div class="filters">
     <div>
-      <label for="dataInicio">Data Início</label>
-      <input type="date" id="dataInicio">
+      <label for="mesInicio">Mês Início</label>
+      <input type="month" id="mesInicio">
     </div>
     <div>
-      <label for="dataFim">Data Fim</label>
-      <input type="date" id="dataFim">
+      <label for="mesFim">Mês Fim</label>
+      <input type="month" id="mesFim">
     </div>
     <div>
       <label for="empresa">Empresa</label>
@@ -147,24 +146,6 @@
         <option value="todas">Todas</option>
         <option value="iFood">iFood</option>
         <option value="Delivery Much">Delivery Much</option>
-      </select>
-    </div>
-    <div>
-      <label for="mesResumoEmpresas">Mês</label>
-      <select id="mesResumoEmpresas">
-        <option value="">Todos</option>
-        <option value="01">Janeiro</option>
-        <option value="02">Fevereiro</option>
-        <option value="03">Março</option>
-        <option value="04">Abril</option>
-        <option value="05">Maio</option>
-        <option value="06">Junho</option>
-        <option value="07">Julho</option>
-        <option value="08">Agosto</option>
-        <option value="09">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
       </select>
     </div>
     <div>
@@ -186,14 +167,13 @@ let chart;
 function setDefaultDates() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
-  const inicio = new Date(ano, mes - 1, 1);
-  const fim = new Date(ano, mes, 0);
-  document.getElementById("dataInicio").value = inicio.toISOString().split('T')[0];
-  document.getElementById("dataFim").value = fim.toISOString().split('T')[0];
-  const mesAnterior = (inicio.getMonth() + 1).toString().padStart(2, '0');
-  document.getElementById("mesResumo").value = mesAnterior;
-  document.getElementById("mesResumoEmpresas").value = mesAnterior;
+  const mes = hoje.getMonth(); // mês atual (0–11)
+  const mesAnterior = new Date(ano, mes - 1, 1);
+  const mesFormatado = mesAnterior.toISOString().slice(0, 7); // yyyy-mm
+
+  document.getElementById("mesInicio").value = mesFormatado;
+  document.getElementById("mesFim").value = mesFormatado;
+  document.getElementById("mesResumo").value = (mesAnterior.getMonth() + 1).toString().padStart(2, '0');
 }
 
 async function carregarDados() {
@@ -287,19 +267,17 @@ function filtrarGrafico() {
 }
 
 function atualizarResumoEmpresa() {
-  const dataInicio = document.getElementById("dataInicio").value;
-  const dataFim = document.getElementById("dataFim").value;
+  const mesInicio = document.getElementById("mesInicio").value;
+  const mesFim = document.getElementById("mesFim").value;
   const empresa = document.getElementById("empresa").value;
   const plataforma = document.getElementById("plataforma").value;
-  const mesResumo = document.getElementById("mesResumoEmpresas").value;
 
   const filtrados = dados.filter(d => {
-    const mesDado = d.data.split("-")[1];
-    return (!dataInicio || d.data >= dataInicio) &&
-           (!dataFim || d.data <= dataFim) &&
+    const mesDado = d.data.substring(0, 7); // yyyy-mm
+    return (!mesInicio || mesDado >= mesInicio) &&
+           (!mesFim || mesDado <= mesFim) &&
            (empresa === "todas" || d.empresa === empresa) &&
-           (plataforma === "todas" || d.plataforma === plataforma) &&
-           (!mesResumo || mesResumo === mesDado);
+           (plataforma === "todas" || d.plataforma === plataforma);
   });
 
   const resumoPorEmpresa = {};
@@ -307,6 +285,7 @@ function atualizarResumoEmpresa() {
   filtrados.forEach(d => {
     const emp = d.empresa;
     const plat = d.plataforma;
+
     if (!resumoPorEmpresa[emp]) resumoPorEmpresa[emp] = {};
     if (!resumoPorEmpresa[emp][plat]) {
       resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0 };
