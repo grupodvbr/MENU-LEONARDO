@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Consolidado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: white;
+    }
+    header {
+      background-color: white;
+      color: #2c3e50;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    .logo-left { flex: 1; }
+    .logo-left img { height: 40px; }
+    .title-center {
+      flex: 2;
+      text-align: center;
+    }
+    .title-center h1 {
+      font-size: 24px;
+      margin: 0;
+      font-weight: bold;
+    }
+    .spacer {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .relatorio-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+    .relatorio-btn:hover { opacity: 1; }
+    .container {
+      padding: 30px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    #relatorio-container { display: none; padding: 30px; }
+    .logo-relatorio {
+      display: block;
+      margin: 0 auto 20px;
+      height: 60px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-left">
+      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    </div>
+    <div class="title-center">
+      <h1>Relatório Consolidado</h1>
+    </div>
+    <div class="spacer">
+      <button class="relatorio-btn" onclick="emitirRelatorio()">📄</button>
+    </div>
+  </header>
+  <div class="container">
+    <p>Use o botão no canto superior direito para gerar o relatório consolidado em PDF com todos os painéis reais.</p>
+  </div>
+  <div id="relatorio-container"></div>
+
+  <script>
+    async function emitirRelatorio() {
+      const dataInicio = prompt("Informe a data INICIAL do relatório (DD/MM/AAAA):");
+      const dataFim = prompt("Informe a data FINAL do relatório (DD/MM/AAAA):");
+      if (!dataInicio || !dataFim) return;
+
+      const relatorio = document.getElementById('relatorio-container');
+      relatorio.innerHTML = `
+        <img class='logo-relatorio' src='https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png' alt='Logo'>
+        <h1 style="text-align:center;">📄 Relatório Consolidado</h1>
+        <h3 style="text-align:center;">Período: ${dataInicio} até ${dataFim}</h3>
+      `;
+
+      const paginas = [
+        { nome: "Resumo de Entradas", url: "index.resumofinanceiro.html" },
+        { nome: "Vendas Delivery", url: "index.delivery.html" },
+        { nome: "Cancelamentos", url: "index.cancelamentos.html" },
+        { nome: "Conciliações", url: "index.conciliacao.html" },
+        { nome: "Pesquisa de Satisfação", url: "index.pesquisa.html" },
+        { nome: "Metas de Receita", url: "index.meta.html" }
+      ];
+
+      for (const pagina of paginas) {
+        try {
+          const res = await fetch(pagina.url);
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const content = doc.querySelector('.container, .conteudo, form, .filters')?.outerHTML || '<p style="color:red">Conteúdo não encontrado.</p>';
+          relatorio.innerHTML += `<hr><h2>${pagina.nome}</h2>${content}`;
+        } catch {
+          relatorio.innerHTML += `<h2>${pagina.nome}</h2><p style="color:red">Erro ao carregar conteúdo.</p>`;
+        }
+      }
+
+      relatorio.style.display = 'block';
+
+      html2pdf().from(relatorio).set({
+        margin: 10,
+        filename: `Relatorio_Completo_${dataInicio.replaceAll('/', '-')}_a_${dataFim.replaceAll('/', '-')}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait' }
+      }).save().then(() => {
+        relatorio.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>
