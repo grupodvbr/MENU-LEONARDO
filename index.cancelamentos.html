@@ -11,6 +11,7 @@
       margin: 0;
       padding: 0;
     }
+
     header {
       background-color: white;
       padding: 10px 20px;
@@ -18,10 +19,12 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
+
     header img {
       height: 50px;
       margin-right: 20px;
     }
+
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -29,49 +32,88 @@
       text-align: center;
       flex: 1;
     }
+
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
     }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
+    }
+
+    .filters label {
+      font-weight: bold;
+    }
+
+    .filters select,
+    .filters input[type="date"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+
+    .filters > div {
+      flex: 1 1 200px;
+    }
+
+    .filters button,
+    #btnWhats {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .filters button {
+      background-color: #1e1e2f;
+      color: white;
+    }
+
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      margin: 10px 0;
+    }
+
     .card {
       background: white;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
       padding: 20px;
       margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
+
     .card h3 {
       margin-top: 0;
+      color: #2c3e50;
     }
+
     .cancelamento {
       padding: 4px 0;
       border-bottom: 1px solid #eee;
     }
+
     .cancelamento:last-child {
       border-bottom: none;
     }
-    .filtros {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .filtros select,
-    .filtros input {
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    #btnWhats {
-      background-color: #25d366;
-      color: white;
-      padding: 10px 20px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-bottom: 20px;
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      header img {
+        margin: 0 0 10px;
+      }
     }
   </style>
 </head>
@@ -79,11 +121,11 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Cancelamentos</h1>
+  <h1>📦 Painel de Cancelamentos</h1>
 </header>
 
 <div class="container">
-  <div class="filtros">
+  <div class="filters">
     <div>
       <label for="data">Data:</label>
       <input type="date" id="data" onchange="filtrarCancelamentos()">
@@ -94,6 +136,9 @@
         <option value="todas">Todas</option>
       </select>
     </div>
+    <div>
+      <button onclick="filtrarCancelamentos()">Filtrar</button>
+    </div>
   </div>
 
   <button id="btnWhats">📲 Enviar via WhatsApp</button>
@@ -102,7 +147,7 @@
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxeyco0NhiENLYzVosHSe11TCYUZypHrIrgYh-Ji6xIKJRk03YaXsI1Wm0RgCrb0fa2rA/exec";
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbz9YVRJxnNJhh1-4OwFRbwXBtAnyArSw7UqbIC1WjKqr4E5EjGpJUBBu6G8CrQjwdW5Fg/exec";
 let dados = [];
 
 async function carregarDados() {
@@ -156,7 +201,7 @@ function filtrarCancelamentos() {
     agrupado[emp].forEach(item => {
       const div = document.createElement("div");
       div.className = "cancelamento";
-      div.textContent = item; // mantém emojis
+      div.textContent = item;
       card.appendChild(div);
     });
     container.appendChild(card);
@@ -179,7 +224,7 @@ document.getElementById("btnWhats").addEventListener("click", () => {
     mensagem += `*${titulo}*\n${itens}\n\n`;
   });
 
-  const numero = "5577999761436"; // Altere o número aqui se necessário
+  const numero = "5577999761436";
   const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
   window.open(link, "_blank");
 });
