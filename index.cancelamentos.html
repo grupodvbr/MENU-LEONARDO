@@ -168,7 +168,7 @@ function aplicarFiltros() {
     if (
       (empresa && c.empresa !== empresa) ||
       (mes && !c.data.startsWith(mes)) ||
-      (busca && !c.motivo.toLowerCase().includes(busca))
+      (busca && !c.item.toLowerCase().includes(busca))
     ) return;
 
     total += c.valor;
@@ -177,7 +177,7 @@ function aplicarFiltros() {
     div.innerHTML = `
       <h3>${c.empresa} — ${formatarMoeda(c.valor)}</h3>
       <p>📅 ${c.data}</p>
-      <p>📝 ${c.motivo}</p>
+      <p>🧾 ${c.item}</p>
     `;
     lista.appendChild(div);
   });
@@ -188,7 +188,7 @@ function aplicarFiltros() {
 function enviarWhatsapp() {
   let mensagem = `📢 *Resumo de Cancelamentos*%0A`;
   cancelamentos.forEach(c => {
-    mensagem += `\n🏢 *${c.empresa}* — ${formatarMoeda(c.valor)}%0A📆 ${c.data} | 📝 ${c.motivo}%0A`;
+    mensagem += `\n🏢 *${c.empresa}* — ${formatarMoeda(c.valor)}%0A📆 ${c.data} | 🧾 ${c.item}%0A`;
   });
 
   const telefone = "557799999999"; // Troque pelo número real
