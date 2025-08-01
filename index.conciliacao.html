@@ -113,15 +113,16 @@ async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
-  definirDataPadrao();
-  filtrar();
+  definirDataPadrao(); // já aplica o filtro
 }
 
 function definirDataPadrao() {
   const inputData = document.getElementById("data");
   const ontem = new Date();
   ontem.setDate(ontem.getDate() - 1);
-  inputData.value = ontem.toISOString().split('T')[0];
+  const ontemISO = ontem.toISOString().split('T')[0];
+  inputData.value = ontemISO;
+  filtrar(); // aplica o filtro com a data de ontem
 }
 
 function popularEmpresas() {
