@@ -8,11 +8,10 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f7f7f7;
+      background: #ffffff;
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: white;
       padding: 10px 20px;
@@ -20,12 +19,10 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
-
     header img {
       height: 50px;
       margin-right: 20px;
     }
-
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -33,13 +30,11 @@
       text-align: center;
       flex: 1;
     }
-
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
     }
-
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -47,76 +42,74 @@
       margin-bottom: 20px;
       align-items: end;
     }
-
     .filters label {
       font-weight: bold;
     }
-
-    .filters select, .filters input {
+    .filters select,
+    .filters input {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       width: 100%;
     }
-
     .filters > div {
       flex: 1 1 200px;
     }
-
-    .filters button {
+    .filters button,
+    #btnWhats {
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
-      background-color: #1e1e2f;
-      color: white;
       font-weight: bold;
       cursor: pointer;
     }
-
-    .card {
+    .filters button {
+      background-color: #1e1e2f;
+      color: white;
+    }
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      margin-bottom: 20px;
+    }
+    .card, .chart-box, .total-box, .resumo-box {
       background: white;
       border-radius: 10px;
       padding: 20px;
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
-
-    .card h2 {
+    .card h2, .chart-box h3, .total-box h3, .resumo-box h3 {
       margin: 0 0 10px;
       font-size: 1.2em;
       color: #2c3e50;
     }
-
     .total-line {
       display: flex;
       justify-content: space-between;
       font-size: 1.05em;
       padding: 4px 0;
     }
-
-    .chart-box {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    .resumo-linha {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
     }
-
-    .chart-box h3 {
-      margin-top: 0;
+    .resumo-linha strong {
+      display: block;
+      font-size: 1.1em;
+      margin-bottom: 4px;
     }
-
     .chart-box canvas {
       max-width: 100%;
       height: 300px;
     }
-
     @media (max-width: 600px) {
       header {
         flex-direction: column;
         text-align: center;
       }
-
       header img {
         margin-bottom: 10px;
       }
@@ -133,44 +126,59 @@
 <div class="container">
   <div class="filters">
     <div>
-      <label for="mes">Mês:</label>
-      <input type="month" id="mes">
+      <label for="mesInicio">Mês Início</label>
+      <input type="month" id="mesInicio">
     </div>
     <div>
-      <label for="empresa">Empresa:</label>
+      <label for="mesFim">Mês Fim</label>
+      <input type="month" id="mesFim">
+    </div>
+    <div>
+      <label for="empresa">Empresa</label>
       <select id="empresa">
-        <option value="">Todas</option>
+        <option value="todas">Todas</option>
       </select>
     </div>
     <div>
-      <label for="plataforma">Plataforma:</label>
+      <label for="plataforma">Plataforma</label>
       <select id="plataforma">
-        <option value="">Todas</option>
+        <option value="todas">Todas</option>
         <option value="iFood">iFood</option>
         <option value="Delivery Much">Delivery Much</option>
       </select>
     </div>
     <div>
-      <button onclick="filtrarDados()">Filtrar</button>
+      <button onclick="filtrarResumoEmpresa()">Filtrar Resumo</button>
     </div>
   </div>
 
-  <div class="card" id="totaisCard">
-    <h2>💰 Totais por Plataforma</h2>
-    <div class="total-line"><span>iFood</span><span id="totalIfood">R$ 0,00</span></div>
-    <div class="total-line"><span>Delivery Much</span><span id="totalDM">R$ 0,00</span></div>
-    <hr>
-    <div class="total-line"><strong>Total Geral</strong><strong id="totalGeral">R$ 0,00</strong></div>
+  <button id="btnWhats">📲 Enviar via WhatsApp</button>
+
+  <div class="total-box">
+    <h3>💰 Totais por Plataforma</h3>
+    <div class="total-line">
+      <span>iFood</span>
+      <span id="total-ifood">R$ 0,00</span>
+    </div>
+    <div class="total-line">
+      <span>Delivery Much</span>
+      <span id="total-dm">R$ 0,00</span>
+    </div>
+    <hr />
+    <div class="total-line">
+      <strong>Total Geral</strong>
+      <strong id="total-geral">R$ 0,00</strong>
+    </div>
   </div>
 
   <div class="chart-box">
-    <h3>📈 Evolução das Vendas</h3>
+    <h3>📈 Vendas Brutas por Mês</h3>
     <canvas id="graficoVendas"></canvas>
   </div>
 
-  <div class="card">
-    <h2>🏪 Resumo por Empresa</h2>
-    <div id="resumoEmpresas"></div>
+  <div class="resumo-box">
+    <h3>🏪 Resumo por Empresa</h3>
+    <div id="resumo-empresas"></div>
   </div>
 </div>
 
@@ -179,104 +187,69 @@ const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG1
 let dados = [];
 let chart;
 
+function setDefaultDates() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const inicio = new Date(ano, mes - 1, 1);
+  const fim = new Date(ano, mes, 0);
+  document.getElementById("mesInicio").value = inicio.toISOString().slice(0, 7);
+  document.getElementById("mesFim").value = fim.toISOString().slice(0, 7);
+}
+
 async function carregarDados() {
+  setDefaultDates();
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
-  definirMesAtual();
-  filtrarDados();
+  atualizarTotais();
+  filtrarResumoEmpresa();
+  filtrarGrafico();
 }
 
 function popularEmpresas() {
   const empresas = [...new Set(dados.map(d => d.empresa))];
   const select = document.getElementById("empresa");
-  empresas.forEach(emp => {
+  empresas.forEach(empresa => {
     const opt = document.createElement("option");
-    opt.value = emp;
-    opt.textContent = emp;
+    opt.value = empresa;
+    opt.textContent = empresa;
     select.appendChild(opt);
   });
 }
 
-function definirMesAtual() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = (hoje.getMonth()).toString().padStart(2, '0');
-  document.getElementById("mes").value = `${ano}-${mes}`;
-}
-
-function filtrarDados() {
-  const mesFiltro = document.getElementById("mes").value;
-  const empresa = document.getElementById("empresa").value;
-  const plataforma = document.getElementById("plataforma").value;
-
-  const filtrado = dados.filter(d => {
-    const mesDado = d.data?.slice(0, 7);
-    return (!mesFiltro || mesDado === mesFiltro) &&
-           (!empresa || d.empresa === empresa) &&
-           (!plataforma || d.plataforma === plataforma);
-  });
-
-  mostrarTotais(filtrado);
-  mostrarGrafico(filtrado);
-  mostrarResumo(filtrado);
-}
-
-function mostrarTotais(lista) {
-  let totalIfood = 0, totalDM = 0;
-  lista.forEach(d => {
+function atualizarTotais() {
+  let totalIfood = 0;
+  let totalDM = 0;
+  dados.forEach(d => {
     const bruto = parseFloat(d.bruto || 0);
     if (d.plataforma === "iFood") totalIfood += bruto;
     if (d.plataforma === "Delivery Much") totalDM += bruto;
   });
-
-  document.getElementById("totalIfood").textContent = formatar(totalIfood);
-  document.getElementById("totalDM").textContent = formatar(totalDM);
-  document.getElementById("totalGeral").textContent = formatar(totalIfood + totalDM);
+  document.getElementById("total-ifood").textContent = formatar(totalIfood);
+  document.getElementById("total-dm").textContent = formatar(totalDM);
+  document.getElementById("total-geral").textContent = formatar(totalIfood + totalDM);
 }
 
-function mostrarResumo(lista) {
+function filtrarGrafico() {
   const agrupado = {};
-  lista.forEach(d => {
-    const emp = d.empresa;
-    const plat = d.plataforma;
-    if (!agrupado[emp]) agrupado[emp] = {};
-    if (!agrupado[emp][plat]) agrupado[emp][plat] = 0;
-    agrupado[emp][plat] += parseFloat(d.bruto || 0);
-  });
-
-  const div = document.getElementById("resumoEmpresas");
-  div.innerHTML = "";
-  for (let emp in agrupado) {
-    const bloco = document.createElement("div");
-    bloco.innerHTML = `<strong>${emp}</strong>`;
-    for (let plat in agrupado[emp]) {
-      bloco.innerHTML += `<br>• ${plat}: ${formatar(agrupado[emp][plat])}`;
-    }
-    bloco.style.marginBottom = "15px";
-    div.appendChild(bloco);
-  }
-}
-
-function mostrarGrafico(lista) {
-  const porDia = {};
-  lista.forEach(d => {
-    const dia = d.data?.split("-").reverse().join("/");
+  dados.forEach(d => {
+    const mesAno = d.data?.slice(0, 7);
     const valor = parseFloat(d.bruto || 0);
-    porDia[dia] = (porDia[dia] || 0) + valor;
+    agrupado[mesAno] = (agrupado[mesAno] || 0) + valor;
   });
-
-  const labels = Object.keys(porDia).sort();
-  const valores = labels.map(d => porDia[d]);
+  const labels = Object.keys(agrupado).sort();
+  const valores = labels.map(m => agrupado[m]);
+  const labelsFormatados = labels.map(m => m.split("-").reverse().join("/"));
 
   if (chart) chart.destroy();
-  const ctx = document.getElementById("graficoVendas").getContext("2d");
+  const ctx = document.getElementById("graficoVendas").getContext('2d');
   chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels,
+      labels: labelsFormatados,
       datasets: [{
-        label: 'Vendas Brutas por Dia',
+        label: 'Vendas Brutas',
         data: valores,
         fill: true,
         borderColor: '#388e3c',
@@ -289,6 +262,7 @@ function mostrarGrafico(lista) {
       responsive: true,
       scales: {
         y: {
+          beginAtZero: true,
           ticks: {
             callback: value => 'R$ ' + value.toLocaleString('pt-BR')
           }
@@ -298,9 +272,67 @@ function mostrarGrafico(lista) {
   });
 }
 
+function filtrarResumoEmpresa() {
+  const inicio = document.getElementById("mesInicio").value;
+  const fim = document.getElementById("mesFim").value;
+  const empresa = document.getElementById("empresa").value;
+  const plataforma = document.getElementById("plataforma").value;
+
+  const filtrados = dados.filter(d => {
+    const mes = d.data.substring(0, 7);
+    return (!inicio || mes >= inicio) && (!fim || mes <= fim) &&
+           (empresa === "todas" || d.empresa === empresa) &&
+           (plataforma === "todas" || d.plataforma === plataforma);
+  });
+
+  const resumo = {};
+  filtrados.forEach(d => {
+    const emp = d.empresa;
+    const plat = d.plataforma;
+    if (!resumo[emp]) resumo[emp] = {};
+    if (!resumo[emp][plat]) resumo[emp][plat] = 0;
+    resumo[emp][plat] += parseFloat(d.bruto || 0);
+  });
+
+  const divResumo = document.getElementById("resumo-empresas");
+  divResumo.innerHTML = "";
+  for (let emp in resumo) {
+    const bloco = document.createElement("div");
+    bloco.className = "resumo-linha";
+    bloco.innerHTML = `<strong>${emp}</strong>`;
+    for (let plat in resumo[emp]) {
+      bloco.innerHTML += `<br>• ${plat}: ${formatar(resumo[emp][plat])}`;
+    }
+    divResumo.appendChild(bloco);
+  }
+}
+
 function formatar(valor) {
   return "R$ " + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
+
+document.getElementById("btnWhats").addEventListener("click", () => {
+  const inicio = document.getElementById("mesInicio").value;
+  const fim = document.getElementById("mesFim").value;
+  let mensagem = `📦 *Resumo Vendas Delivery*\n${inicio} até ${fim}\n\n`;
+
+  mensagem += `💰 *Totais:*\n`;
+  mensagem += `• iFood: ${document.getElementById("total-ifood").textContent}\n`;
+  mensagem += `• Delivery Much: ${document.getElementById("total-dm").textContent}\n`;
+  mensagem += `• Total Geral: ${document.getElementById("total-geral").textContent}\n\n`;
+
+  const blocos = document.querySelectorAll(".resumo-linha");
+  blocos.forEach(bloco => {
+    mensagem += `🏪 *${bloco.querySelector("strong").innerText}*\n`;
+    const linhas = bloco.innerHTML.split("<br>").slice(1);
+    linhas.forEach(l => mensagem += l.replace(/<[^>]*>/g, '') + "\n");
+    mensagem += "\n";
+  });
+
+  const numero = "5577999761436";
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
+  window.open(link, "_blank");
+});
 
 carregarDados();
 </script>
