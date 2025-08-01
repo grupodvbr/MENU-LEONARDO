@@ -15,20 +15,24 @@
     header {
       background-color: white;
       padding: 10px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+    .header-wrapper {
       display: flex;
       align-items: center;
-      border-bottom: 1px solid #ccc;
+      justify-content: center;
+      position: relative;
     }
     header img {
       height: 50px;
-      margin-right: 20px;
+      position: absolute;
+      left: 20px;
     }
     header h1 {
-      margin: 0 auto;
       font-size: 1.6em;
       font-weight: bold;
-      text-align: center;
-      flex: 1;
+      margin: 0 auto;
+      color: #000;
     }
     .container {
       padding: 20px;
@@ -103,12 +107,23 @@
       height: 300px;
     }
     @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        text-align: center;
+      .header-wrapper {
+        position: static;
+        justify-content: center;
       }
       header img {
-        margin: 0 0 10px;
+        position: static;
+        margin-right: 0;
+        margin-bottom: 10px;
+      }
+      header h1 {
+        margin: 0 auto;
+      }
+      .filters {
+        flex-direction: column;
+      }
+      #btnWhats {
+        margin: 10px 0;
       }
     }
   </style>
@@ -116,19 +131,21 @@
 <body>
 
 <header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Painel de Metas</h1>
+  <div class="header-wrapper">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems" />
+    <h1>Painel de Metas</h1>
+  </div>
 </header>
 
 <div class="container">
   <div class="filters">
     <div>
       <label>Data Início:</label>
-      <input type="date" id="dataInicio">
+      <input type="date" id="dataInicio" />
     </div>
     <div>
       <label>Data Fim:</label>
-      <input type="date" id="dataFim">
+      <input type="date" id="dataFim" />
     </div>
     <div>
       <label>Empresa:</label>
