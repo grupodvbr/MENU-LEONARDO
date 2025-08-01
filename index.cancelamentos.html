@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Cancelamentos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -46,7 +45,7 @@
       margin-top: 0;
     }
     .cancelamento {
-      padding: 8px 0;
+      padding: 4px 0;
       border-bottom: 1px solid #eee;
     }
     .cancelamento:last-child {
@@ -58,17 +57,24 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .filtros select, .filtros input {
+    .filtros select,
+    .filtros input {
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      padding: 10px 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
-<body>
-
-<!-- ... seu <head> e estilos continuam iguais ... -->
-
 <body>
 
 <header>
@@ -89,6 +95,8 @@
       </select>
     </div>
   </div>
+
+  <button id="btnWhats">📲 Enviar via WhatsApp</button>
 
   <div id="cancelamentos"></div>
 </div>
@@ -130,10 +138,10 @@ function filtrarCancelamentos() {
   const container = document.getElementById("cancelamentos");
   container.innerHTML = "";
 
-  const filtrados = dados.filter(d => {
-    return (!data || d.data === data) &&
-           (empresa === "todas" || d.empresa === empresa);
-  });
+  const filtrados = dados.filter(d =>
+    (!data || d.data === data) &&
+    (empresa === "todas" || d.empresa === empresa)
+  );
 
   const agrupado = {};
   filtrados.forEach(d => {
@@ -148,12 +156,33 @@ function filtrarCancelamentos() {
     agrupado[emp].forEach(item => {
       const div = document.createElement("div");
       div.className = "cancelamento";
-      div.textContent = item;
+      div.textContent = item; // mantém emojis
       card.appendChild(div);
     });
     container.appendChild(card);
   }
 }
+
+document.getElementById("btnWhats").addEventListener("click", () => {
+  const data = document.getElementById("data").value;
+  if (!data) return alert("Selecione uma data.");
+
+  const cards = document.querySelectorAll(".card");
+  if (!cards.length) return alert("Nenhum dado para enviar.");
+
+  const dataBR = data.split("-").reverse().join("/");
+  let mensagem = `📆 *Cancelamentos do dia ${dataBR}*\n\n`;
+
+  cards.forEach(card => {
+    const titulo = card.querySelector("h3").innerText;
+    const itens = [...card.querySelectorAll(".cancelamento")].map(el => `• ${el.innerText}`).join("\n");
+    mensagem += `*${titulo}*\n${itens}\n\n`;
+  });
+
+  const numero = "5577999761436"; // Altere o número aqui se necessário
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
+  window.open(link, "_blank");
+});
 
 carregarDados();
 </script>
