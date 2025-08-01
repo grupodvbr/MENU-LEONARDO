@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel Financeiro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise Financeira</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f6f9;
+      background-color: white;
     }
 
     #splash {
@@ -37,42 +37,25 @@
     }
 
     header {
-      background-color: #2c3e50;
-      color: white;
-      padding: 20px;
+      background-color: white;
+      color: #2c3e50;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+
+    header h1 {
+      flex: 1;
       text-align: center;
       font-size: 24px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-
-    .menu-categorias {
-      background-color: white;
-      border-bottom: 1px solid #ccc;
-      padding: 10px 20px;
-    }
-
-    .menu-categorias ul {
-      list-style: none;
-      padding: 0;
       margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-    }
-
-    .menu-categorias li a {
-      text-decoration: none;
-      color: #2c3e50;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background 0.3s;
-    }
-
-    .menu-categorias li a:hover {
-      background-color: #f0f0f0;
+      font-weight: bold;
     }
 
     .container {
@@ -114,7 +97,18 @@
 
     @media (max-width: 500px) {
       header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      header img {
+        margin: 0 0 10px;
+      }
+
+      header h1 {
         font-size: 20px;
+        text-align: center;
       }
 
       .card h2 {
@@ -134,20 +128,13 @@
     <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   </div>
 
-  <header>Painel de Análise Financeira</header>
+  <!-- Cabeçalho -->
+  <header>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Análise Financeira</h1>
+  </header>
 
-  <!-- Menu de Categorias -->
-  <nav class="menu-categorias">
-    <ul>
-      <li><a href="#">📦 Todos</a></li>
-      <li><a href="#">📈 Financeiro</a></li>
-      <li><a href="#">❌ Cancelamentos</a></li>
-      <li><a href="#">🚚 Delivery</a></li>
-      <li><a href="#">📊 Metas</a></li>
-      <li><a href="#">💳 Conciliações</a></li>
-    </ul>
-  </nav>
-
+  <!-- Cards -->
   <div class="container">
     <a class="card" href="https://grupodvbr.github.io/RESUMO-TRANSA-ES-FINANCEIRAS/" target="_blank">
       <div class="icon">📈</div>
@@ -175,6 +162,7 @@
     </a>
   </div>
 
+  <!-- Script splash -->
   <script>
     window.addEventListener('load', () => {
       const splash = document.getElementById('splash');
