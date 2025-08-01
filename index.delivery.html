@@ -91,7 +91,7 @@
         <option value="04">Abril</option>
         <option value="05">Maio</option>
         <option value="06">Junho</option>
-        <option value="07" selected>Julho</option>
+        <option value="07">Julho</option>
         <option value="08">Agosto</option>
         <option value="09">Setembro</option>
         <option value="10">Outubro</option>
@@ -167,13 +167,17 @@ let chart;
 function setDefaultDates() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
-  const mes = hoje.getMonth(); // mês atual (0-11)
+  const mes = hoje.getMonth();
 
-  const inicio = new Date(ano, mes - 1, 1); // dia 01 do mês anterior
-  const fim = new Date(ano, mes, 0); // último dia do mês anterior
+  const inicio = new Date(ano, mes - 1, 1);
+  const fim = new Date(ano, mes, 0);
 
   document.getElementById("dataInicio").value = inicio.toISOString().split('T')[0];
   document.getElementById("dataFim").value = fim.toISOString().split('T')[0];
+
+  // Seleciona mês anterior no select
+  const mesAnterior = (inicio.getMonth() + 1).toString().padStart(2, '0');
+  document.getElementById("mesResumo").value = mesAnterior;
 }
 
 async function carregarDados() {
