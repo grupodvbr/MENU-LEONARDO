@@ -2,16 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>📦 Vendas Delivery - Grupo DV</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vendas Delivery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #ffffff;
-      margin: 0;
-      padding: 0;
-    }
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
     header {
       background-color: white;
       padding: 10px 20px;
@@ -24,95 +19,65 @@
       margin-right: 20px;
     }
     header h1 {
-      margin: 0 auto;
+      margin: 0;
       font-size: 1.6em;
       font-weight: bold;
-      text-align: center;
-      flex: 1;
     }
-    .container {
+    .container { padding: 20px; }
+    .chart-box, .total-box, .resumo-box {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
       padding: 20px;
-      max-width: 1200px;
-      margin: auto;
-    }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       margin-bottom: 20px;
-      align-items: end;
     }
-    .filters label {
-      font-weight: bold;
-    }
-    .filters select,
-    .filters input {
+    .chart-box canvas { max-width: 100%; height: 300px; }
+    .total-box h3, .resumo-box h3 { margin-top: 0; }
+    .total-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1em; }
+    .total-line strong { font-weight: bold; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end; }
+    .filters label { font-weight: bold; }
+    .filters select, .filters input[type="date"] {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       width: 100%;
     }
-    .filters > div {
-      flex: 1 1 200px;
-    }
-    .filters button,
-    #btnWhats {
+    .filters > div { flex: 1 1 200px; }
+    .filters button {
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
+      background-color: #1e1e2f;
+      color: white;
       font-weight: bold;
       cursor: pointer;
     }
-    .filters button {
-      background-color: #1e1e2f;
-      color: white;
-    }
-    #btnWhats {
-      background-color: #25d366;
-      color: white;
-      margin-bottom: 20px;
-    }
-    .card, .chart-box, .total-box, .resumo-box {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-    .card h2, .chart-box h3, .total-box h3, .resumo-box h3 {
-      margin: 0 0 10px;
-      font-size: 1.2em;
-      color: #2c3e50;
-    }
-    .total-line {
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.05em;
-      padding: 4px 0;
-    }
     .resumo-linha {
-      background: #f4f4f4;
+      background: #eaffea;
       padding: 10px;
       border-radius: 8px;
       margin-bottom: 10px;
+      line-height: 1.6;
     }
-    .resumo-linha strong {
-      display: block;
-      font-size: 1.1em;
-      margin-bottom: 4px;
+    .resumo-linha strong { display: block; font-size: 1.1em; margin-bottom: 4px; }
+    .total-box select#empresaResumo {
+      margin-top: 5px;
+      margin-left: 10px;
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
-    .chart-box canvas {
-      max-width: 100%;
-      height: 300px;
-    }
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        text-align: center;
-      }
-      header img {
-        margin-bottom: 10px;
-      }
+    .btn-whatsapp {
+      background-color: #25D366;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      float: right;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -120,12 +85,12 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>📦 Vendas Delivery - Grupo DV</h1>
+  <h1>Vendas Delivery</h1>
 </header>
 
 <div class="container">
-  <div class="filters">
-    <div>
+  <div class="total-box">
+    <div style="float:right">
       <label for="mesResumo">Mês:</label>
       <select id="mesResumo" onchange="atualizarTotais()">
         <option value="">Todos</option>
@@ -135,25 +100,19 @@
         <option value="04">Abril</option>
         <option value="05">Maio</option>
         <option value="06">Junho</option>
-        <option value="07">Julho</option>
+        <option value="07" selected>Julho</option>
         <option value="08">Agosto</option>
         <option value="09">Setembro</option>
         <option value="10">Outubro</option>
         <option value="11">Novembro</option>
         <option value="12">Dezembro</option>
       </select>
-    </div>
-    <div>
+      <br>
       <label for="empresaResumo">Empresa:</label>
       <select id="empresaResumo" onchange="atualizarTotais()">
         <option value="">Todas</option>
       </select>
     </div>
-  </div>
-
-  <button id="btnWhats" onclick="enviarWhatsApp()">📲 Enviar via WhatsApp</button>
-
-  <div class="total-box">
     <h3>💰 Totais por Plataforma</h3>
     <div class="total-line">
       <span>iFood</span>
@@ -175,6 +134,37 @@
     <canvas id="graficoVendas"></canvas>
   </div>
 
+  <div class="filters">
+    <div>
+      <label for="dataInicio">Data Início</label>
+      <input type="date" id="dataInicio">
+    </div>
+    <div>
+      <label for="dataFim">Data Fim</label>
+      <input type="date" id="dataFim">
+    </div>
+    <div>
+      <label for="empresa">Empresa</label>
+      <select id="empresa">
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+    <div>
+      <label for="plataforma">Plataforma</label>
+      <select id="plataforma">
+        <option value="todas">Todas</option>
+        <option value="iFood">iFood</option>
+        <option value="Delivery Much">Delivery Much</option>
+      </select>
+    </div>
+    <div>
+      <button onclick="atualizarResumoEmpresa()">Filtrar Resumo</button>
+    </div>
+  </div>
+
+  <!-- BOTÃO WHATSAPP -->
+  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
   <div class="resumo-box">
     <h3>🏪 Resumo por Empresa</h3>
     <div id="resumo-empresas"></div>
@@ -182,24 +172,172 @@
 </div>
 
 <script>
-function enviarWhatsApp() {
-  let mensagem = "📦 *Resumo de Vendas Delivery*\n\n";
-  mensagem += `🛒 *iFood:* ${document.getElementById("total-ifood").innerText}\n`;
-  mensagem += `🛍️ *Delivery Much:* ${document.getElementById("total-dm").innerText}\n`;
-  mensagem += `💰 *Total Geral:* ${document.getElementById("total-geral").innerText}\n\n`;
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
+let dados = [];
+let chart;
 
-  const empresas = document.querySelectorAll(".resumo-linha");
-  empresas.forEach(div => {
-    mensagem += `🏪 *${div.querySelector("strong").innerText}*\n`;
-    const linhas = div.innerHTML.split("<br>").slice(1);
-    linhas.forEach(l => mensagem += l.replace(/<[^>]+>/g, '') + "\n");
-    mensagem += "\n";
+function setDefaultDates() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const inicio = new Date(ano, mes, 1);
+  const fim = new Date(ano, mes, 5);
+  document.getElementById("dataInicio").value = inicio.toISOString().split('T')[0];
+  document.getElementById("dataFim").value = fim.toISOString().split('T')[0];
+}
+
+async function carregarDados() {
+  setDefaultDates();
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  popularEmpresas();
+  filtrarGrafico();
+  atualizarTotais();
+  atualizarResumoEmpresa();
+}
+
+function popularEmpresas() {
+  const select = document.getElementById("empresa");
+  const selectResumo = document.getElementById("empresaResumo");
+  const empresas = [...new Set(dados.map(d => d.empresa))];
+  empresas.forEach(empresa => {
+    const opt1 = document.createElement("option");
+    opt1.value = empresa;
+    opt1.textContent = empresa;
+    select.appendChild(opt1);
+    const opt2 = document.createElement("option");
+    opt2.value = empresa;
+    opt2.textContent = empresa;
+    selectResumo.appendChild(opt2);
+  });
+}
+
+function atualizarTotais() {
+  const mes = document.getElementById("mesResumo").value;
+  const empresa = document.getElementById("empresaResumo").value;
+  let totalIfood = 0;
+  let totalDM = 0;
+
+  dados.forEach(d => {
+    const mesDado = d.data.split("-")[1];
+    if ((mes && mes !== mesDado) || (empresa && d.empresa !== empresa)) return;
+    const bruto = parseFloat(d.bruto || 0);
+    if (d.plataforma === "iFood") totalIfood += bruto;
+    if (d.plataforma === "Delivery Much") totalDM += bruto;
   });
 
-  const numero = "5577999761436";
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-  window.open(link, '_blank');
+  document.getElementById("total-ifood").textContent = "R$ " + totalIfood.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById("total-dm").textContent = "R$ " + totalDM.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  document.getElementById("total-geral").textContent = "R$ " + (totalIfood + totalDM).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
+
+function filtrarGrafico() {
+  const agrupado = {};
+  dados.forEach(d => {
+    const data = d.data;
+    const bruto = parseFloat(d.bruto || 0);
+    const label = new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    agrupado[label] = (agrupado[label] || 0) + bruto;
+  });
+
+  const labels = Object.keys(agrupado).sort();
+  const valores = labels.map(d => agrupado[d]);
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Valor Bruto por Dia',
+        data: valores,
+        borderColor: '#2980b9',
+        backgroundColor: 'rgba(41,128,185,0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+          }
+        }
+      }
+    }
+  });
+}
+
+function atualizarResumoEmpresa() {
+  const dataInicio = document.getElementById("dataInicio").value;
+  const dataFim = document.getElementById("dataFim").value;
+  const empresa = document.getElementById("empresa").value;
+  const plataforma = document.getElementById("plataforma").value;
+  const filtrados = dados.filter(d => {
+    return (!dataInicio || d.data >= dataInicio) &&
+           (!dataFim || d.data <= dataFim) &&
+           (empresa === "todas" || d.empresa === empresa) &&
+           (plataforma === "todas" || d.plataforma === plataforma);
+  });
+
+  const resumoPorEmpresa = {};
+  filtrados.forEach(d => {
+    const emp = d.empresa;
+    const plat = d.plataforma;
+    if (!resumoPorEmpresa[emp]) resumoPorEmpresa[emp] = {};
+    if (!resumoPorEmpresa[emp][plat]) {
+      resumoPorEmpresa[emp][plat] = { bruto: 0, liquido: 0, taxa: 0, repassado: 0 };
+    }
+    const bruto = parseFloat(d.bruto || 0);
+    const liquido = parseFloat(d.liquido || 0);
+    const taxa = parseFloat(d.taxa || 0);
+    const repassado = parseFloat(d.repassado || 0);
+    resumoPorEmpresa[emp][plat].bruto += bruto;
+    resumoPorEmpresa[emp][plat].liquido += liquido;
+    resumoPorEmpresa[emp][plat].taxa += taxa;
+    resumoPorEmpresa[emp][plat].repassado += repassado;
+  });
+
+  const resumo = document.getElementById("resumo-empresas");
+  resumo.innerHTML = "";
+  for (const emp in resumoPorEmpresa) {
+    const div = document.createElement("div");
+    div.className = "resumo-linha";
+    div.innerHTML = `<strong>${emp}</strong>`;
+    for (const plat in resumoPorEmpresa[emp]) {
+      const val = resumoPorEmpresa[emp][plat];
+      const perc = (val.taxa / val.bruto) * 100 || 0;
+      div.innerHTML += `
+        <br><u>${plat}</u><br>
+        💰 Bruto: R$ ${val.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+        💵 Líquido: R$ ${val.liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+        📉 Investimento (${perc.toFixed(2)}%): R$ ${val.taxa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+      `;
+    }
+    resumo.appendChild(div);
+  }
+}
+
+function enviarWhatsapp() {
+  const totalIFood = document.getElementById("total-ifood").textContent;
+  const totalDM = document.getElementById("total-dm").textContent;
+  const totalGeral = document.getElementById("total-geral").textContent;
+  const empresa = document.getElementById("empresaResumo").value || "Todas as empresas";
+  const mes = document.getElementById("mesResumo").value || "Todos os meses";
+
+  const mensagem = `📊 *Resumo de Vendas Delivery* %0A🏢 Empresa: *${empresa}* %0A📅 Mês: *${mes}* %0A🍽️ iFood: *${totalIFood}* %0A📦 Delivery Much: *${totalDM}* %0A💰 Total Geral: *${totalGeral}*`;
+  const telefone = "557799999999"; // Altere para o número desejado
+  const url = `https://wa.me/${telefone}?text=${mensagem}`;
+  window.open(url, "_blank");
+}
+
+carregarDados();
 </script>
 
 </body>
