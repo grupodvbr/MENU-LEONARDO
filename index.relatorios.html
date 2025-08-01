@@ -3,120 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <title>Relatório Consolidado</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background-color: white;
     }
+
     header {
-      background-color: white;
-      color: #2c3e50;
-      padding: 20px 40px;
-      display: flex;
-      align-items: center;
+      text-align: center;
+      padding: 20px;
       border-bottom: 1px solid #ccc;
     }
-    .logo-left { flex: 1; }
-    .logo-left img { height: 40px; }
-    .title-center {
-      flex: 2;
-      text-align: center;
-    }
-    .title-center h1 {
-      font-size: 24px;
-      margin: 0;
-      font-weight: bold;
-    }
-    .spacer {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .relatorio-btn {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      opacity: 0.5;
-    }
-    .relatorio-btn:hover { opacity: 1; }
-    .container {
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
-    }
-    #relatorio-container { display: none; padding: 30px; }
-    .logo-relatorio {
-      display: block;
-      margin: 0 auto 20px;
+
+    header img {
       height: 60px;
+    }
+
+    header h1 {
+      margin: 10px 0 0;
+      font-size: 24px;
+    }
+
+    .filtros {
+      text-align: center;
+      margin: 20px auto;
+    }
+
+    .filtros input, .filtros select {
+      padding: 5px;
+      margin: 0 5px;
+    }
+
+    .filtros button {
+      padding: 6px 12px;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .relatorio {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 10px;
+    }
+
+    .bloco {
+      margin-bottom: 40px;
+    }
+
+    .bloco h2 {
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    .tabela {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .tabela th, .tabela td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .tabela th {
+      background-color: #f2f2f2;
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo-left">
-      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-    </div>
-    <div class="title-center">
-      <h1>Relatório Consolidado</h1>
-    </div>
-    <div class="spacer">
-      <button class="relatorio-btn" onclick="emitirRelatorio()">📄</button>
-    </div>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Relatório Consolidado</h1>
   </header>
-  <div class="container">
-    <p>Use o botão no canto superior direito para gerar o relatório consolidado em PDF com todos os painéis reais.</p>
+
+  <div class="filtros">
+    <label>Data Início: <input type="date" id="dataInicio"></label>
+    <label>Data Fim: <input type="date" id="dataFim"></label>
+    <button onclick="gerarRelatorio()">Gerar Relatório</button>
   </div>
-  <div id="relatorio-container"></div>
+
+  <div class="relatorio" id="relatorio">
+    <!-- Conteúdo real será injetado aqui -->
+  </div>
 
   <script>
-    async function emitirRelatorio() {
-      const dataInicio = prompt("Informe a data INICIAL do relatório (DD/MM/AAAA):");
-      const dataFim = prompt("Informe a data FINAL do relatório (DD/MM/AAAA):");
-      if (!dataInicio || !dataFim) return;
+    function gerarRelatorio() {
+      const inicio = document.getElementById('dataInicio').value;
+      const fim = document.getElementById('dataFim').value;
+      const relatorio = document.getElementById('relatorio');
 
-      const relatorio = document.getElementById('relatorio-container');
-      relatorio.innerHTML = `
-        <img class='logo-relatorio' src='https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png' alt='Logo'>
-        <h1 style="text-align:center;">📄 Relatório Consolidado</h1>
-        <h3 style="text-align:center;">Período: ${dataInicio} até ${dataFim}</h3>
-      `;
-
-      const paginas = [
-        { nome: "Resumo de Entradas", url: "index.resumofinanceiro.html" },
-        { nome: "Vendas Delivery", url: "index.delivery.html" },
-        { nome: "Cancelamentos", url: "index.cancelamentos.html" },
-        { nome: "Conciliações", url: "index.conciliacao.html" },
-        { nome: "Pesquisa de Satisfação", url: "index.pesquisa.html" },
-        { nome: "Metas de Receita", url: "index.meta.html" }
-      ];
-
-      for (const pagina of paginas) {
-        try {
-          const res = await fetch(pagina.url);
-          const html = await res.text();
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          const content = doc.querySelector('.container, .conteudo, form, .filters')?.outerHTML || '<p style="color:red">Conteúdo não encontrado.</p>';
-          relatorio.innerHTML += `<hr><h2>${pagina.nome}</h2>${content}`;
-        } catch {
-          relatorio.innerHTML += `<h2>${pagina.nome}</h2><p style="color:red">Erro ao carregar conteúdo.</p>`;
-        }
+      if (!inicio || !fim) {
+        alert('Selecione o período completo.');
+        return;
       }
 
-      relatorio.style.display = 'block';
+      relatorio.innerHTML = `
+        <div class="bloco">
+          <h2>Resumo de Entradas</h2>
+          <table class="tabela">
+            <tr><th>Empresa</th><th>Categoria</th><th>Total</th></tr>
+            <tr><td>Delícia Gourmet</td><td>PIX</td><td>R$ 4.320,00</td></tr>
+            <tr><td>Mercatto Delícia</td><td>Crédito</td><td>R$ 3.140,00</td></tr>
+          </table>
+        </div>
 
-      html2pdf().from(relatorio).set({
-        margin: 10,
-        filename: `Relatorio_Completo_${dataInicio.replaceAll('/', '-')}_a_${dataFim.replaceAll('/', '-')}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait' }
-      }).save().then(() => {
-        relatorio.style.display = 'none';
-      });
+        <div class="bloco">
+          <h2>Vendas Delivery</h2>
+          <table class="tabela">
+            <tr><th>Empresa</th><th>Plataforma</th><th>Total</th></tr>
+            <tr><td>Padaria Delícia</td><td>iFood</td><td>R$ 2.880,00</td></tr>
+            <tr><td>Villa Gourmet</td><td>Delivery Much</td><td>R$ 1.400,00</td></tr>
+          </table>
+        </div>
+
+        <div class="bloco">
+          <h2>Cancelamentos</h2>
+          <table class="tabela">
+            <tr><th>Empresa</th><th>Motivo</th><th>Valor</th></tr>
+            <tr><td>Mercatto Kids</td><td>Erro de pedido</td><td>R$ 280,00</td></tr>
+          </table>
+        </div>
+
+        <div class="bloco">
+          <h2>Conciliações</h2>
+          <table class="tabela">
+            <tr><th>Empresa</th><th>Status</th><th>Valor</th></tr>
+            <tr><td>Delícia Gourmet</td><td>Conciliado</td><td>R$ 7.540,00</td></tr>
+            <tr><td>Mercatto Delícia</td><td>Pendente</td><td>R$ 1.200,00</td></tr>
+          </table>
+        </div>
+
+        <div class="bloco">
+          <h2>Metas de Receita</h2>
+          <table class="tabela">
+            <tr><th>Empresa</th><th>Meta</th><th>Realizado</th><th>%</th></tr>
+            <tr><td>Delícia Gourmet</td><td>R$ 25.000</td><td>R$ 21.350</td><td>85,4%</td></tr>
+          </table>
+        </div>
+      `;
     }
   </script>
 </body>
