@@ -6,28 +6,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: white;
+      margin: 0;
+      padding: 0;
+    }
     header {
       background-color: white;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
+      padding: 20px 20px 10px;
       border-bottom: 1px solid #ccc;
+      text-align: center;
     }
-    header img { height: 50px; margin-right: 20px; }
-    header h1 { margin: 0; font-size: 1.6em; font-weight: bold; }
-    .container { padding: 20px; }
+    header img {
+      height: 60px;
+      margin-bottom: 5px;
+    }
+    header h1 {
+      margin: 5px 0 0;
+      font-size: 1.6em;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
     .filters {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
     }
-    .filters label { font-weight: bold; }
+    .filters label {
+      font-weight: bold;
+    }
     .filters select, .filters input[type="date"] {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       width: 100%;
     }
-    .filters > div { flex: 1 1 200px; }
+    .filters > div {
+      flex: 1 1 200px;
+    }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
@@ -46,7 +67,12 @@
       flex: 1;
       min-width: 320px;
     }
-    .charts { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; }
+    .charts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
