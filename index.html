@@ -153,7 +153,7 @@
     </a>
   </div>
 
-  <!-- Scripts -->
+  <!-- Splash Script -->
   <script>
     window.addEventListener('load', () => {
       const splash = document.getElementById('splash');
@@ -162,7 +162,10 @@
         setTimeout(() => splash.style.display = 'none', 500);
       }, 1000);
     });
+  </script>
 
+  <!-- Numpad Script -->
+  <script>
     function addChar(num) {
       const input = document.getElementById("senha");
       input.value += num;
@@ -172,14 +175,17 @@
       const input = document.getElementById("senha");
       input.value = input.value.slice(0, -1);
     }
+  </script>
 
+  <!-- Verifica Senha -->
+  <script>
     async function verificarSenha() {
       const senha = document.getElementById("senha").value;
       const mensagem = document.getElementById("mensagem");
       mensagem.textContent = "Verificando...";
 
       try {
-        const resposta = await fetch("https://script.google.com/macros/s/AKfycbwSCw0gWjyQ2GDTGyds2YMZ2S3MLbpSAqjGxh8fklaywdrOPGSjgeQz4N1O25omrNhpPQ/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
+        const resposta = await fetch("https://script.google.com/macros/s/AKfycby1XE-ZSwyyxdLwIcdbr72z1-FNYkFRuv67Sfa5b80r-gjSUe2Pw3yzPzdIegILFvQbeQ/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
 
         if (!resposta.ok) throw new Error("Erro na requisição");
         const dados = await resposta.json();
