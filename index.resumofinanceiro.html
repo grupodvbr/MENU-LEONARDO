@@ -105,14 +105,25 @@
     }
 
     @media (min-width: 768px) {
+      .empresa-box {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .empresa-conteudo {
+        flex: 1;
+      }
+
       .grafico-desktop {
         display: block;
-        margin-top: 15px;
+        flex: 1;
+        max-width: 60%;
       }
 
       canvas {
-        max-width: 100%;
-        margin: 0 auto;
+        width: 100% !important;
+        height: auto !important;
       }
     }
 
@@ -169,24 +180,11 @@
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
 
 const emojis = {
-  "DINHEIRO": "💵",
-  "CRÉDITO": "💳",
-  "DÉBITO": "🏦",
-  "PIX": "💲",
-  "ONLINE": "💻",
-  "CREDIÁRIO": "📋",
-  "VOUCHER": "🎫",
-  "BONIFICAÇÃO": "🎁",
-  "CONSUMO INTERNO": "👔",
-  "BOLETO": "📃",
-  "MARKETING": "📣",
-  "CONSUMO SÓCIO": "👔",
-  "CATÁLOGO DELIVERY": "🛒",
-  "IFOOD": "🍱",
-  "DELIVERY MUCH": "🍔",
-  "TRANSFERÊNCIA BANCÁRIA": "🏛️",
-  "ERROS DE GARÇONS": "🏛️",
-  "OUTROS": "🗂"
+  "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
+  "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
+  "CONSUMO INTERNO": "👔", "BOLETO": "📃", "MARKETING": "📣", "CONSUMO SÓCIO": "👔",
+  "CATÁLOGO DELIVERY": "🛒", "IFOOD": "🍱", "DELIVERY MUCH": "🍔",
+  "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂"
 };
 
 let dados = [];
@@ -243,18 +241,23 @@ function aplicarFiltro() {
     const box = document.createElement("div");
     box.className = "empresa-box";
 
+    const conteudo = document.createElement("div");
+    conteudo.className = "empresa-conteudo";
+
     let html = `<h2>${emp.toUpperCase()} — R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h2><ul>`;
     dadosEmpresa.forEach(item => {
       const emoji = emojis[item.Categoria.toUpperCase()] || "📌";
       html += `<li>${emoji} ${item.Categoria}: R$ ${parseFloat(item.Valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</li>`;
     });
     html += `</ul>`;
-    box.innerHTML = html;
+    conteudo.innerHTML = html;
 
     const canvasContainer = document.createElement("div");
     canvasContainer.className = "grafico-desktop";
     const canvas = document.createElement("canvas");
     canvasContainer.appendChild(canvas);
+
+    box.appendChild(conteudo);
     box.appendChild(canvasContainer);
     painel.appendChild(box);
 
@@ -290,16 +293,15 @@ function desenharGrafico(canvas, dadosEmpresa) {
 function exportarPDF() {
   const painel = document.getElementById("painel");
   const opt = {
-    margin:       0.3,
-    filename:     'relatorio-financeiro.pdf',
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    margin: 0.3,
+    filename: 'relatorio-financeiro.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().from(painel).set(opt).save();
 }
 
-// NOVA FUNÇÃO PARA WHATSAPP
 document.getElementById("enviarWhatsapp").addEventListener("click", () => {
   const dataInicio = document.getElementById("dataInicio").value;
   const dataFim = document.getElementById("dataFim").value;
@@ -324,12 +326,11 @@ document.getElementById("enviarWhatsapp").addEventListener("click", () => {
     mensagem += `*${titulo}*\n${itens}\n\n`;
   });
 
-  const numero = "5577999761436"; // Altere para o número desejado
+  const numero = "5577999761436";
   const link = `https://wa.me/${numero}?text=` + encodeURIComponent(mensagem.trim());
   window.open(link, "_blank");
 });
 </script>
-
 
 </body>
 </html>
