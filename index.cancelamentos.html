@@ -132,6 +132,7 @@ async function carregarDados() {
   cancelamentos = await res.json();
   preencherFiltros();
   aplicarFiltros();
+  preencherDataPadrao();
 }
 
 function formatarMoeda(valor) {
@@ -143,30 +144,38 @@ function preencherFiltros() {
   const selectEmpresa = document.getElementById('filtroEmpresa');
   selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` + 
     empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+}
 
-  const meses = [...new Set(cancelamentos.map(c => c.data.substring(0,7)))];
-  const selectMes = document.getElementById('filtroMes');
-  selectMes.innerHTML = `<option value="">Todos os Meses</option>` + 
-    meses.map(m => `<option value="${m}">${m}</option>`).join('');
+function preencherDataPadrao() {
+  const hoje = new Date();
+  const ontem = new Date();
+  ontem.setDate(hoje.getDate() - 1);
+
+  const formato = d => d.toISOString().split("T")[0];
+
+  document.getElementById("dataInicio").value = formato(ontem);
+  document.getElementById("dataFim").value = formato(ontem);
 }
 
 function aplicarFiltros() {
   const empresaFiltro = document.getElementById('filtroEmpresa').value;
-  const mesFiltro = document.getElementById('filtroMes').value;
   const busca = document.getElementById('filtroBusca').value.toLowerCase();
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim = document.getElementById('dataFim').value;
 
   const lista = document.getElementById("listaCancelamentos");
   lista.innerHTML = "";
   document.getElementById("rankingContainer")?.remove();
 
   let totalGeral = 0;
-
   const grupos = {};
+
   cancelamentos.forEach(c => {
     if (
       (empresaFiltro && c.empresa !== empresaFiltro) ||
-      (mesFiltro && !c.data.startsWith(mesFiltro)) ||
-      (busca && !c.item.toLowerCase().includes(busca))
+      (busca && !c.item.toLowerCase().includes(busca)) ||
+      (dataInicio && c.data < dataInicio) ||
+      (dataFim && c.data > dataFim)
     ) return;
 
     if (!grupos[c.empresa]) grupos[c.empresa] = [];
@@ -180,7 +189,6 @@ function aplicarFiltros() {
     const divGrupo = document.createElement("div");
     divGrupo.className = "grupo-empresa";
 
-    // cabeçalho com a primeira data, nome da empresa e subtotal
     const primeiraData = grupo[0]?.data || "";
     grupo.forEach(c => subtotal += c.valor);
     totalGeral += subtotal;
@@ -192,9 +200,7 @@ function aplicarFiltros() {
     grupo.forEach(c => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "item-cancelamento";
-      itemDiv.innerHTML = `
-        <p>🧾 ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>
-      `;
+      itemDiv.innerHTML = `<p>🧾 ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>`;
       divGrupo.appendChild(itemDiv);
     });
 
@@ -255,7 +261,8 @@ function enviarWhatsapp() {
 }
 
 document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-document.getElementById('filtroMes').addEventListener('change', aplicarFiltros);
+document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
 document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
 
 carregarDados();
