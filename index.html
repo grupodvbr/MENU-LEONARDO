@@ -69,7 +69,7 @@
   <div class="login-box">
     <h2>Bem-vindo, Leonardo Henrique</h2>
     <p>Digite sua senha para continuar:</p>
-    <input type="password" id="senha" placeholder="Senha" />
+    <input type="password" id="senha" placeholder="Senha" onkeydown="if(event.key==='Enter'){verificarSenha()}" />
     <button onclick="verificarSenha()">Entrar</button>
     <p id="mensagem"></p>
   </div>
