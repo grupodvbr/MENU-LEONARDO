@@ -11,9 +11,6 @@
       background: #f7f7f7;
       margin: 0;
       padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow-x: hidden;
     }
     header {
       background-color: white;
@@ -35,8 +32,6 @@
     }
     .container {
       padding: 20px;
-      max-width: 100%;
-      box-sizing: border-box;
     }
     .filtros {
       margin-bottom: 20px;
@@ -100,20 +95,20 @@
   <button id="btnWhats">📲 Enviar via WhatsApp</button>
 
   <div class="graficos">
-    <canvas id="graficoCartao"></canvas>
-    <canvas id="graficoBanco"></canvas>
+    <canvas id="graficoPercentual"></canvas>
+    <canvas id="graficoValor"></canvas>
   </div>
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxbORoWfsm8Lqg_ghum3LGqXazVbjyGL_ftaijCeNd2TL_PawQpRrovP1tUhhe8Bdi3eA/exec";
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyihDnkDLVzHPbTk1X9ikT962-NsFq1vUKNqWyyau-z-fpG5ARWSbmSrdIofXcDzqYcnA/exec";
 let dados = [];
 
 async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
   popularEmpresas();
-  definirDataPadrao(); // já aplica o filtro
+  definirDataPadrao();
 }
 
 function definirDataPadrao() {
@@ -122,7 +117,7 @@ function definirDataPadrao() {
   ontem.setDate(ontem.getDate() - 1);
   const ontemISO = ontem.toISOString().split('T')[0];
   inputData.value = ontemISO;
-  filtrar(); // aplica o filtro com a data de ontem
+  filtrar();
 }
 
 function popularEmpresas() {
@@ -145,35 +140,21 @@ function filtrar() {
     (empresa === "todas" || d.empresa === empresa)
   );
 
-  const porEmpresa = {};
+  const labels = [];
+  const percentualData = [];
+  const valorData = [];
+
   filtrados.forEach(d => {
-    const key = `${d.empresa}_${d.tipo}`;
-    if (!porEmpresa[key]) porEmpresa[key] = { valor: 0, percentual: 0 };
-    porEmpresa[key].valor += d.valor;
-    porEmpresa[key].percentual += d.percentual;
+    labels.push(d.empresa);
+    percentualData.push(d.percentual);
+    valorData.push(d.valor);
   });
 
-  const cartaoLabels = [], cartaoData = [], bancoLabels = [], bancoData = [];
-
-  Object.keys(porEmpresa).forEach(key => {
-    const [empresa, tipo] = key.split("_");
-    const valor = porEmpresa[key].valor;
-    const perc = porEmpresa[key].percentual;
-    const label = `${empresa} (${perc.toFixed(1)}%)`;
-    if (tipo.toLowerCase().includes("cart")) {
-      cartaoLabels.push(label);
-      cartaoData.push(valor);
-    } else {
-      bancoLabels.push(label);
-      bancoData.push(valor);
-    }
-  });
-
-  renderChart("graficoCartao", "💳 Cartão - Não Conciliado", cartaoLabels, cartaoData);
-  renderChart("graficoBanco", "🏦 Bancária - Não Conciliado", bancoLabels, bancoData);
+  renderChart("graficoPercentual", "📈 % Conciliado", labels, percentualData, "%");
+  renderChart("graficoValor", "💰 Valor Pendente (R$)", labels, valorData, "R$");
 }
 
-function renderChart(id, title, labels, data) {
+function renderChart(id, title, labels, data, tipo) {
   const ctx = document.getElementById(id).getContext("2d");
   if (window[id]) window[id].destroy();
   window[id] = new Chart(ctx, {
@@ -181,7 +162,7 @@ function renderChart(id, title, labels, data) {
     data: {
       labels,
       datasets: [{
-        label: "Valor (R$)",
+        label: title,
         data,
         backgroundColor: "#3e95cd"
       }]
@@ -199,7 +180,7 @@ function renderChart(id, title, labels, data) {
       scales: {
         y: {
           ticks: {
-            callback: val => "R$ " + val.toLocaleString("pt-BR")
+            callback: val => tipo === "%" ? val + "%" : "R$ " + val.toLocaleString("pt-BR")
           }
         }
       }
@@ -221,7 +202,7 @@ document.getElementById("btnWhats").addEventListener("click", () => {
 
   let mensagem = `📊 *Conciliações ${dataBR}*\n\n`;
   filtrados.forEach(d => {
-    mensagem += `*${d.empresa}* - ${d.tipo}\n• Não conciliado: R$ ${d.valor.toFixed(2)} (${d.percentual.toFixed(1)}%)\n\n`;
+    mensagem += `*${d.empresa}*\n• % Conciliado: ${d.percentual.toFixed(1)}%\n• Valor pendente: R$ ${d.valor.toFixed(2)}\n\n`;
   });
 
   const numero = "5577999761436"; // Altere aqui
