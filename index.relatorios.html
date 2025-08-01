@@ -17,13 +17,18 @@
       gap: 20px;
       padding: 20px;
     }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      cursor: pointer;
+      background: white;
+    }
     iframe {
       width: 100%;
       height: 600px;
       border: none;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      background: white;
+      display: block;
     }
     @media (max-width: 1200px) {
       .grid {
@@ -42,12 +47,52 @@
 </head>
 <body>
   <div class="grid">
-    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
-    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
-    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
-    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
-    <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
-    <!-- Adicione mais iframes aqui se quiser -->
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html">
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
+    </div>
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html">
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
+    </div>
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html">
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
+    </div>
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html">
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
+    </div>
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html">
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
+    </div>
   </div>
+
+  <script>
+    // Para cada card, adiciona escuta de triple click
+    document.querySelectorAll('.card').forEach(card => {
+      let clickCount = 0;
+      let clickTimer = null;
+
+      card.addEventListener('click', () => {
+        clickCount++;
+
+        if (clickCount === 3) {
+          // Ao triple click abre a url do card em nova aba
+          const url = card.getAttribute('data-url');
+          window.open(url, '_blank');
+          resetClicks();
+          return;
+        }
+
+        // Se não chegar a 3 cliques em 600ms, reseta
+        if (clickTimer) clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+          resetClicks();
+        }, 600);
+
+        function resetClicks() {
+          clickCount = 0;
+          clickTimer = null;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
