@@ -38,55 +38,11 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
 
-    .filtros input, .filtros select {
-      padding: 8px;
-      margin: 0 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    .filtros button {
-      padding: 8px 16px;
-      background-color: #2980b9;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .relatorio {
-      max-width: 1000px;
-      margin: 20px auto;
-      padding: 10px;
-    }
-
-    .bloco {
-      margin-bottom: 40px;
-    }
-
-    .bloco h2 {
-      border-bottom: 2px solid #ccc;
-      padding-bottom: 4px;
-      margin-bottom: 10px;
-      color: #2c3e50;
-    }
-
-    .tabela {
+    iframe {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    .tabela th, .tabela td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: left;
-    }
-
-    .tabela th {
-      background-color: #ecf0f1;
+      height: 800px;
+      border: none;
+      margin-bottom: 30px;
     }
   </style>
 </head>
@@ -97,79 +53,13 @@
   </header>
 
   <div class="filtros">
-    <label>Data Início: <input type="date" id="dataInicio"></label>
-    <label>Data Fim: <input type="date" id="dataFim"></label>
-    <button onclick="gerarRelatorio()">Gerar Relatório</button>
+    <p>As páginas abaixo são exibidas conforme o conteúdo original de cada painel:</p>
   </div>
 
-  <div class="relatorio" id="relatorio">
-    <!-- Conteúdo real será injetado aqui -->
-  </div>
-
-  <script>
-    async function gerarRelatorio() {
-      const inicio = document.getElementById('dataInicio').value;
-      const fim = document.getElementById('dataFim').value;
-      const relatorio = document.getElementById('relatorio');
-
-      if (!inicio || !fim) {
-        alert('Selecione o período completo.');
-        return;
-      }
-
-      const urls = [
-        'https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.json',
-        'https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.json',
-        'https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.json',
-        'https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.json',
-        'https://grupodvbr.github.io/MENU-LEONARDO/index.meta.json'
-      ];
-
-      relatorio.innerHTML = '<p>Carregando dados...</p>';
-
-      try {
-        const dados = await Promise.all(urls.map(url => fetch(url).then(r => r.json())));
-
-        const [entradas, delivery, cancelamentos, conciliacoes, metas] = dados;
-
-        let html = '';
-
-        if (entradas.length) {
-          html += `<div class='bloco'><h2>Resumo de Entradas</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Categoria</th><th>Total</th></tr></thead><tbody>`;
-          entradas.forEach(e => html += `<tr><td>${e.empresa}</td><td>${e.categoria}</td><td>${e.total}</td></tr>`);
-          html += '</tbody></table></div>';
-        }
-
-        if (delivery.length) {
-          html += `<div class='bloco'><h2>Vendas Delivery</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Plataforma</th><th>Total</th></tr></thead><tbody>`;
-          delivery.forEach(d => html += `<tr><td>${d.empresa}</td><td>${d.plataforma}</td><td>${d.total}</td></tr>`);
-          html += '</tbody></table></div>';
-        }
-
-        if (cancelamentos.length) {
-          html += `<div class='bloco'><h2>Cancelamentos</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Motivo</th><th>Valor</th></tr></thead><tbody>`;
-          cancelamentos.forEach(c => html += `<tr><td>${c.empresa}</td><td>${c.motivo}</td><td>${c.valor}</td></tr>`);
-          html += '</tbody></table></div>';
-        }
-
-        if (conciliacoes.length) {
-          html += `<div class='bloco'><h2>Conciliações</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Status</th><th>Valor</th></tr></thead><tbody>`;
-          conciliacoes.forEach(c => html += `<tr><td>${c.empresa}</td><td>${c.status}</td><td>${c.valor}</td></tr>`);
-          html += '</tbody></table></div>';
-        }
-
-        if (metas.length) {
-          html += `<div class='bloco'><h2>Metas de Receita</h2><table class='tabela'><thead><tr><th>Empresa</th><th>Previsto</th><th>Realizado</th></tr></thead><tbody>`;
-          metas.forEach(m => html += `<tr><td>${m.empresa}</td><td>${m.previsto}</td><td>${m.realizado}</td></tr>`);
-          html += '</tbody></table></div>';
-        }
-
-        relatorio.innerHTML = html || '<p>Nenhum dado encontrado para o período selecionado.</p>';
-      } catch (e) {
-        alert('Erro ao carregar os dados.');
-        console.error(e);
-      }
-    }
-  </script>
+  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
+  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
+  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
+  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
+  <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
 </body>
 </html>
