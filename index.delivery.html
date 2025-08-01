@@ -126,33 +126,32 @@
 <div class="container">
   <div class="filters">
     <div>
-      <label for="mesInicio">Mês Início</label>
-      <input type="month" id="mesInicio">
-    </div>
-    <div>
-      <label for="mesFim">Mês Fim</label>
-      <input type="month" id="mesFim">
-    </div>
-    <div>
-      <label for="empresa">Empresa</label>
-      <select id="empresa">
-        <option value="todas">Todas</option>
+      <label for="mesResumo">Mês:</label>
+      <select id="mesResumo" onchange="atualizarTotais()">
+        <option value="">Todos</option>
+        <option value="01">Janeiro</option>
+        <option value="02">Fevereiro</option>
+        <option value="03">Março</option>
+        <option value="04">Abril</option>
+        <option value="05">Maio</option>
+        <option value="06">Junho</option>
+        <option value="07">Julho</option>
+        <option value="08">Agosto</option>
+        <option value="09">Setembro</option>
+        <option value="10">Outubro</option>
+        <option value="11">Novembro</option>
+        <option value="12">Dezembro</option>
       </select>
     </div>
     <div>
-      <label for="plataforma">Plataforma</label>
-      <select id="plataforma">
-        <option value="todas">Todas</option>
-        <option value="iFood">iFood</option>
-        <option value="Delivery Much">Delivery Much</option>
+      <label for="empresaResumo">Empresa:</label>
+      <select id="empresaResumo" onchange="atualizarTotais()">
+        <option value="">Todas</option>
       </select>
-    </div>
-    <div>
-      <button onclick="filtrarResumoEmpresa()">Filtrar Resumo</button>
     </div>
   </div>
 
-  <button id="btnWhats">📲 Enviar via WhatsApp</button>
+  <button id="btnWhats" onclick="enviarWhatsApp()">📲 Enviar via WhatsApp</button>
 
   <div class="total-box">
     <h3>💰 Totais por Plataforma</h3>
@@ -183,158 +182,24 @@
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
-let dados = [];
-let chart;
+function enviarWhatsApp() {
+  let mensagem = "📦 *Resumo de Vendas Delivery*\n\n";
+  mensagem += `🛒 *iFood:* ${document.getElementById("total-ifood").innerText}\n`;
+  mensagem += `🛍️ *Delivery Much:* ${document.getElementById("total-dm").innerText}\n`;
+  mensagem += `💰 *Total Geral:* ${document.getElementById("total-geral").innerText}\n\n`;
 
-function setDefaultDates() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
-  const inicio = new Date(ano, mes - 1, 1);
-  const fim = new Date(ano, mes, 0);
-  document.getElementById("mesInicio").value = inicio.toISOString().slice(0, 7);
-  document.getElementById("mesFim").value = fim.toISOString().slice(0, 7);
-}
-
-async function carregarDados() {
-  setDefaultDates();
-  const res = await fetch(URL_SCRIPT);
-  dados = await res.json();
-  popularEmpresas();
-  atualizarTotais();
-  filtrarResumoEmpresa();
-  filtrarGrafico();
-}
-
-function popularEmpresas() {
-  const empresas = [...new Set(dados.map(d => d.empresa))];
-  const select = document.getElementById("empresa");
-  empresas.forEach(empresa => {
-    const opt = document.createElement("option");
-    opt.value = empresa;
-    opt.textContent = empresa;
-    select.appendChild(opt);
-  });
-}
-
-function atualizarTotais() {
-  let totalIfood = 0;
-  let totalDM = 0;
-  dados.forEach(d => {
-    const bruto = parseFloat(d.bruto || 0);
-    if (d.plataforma === "iFood") totalIfood += bruto;
-    if (d.plataforma === "Delivery Much") totalDM += bruto;
-  });
-  document.getElementById("total-ifood").textContent = formatar(totalIfood);
-  document.getElementById("total-dm").textContent = formatar(totalDM);
-  document.getElementById("total-geral").textContent = formatar(totalIfood + totalDM);
-}
-
-function filtrarGrafico() {
-  const agrupado = {};
-  dados.forEach(d => {
-    const mesAno = d.data?.slice(0, 7);
-    const valor = parseFloat(d.bruto || 0);
-    agrupado[mesAno] = (agrupado[mesAno] || 0) + valor;
-  });
-  const labels = Object.keys(agrupado).sort();
-  const valores = labels.map(m => agrupado[m]);
-  const labelsFormatados = labels.map(m => m.split("-").reverse().join("/"));
-
-  if (chart) chart.destroy();
-  const ctx = document.getElementById("graficoVendas").getContext('2d');
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labelsFormatados,
-      datasets: [{
-        label: 'Vendas Brutas',
-        data: valores,
-        fill: true,
-        borderColor: '#388e3c',
-        backgroundColor: 'rgba(56, 142, 60, 0.1)',
-        tension: 0.3,
-        pointRadius: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
-          }
-        }
-      }
-    }
-  });
-}
-
-function filtrarResumoEmpresa() {
-  const inicio = document.getElementById("mesInicio").value;
-  const fim = document.getElementById("mesFim").value;
-  const empresa = document.getElementById("empresa").value;
-  const plataforma = document.getElementById("plataforma").value;
-
-  const filtrados = dados.filter(d => {
-    const mes = d.data.substring(0, 7);
-    return (!inicio || mes >= inicio) && (!fim || mes <= fim) &&
-           (empresa === "todas" || d.empresa === empresa) &&
-           (plataforma === "todas" || d.plataforma === plataforma);
-  });
-
-  const resumo = {};
-  filtrados.forEach(d => {
-    const emp = d.empresa;
-    const plat = d.plataforma;
-    if (!resumo[emp]) resumo[emp] = {};
-    if (!resumo[emp][plat]) resumo[emp][plat] = 0;
-    resumo[emp][plat] += parseFloat(d.bruto || 0);
-  });
-
-  const divResumo = document.getElementById("resumo-empresas");
-  divResumo.innerHTML = "";
-  for (let emp in resumo) {
-    const bloco = document.createElement("div");
-    bloco.className = "resumo-linha";
-    bloco.innerHTML = `<strong>${emp}</strong>`;
-    for (let plat in resumo[emp]) {
-      bloco.innerHTML += `<br>• ${plat}: ${formatar(resumo[emp][plat])}`;
-    }
-    divResumo.appendChild(bloco);
-  }
-}
-
-function formatar(valor) {
-  return "R$ " + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-}
-
-document.getElementById("btnWhats").addEventListener("click", () => {
-  const inicio = document.getElementById("mesInicio").value;
-  const fim = document.getElementById("mesFim").value;
-  let mensagem = `📦 *Resumo Vendas Delivery*\n${inicio} até ${fim}\n\n`;
-
-  mensagem += `💰 *Totais:*\n`;
-  mensagem += `• iFood: ${document.getElementById("total-ifood").textContent}\n`;
-  mensagem += `• Delivery Much: ${document.getElementById("total-dm").textContent}\n`;
-  mensagem += `• Total Geral: ${document.getElementById("total-geral").textContent}\n\n`;
-
-  const blocos = document.querySelectorAll(".resumo-linha");
-  blocos.forEach(bloco => {
-    mensagem += `🏪 *${bloco.querySelector("strong").innerText}*\n`;
-    const linhas = bloco.innerHTML.split("<br>").slice(1);
-    linhas.forEach(l => mensagem += l.replace(/<[^>]*>/g, '') + "\n");
+  const empresas = document.querySelectorAll(".resumo-linha");
+  empresas.forEach(div => {
+    mensagem += `🏪 *${div.querySelector("strong").innerText}*\n`;
+    const linhas = div.innerHTML.split("<br>").slice(1);
+    linhas.forEach(l => mensagem += l.replace(/<[^>]+>/g, '') + "\n");
     mensagem += "\n";
   });
 
   const numero = "5577999761436";
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
-  window.open(link, "_blank");
-});
-
-carregarDados();
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  window.open(link, '_blank');
+}
 </script>
 
 </body>
