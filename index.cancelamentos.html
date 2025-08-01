@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cancelamentos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    header h1 {
+      margin: 0 auto;
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      flex: 1;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      margin-top: 0;
+    }
+    .cancelamento {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .cancelamento:last-child {
+      border-bottom: none;
+    }
+    .filtros {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filtros select, .filtros input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
 
+<header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1>Cancelamentos</h1>
+</header>
+
+<div class="container">
+  <div class="filtros">
+    <div>
+      <label for="data">Data:</label>
+      <input type="date" id="data" onchange="filtrarCancelamentos()">
+    </div>
+    <div>
+      <label for="empresa">Empresa:</label>
+      <select id="empresa" onchange="filtrarCancelamentos()">
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="cancelamentos"></div>
+</div>
+
+<script>
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxJIjEmXw9lpKsn5D0rkRYo3UsLzgoTlzqLruuLLAvMjNiOiZvNhrWnjYcPD4hwh_FHOQ/exec";
+let dados = [];
+
+async function carregarDados() {
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  popularEmpresas();
+  filtrarCancelamentos();
+}
+
+function popularEmpresas() {
+  const select = document.getElementById("empresa");
+  const empresas = [...new Set(dados.map(d => d.empresa))];
+  empresas.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp;
+    opt.textContent = emp;
+    select.appendChild(opt);
+  });
+}
+
+function filtrarCancelamentos() {
+  const data = document.getElementById("data").value;
+  const empresa = document.getElementById("empresa").value;
+  const container = document.getElementById("cancelamentos");
+  container.innerHTML = "";
+
+  const filtrados = dados.filter(d => {
+    return (!data || d.data === data) &&
+           (empresa === "todas" || d.empresa === empresa);
+  });
+
+  const agrupado = {};
+  filtrados.forEach(d => {
+    if (!agrupado[d.empresa]) agrupado[d.empresa] = [];
+    agrupado[d.empresa].push(d.item);
+  });
+
+  for (const emp in agrupado) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h3>${emp}</h3>`;
+    agrupado[emp].forEach(item => {
+      const div = document.createElement("div");
+      div.className = "cancelamento";
+      div.textContent = item;
+      card.appendChild(div);
+    });
+    container.appendChild(card);
+  }
+}
+
+carregarDados();
+</script>
+
+</body>
+</html>
