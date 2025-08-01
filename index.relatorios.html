@@ -15,6 +15,7 @@
       text-align: center;
       padding: 20px;
       border-bottom: 1px solid #ccc;
+      background-color: #f9f9f9;
     }
 
     header img {
@@ -23,30 +24,40 @@
 
     header h1 {
       margin: 10px 0 0;
-      font-size: 24px;
+      font-size: 26px;
+      color: #2c3e50;
     }
 
     .filtros {
       text-align: center;
-      margin: 20px auto;
+      margin: 30px auto;
+      background: #f0f4f8;
+      padding: 20px;
+      border-radius: 10px;
+      width: fit-content;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
 
     .filtros input, .filtros select {
-      padding: 5px;
-      margin: 0 5px;
+      padding: 8px;
+      margin: 0 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
 
     .filtros button {
-      padding: 6px 12px;
+      padding: 8px 16px;
       background-color: #2980b9;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-weight: bold;
     }
 
     .relatorio {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 20px auto;
       padding: 10px;
     }
@@ -59,27 +70,29 @@
       border-bottom: 2px solid #ccc;
       padding-bottom: 4px;
       margin-bottom: 10px;
+      color: #2c3e50;
     }
 
     .tabela {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 10px;
     }
 
     .tabela th, .tabela td {
       border: 1px solid #ccc;
-      padding: 8px;
+      padding: 10px;
       text-align: left;
     }
 
     .tabela th {
-      background-color: #f2f2f2;
+      background-color: #ecf0f1;
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <img src="321cb5c5-c200-4a06-b296-14a187d3778b.png" alt="Logo">
     <h1>Relatório Consolidado</h1>
   </header>
 
@@ -94,7 +107,7 @@
   </div>
 
   <script>
-    function gerarRelatorio() {
+    async function gerarRelatorio() {
       const inicio = document.getElementById('dataInicio').value;
       const fim = document.getElementById('dataFim').value;
       const relatorio = document.getElementById('relatorio');
@@ -104,50 +117,36 @@
         return;
       }
 
-      relatorio.innerHTML = `
-        <div class="bloco">
-          <h2>Resumo de Entradas</h2>
-          <table class="tabela">
-            <tr><th>Empresa</th><th>Categoria</th><th>Total</th></tr>
-            <tr><td>Delícia Gourmet</td><td>PIX</td><td>R$ 4.320,00</td></tr>
-            <tr><td>Mercatto Delícia</td><td>Crédito</td><td>R$ 3.140,00</td></tr>
-          </table>
-        </div>
+      const urls = [
+        `https://script.google.com/macros/s/AKfycbwNTKi2IThqV6t-QdQt5wxvDyDHZMdPYLXsNwOh1kmdGBwtd93zA1C-mPT9AcA8DCqE/exec?inicio=${inicio}&fim=${fim}`,
+        `https://script.google.com/macros/s/AKfycbxZqV38vOwTu4lnhUM-x2C_aJe2pU_5OPsp5kbqXYQFctAFYooK7DNHJ4k4xCm3RuIv/exec?inicio=${inicio}&fim=${fim}`,
+        `https://script.google.com/macros/s/AKfycbzDxilnRu2eEcz_hGq3L4ME7BRR-QfJ12gE7L34mKfRQJt_qxXN2Rr4J0VtY7DeYPHt/exec?inicio=${inicio}&fim=${fim}`,
+        `https://script.google.com/macros/s/AKfycbxgn-tmXRIwPz5YOLhLtPiTjeMk-lZjP41O3H54o0zWY3R3bJkqM9fwTrHTN5F0uvEQ/exec?inicio=${inicio}&fim=${fim}`,
+        `https://script.google.com/macros/s/AKfycbyE4q29ZLytltNFvhYoAzhZpOHulN4UVXnWqYe5kFGUqltDylGpRfAJYrV3UGVGLSkH/exec?inicio=${inicio}&fim=${fim}`
+      ];
 
-        <div class="bloco">
-          <h2>Vendas Delivery</h2>
-          <table class="tabela">
-            <tr><th>Empresa</th><th>Plataforma</th><th>Total</th></tr>
-            <tr><td>Padaria Delícia</td><td>iFood</td><td>R$ 2.880,00</td></tr>
-            <tr><td>Villa Gourmet</td><td>Delivery Much</td><td>R$ 1.400,00</td></tr>
-          </table>
-        </div>
+      relatorio.innerHTML = '<p>Carregando dados...</p>';
 
-        <div class="bloco">
-          <h2>Cancelamentos</h2>
-          <table class="tabela">
-            <tr><th>Empresa</th><th>Motivo</th><th>Valor</th></tr>
-            <tr><td>Mercatto Kids</td><td>Erro de pedido</td><td>R$ 280,00</td></tr>
-          </table>
-        </div>
+      try {
+        const resultados = await Promise.all(urls.map(url => fetch(url).then(r => r.json())));
 
-        <div class="bloco">
-          <h2>Conciliações</h2>
-          <table class="tabela">
-            <tr><th>Empresa</th><th>Status</th><th>Valor</th></tr>
-            <tr><td>Delícia Gourmet</td><td>Conciliado</td><td>R$ 7.540,00</td></tr>
-            <tr><td>Mercatto Delícia</td><td>Pendente</td><td>R$ 1.200,00</td></tr>
-          </table>
-        </div>
+        let html = '';
+        for (const secao of resultados) {
+          if (!secao || !secao.colunas || !secao.linhas || secao.linhas.length === 0) continue;
+          html += `<div class="bloco">
+            <h2>${secao.titulo}</h2>
+            <table class="tabela">
+              <tr>${secao.colunas.map(col => `<th>${col}</th>`).join('')}</tr>
+              ${secao.linhas.map(l => `<tr>${l.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
+            </table>
+          </div>`;
+        }
 
-        <div class="bloco">
-          <h2>Metas de Receita</h2>
-          <table class="tabela">
-            <tr><th>Empresa</th><th>Meta</th><th>Realizado</th><th>%</th></tr>
-            <tr><td>Delícia Gourmet</td><td>R$ 25.000</td><td>R$ 21.350</td><td>85,4%</td></tr>
-          </table>
-        </div>
-      `;
+        relatorio.innerHTML = html || '<p>Nenhum dado encontrado para o período selecionado.</p>';
+      } catch (e) {
+        alert('Erro ao carregar os dados.');
+        console.error(e);
+      }
     }
   </script>
 </body>
