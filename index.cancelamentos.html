@@ -1,3 +1,4 @@
+<!-- Salve como index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -53,23 +54,38 @@
       flex: 1 1 200px;
     }
 
-    .card-cancelamento {
+    .grupo-empresa {
       background: white;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      padding: 15px 20px;
     }
 
-    .card-cancelamento h3 {
-      margin: 0 0 10px;
-      font-size: 1.2em;
-      color: #1e1e2f;
+    .grupo-empresa h2 {
+      margin-top: 0;
+      font-size: 1.4em;
+      color: #2c3e50;
     }
 
-    .card-cancelamento p {
-      margin: 6px 0;
-      font-size: 1em;
+    .item-cancelamento {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    .item-cancelamento:last-child {
+      border-bottom: none;
+    }
+
+    .item-cancelamento p {
+      margin: 4px 0;
+    }
+
+    .subtotal {
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 1.1em;
     }
 
     .btn-whatsapp {
@@ -133,7 +149,7 @@ const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3U
 let cancelamentos = [];
 
 async function carregarDados() {
-  const res = await fetch(URL_SCRIPT);
+  const res = await await fetch(URL_SCRIPT);
   cancelamentos = await res.json();
   preencherFiltros();
   aplicarFiltros();
@@ -156,43 +172,85 @@ function preencherFiltros() {
 }
 
 function aplicarFiltros() {
-  const empresa = document.getElementById('filtroEmpresa').value;
-  const mes = document.getElementById('filtroMes').value;
+  const empresaFiltro = document.getElementById('filtroEmpresa').value;
+  const mesFiltro = document.getElementById('filtroMes').value;
   const busca = document.getElementById('filtroBusca').value.toLowerCase();
 
   const lista = document.getElementById("listaCancelamentos");
   lista.innerHTML = "";
-  let total = 0;
 
+  let totalGeral = 0;
+
+  // Agrupando por empresa
+  const grupos = {};
   cancelamentos.forEach(c => {
     if (
-      (empresa && c.empresa !== empresa) ||
-      (mes && !c.data.startsWith(mes)) ||
+      (empresaFiltro && c.empresa !== empresaFiltro) ||
+      (mesFiltro && !c.data.startsWith(mesFiltro)) ||
       (busca && !c.item.toLowerCase().includes(busca))
     ) return;
 
-    total += c.valor;
-    const div = document.createElement("div");
-    div.className = "card-cancelamento";
-    div.innerHTML = `
-      <h3>${c.empresa} — ${formatarMoeda(c.valor)}</h3>
-      <p>📅 ${c.data}</p>
-      <p>🧾 ${c.item}</p>
-    `;
-    lista.appendChild(div);
+    if (!grupos[c.empresa]) grupos[c.empresa] = [];
+    grupos[c.empresa].push(c);
   });
 
-  document.getElementById("totalCancelado").textContent = formatarMoeda(total);
+  Object.keys(grupos).forEach(empresa => {
+    const grupo = grupos[empresa];
+    let subtotal = 0;
+
+    const divGrupo = document.createElement("div");
+    divGrupo.className = "grupo-empresa";
+
+    const titulo = document.createElement("h2");
+    titulo.textContent = `🏢 ${empresa}`;
+    divGrupo.appendChild(titulo);
+
+    grupo.forEach(c => {
+      subtotal += c.valor;
+      totalGeral += c.valor;
+
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "item-cancelamento";
+      itemDiv.innerHTML = `
+        <p>📅 ${c.data}</p>
+        <p>🧾 ${c.item}</p>
+        <p>💸 ${formatarMoeda(c.valor)}</p>
+      `;
+      divGrupo.appendChild(itemDiv);
+    });
+
+    const subtotalEl = document.createElement("div");
+    subtotalEl.className = "subtotal";
+    subtotalEl.textContent = `Subtotal: ${formatarMoeda(subtotal)}`;
+    divGrupo.appendChild(subtotalEl);
+
+    lista.appendChild(divGrupo);
+  });
+
+  document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
 }
 
 function enviarWhatsapp() {
-  let mensagem = `📢 *Resumo de Cancelamentos*%0A`;
+  let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
+  const agrupado = {};
+
   cancelamentos.forEach(c => {
-    mensagem += `\n🏢 *${c.empresa}* — ${formatarMoeda(c.valor)}%0A📆 ${c.data} | 🧾 ${c.item}%0A`;
+    if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
+    agrupado[c.empresa].push(c);
   });
 
-  const telefone = "557799999999"; // Troque pelo número real
-  const url = `https://wa.me/${telefone}?text=${mensagem}`;
+  Object.entries(agrupado).forEach(([empresa, itens]) => {
+    let subtotal = 0;
+    mensagem += `\n\n🏢 *${empresa}*`;
+    itens.forEach(c => {
+      subtotal += c.valor;
+      mensagem += `\n📅 ${c.data} | 🧾 ${c.item} | 💸 ${formatarMoeda(c.valor)}`;
+    });
+    mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
+  });
+
+  const telefone = "557799999999";
+  const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
   window.open(url, "_blank");
 }
 
