@@ -206,8 +206,16 @@ async function carregarMetas() {
     const dataRef = new Date(dataFim);
     const mesRef = dataRef.getMonth();
     const anoRef = dataRef.getFullYear();
+    const hoje = new Date();
+
     const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
     diasCorridosNoMes = ultimoDiaMesRef.getDate();
+
+    // Corrigir previsão para não ultrapassar hoje
+    if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
+      diasCorridosNoMes = hoje.getDate();
+    }
+
     diasCorridosAteData = Math.min(dataRef.getDate(), diasCorridosNoMes);
   }
 
@@ -293,9 +301,7 @@ function mostrarGrafico(metas) {
       responsive: true,
       plugins: {
         legend: { display: true },
-        title: {
-          display: false
-        }
+        title: { display: false }
       },
       scales: {
         y: {
