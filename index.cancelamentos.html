@@ -219,7 +219,7 @@ function aplicarFiltros() {
     grupo.forEach(c => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "item-cancelamento";
-      itemDiv.innerHTML = `<p>🧾 ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>`;
+      itemDiv.innerHTML = `<p> ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>`;
       divGrupo.appendChild(itemDiv);
     });
 
