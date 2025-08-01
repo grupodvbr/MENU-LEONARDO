@@ -2,14 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Análise Financeira - Login</title>
+  <title>Análise Financeira</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background-color: white;
-      text-align: center;
     }
     #splash {
       position: fixed;
@@ -55,9 +54,8 @@
       font-size: 16px;
       cursor: pointer;
     }
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
+    header, .container { display: none; }
   </style>
 </head>
 <body>
@@ -76,7 +74,42 @@
     <p id="mensagem"></p>
   </div>
 
-  <!-- Script Splash -->
+  <!-- Cabeçalho -->
+  <header>
+    <div class="logo-left">
+      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    </div>
+    <div class="title-center">
+      <h1>Análise Financeira</h1>
+    </div>
+    <div class="spacer"></div>
+  </header>
+
+  <!-- Cards -->
+  <div class="container">
+    <a class="card" href="index.resumofinanceiro.html">
+      <div class="icon">📈</div>
+      <h2>Resumo Financeiro</h2>
+    </a>
+    <a class="card" href="index.cancelamentos.html">
+      <div class="icon">❌</div>
+      <h2>Cancelamentos</h2>
+    </a>
+    <a class="card" href="index.delivery.html">
+      <div class="icon">🚚</div>
+      <h2>Vendas Delivery</h2>
+    </a>
+    <a class="card" href="index.meta.html">
+      <div class="icon">📊</div>
+      <h2>Meta de Faturamento</h2>
+    </a>
+    <a class="card" href="index.conciliacao.html">
+      <div class="icon">💳</div>
+      <h2>Conciliações</h2>
+    </a>
+  </div>
+
+  <!-- Script splash -->
   <script>
     window.addEventListener('load', () => {
       const splash = document.getElementById('splash');
@@ -95,14 +128,14 @@
       mensagem.textContent = "Verificando...";
 
       try {
-      const resposta = await fetch("https://script.google.com/macros/s/AKfycbzSVlv5Ju8zHfUaJpPQjgWcaBwckb_OmKpXuVMh32Q8DvZ27KXZ1ncAGi1aVrF6soywRg/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
-
-
+        const resposta = await fetch("https://script.google.com/macros/s/AKfycbzSVlv5Ju8zHfUaJpPQjgWcaBwckb_OmKpXuVMh32Q8DvZ27KXZ1ncAGi1aVrF6soywRg/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
         const dados = await resposta.json();
 
         if (dados.autorizado) {
-          mensagem.textContent = "Acesso autorizado. Redirecionando...";
-          setTimeout(() => window.location.href = "painel.html", 1000);
+          mensagem.textContent = "Acesso autorizado. Bem-vindo!";
+          document.querySelector(".login-box").style.display = "none";
+          document.querySelector("header").style.display = "flex";
+          document.querySelector(".container").style.display = "grid";
         } else {
           mensagem.textContent = "Senha incorreta.";
         }
