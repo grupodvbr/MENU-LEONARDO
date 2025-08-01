@@ -191,13 +191,15 @@
         const dados = await resposta.json();
 
         if (dados.autorizado) {
-          mensagem.textContent = "Acesso autorizado. Bem-vindo!";
-          document.querySelector(".login-box").style.display = "none";
-          document.querySelector("header").style.display = "flex";
-          document.querySelector(".container").style.display = "grid";
-        } else {
-          mensagem.textContent = "Senha incorreta.";
-        }
+  localStorage.setItem("usuarioAutenticado", "Leonardo Henrique"); // 🔐 salva login
+  mensagem.textContent = "Acesso autorizado. Bem-vindo!";
+  document.querySelector(".login-box").style.display = "none";
+  document.querySelector("header").style.display = "flex";
+  document.querySelector(".container").style.display = "grid";
+} else {
+  mensagem.textContent = "Senha incorreta.";
+}
+
       } catch (erro) {
         mensagem.textContent = "Erro na verificação.";
         console.error("Erro na verificação:", erro);
