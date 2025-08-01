@@ -12,7 +12,6 @@
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: white;
       padding: 10px 20px;
@@ -20,12 +19,10 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
-
     header img {
       height: 50px;
       margin-right: 20px;
     }
-
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -33,13 +30,11 @@
       text-align: center;
       flex: 1;
     }
-
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: auto;
     }
-
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -47,11 +42,9 @@
       margin-bottom: 20px;
       align-items: end;
     }
-
     .filters label {
       font-weight: bold;
     }
-
     .filters select,
     .filters input[type="date"] {
       padding: 10px;
@@ -59,11 +52,9 @@
       border: 1px solid #ccc;
       width: 100%;
     }
-
     .filters > div {
       flex: 1 1 200px;
     }
-
     .filters button,
     #btnWhats {
       padding: 10px 20px;
@@ -72,18 +63,15 @@
       font-weight: bold;
       cursor: pointer;
     }
-
     .filters button {
       background-color: #1e1e2f;
       color: white;
     }
-
     #btnWhats {
       background-color: #25d366;
       color: white;
       margin: 10px 0;
     }
-
     .metas-box {
       background: white;
       border-radius: 10px;
@@ -91,18 +79,15 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
-
     .metas-box h2 {
       margin: 0 0 10px;
       font-size: 1.2em;
       color: #2c3e50;
     }
-
     .metas-box p {
       margin: 5px 0;
       font-size: 1em;
     }
-
     .chart-box {
       background: white;
       border-radius: 10px;
@@ -110,16 +95,13 @@
       padding: 20px;
       margin-bottom: 20px;
     }
-
     .chart-box h3 {
       margin-top: 0;
     }
-
     .chart-box canvas {
       max-width: 100%;
       height: 300px;
     }
-
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -211,12 +193,12 @@ async function carregarMetas() {
     const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
     diasCorridosNoMes = ultimoDiaMesRef.getDate();
 
-    // Corrigir previsão para não ultrapassar hoje
+    // Corrigir previsão: usar dias até hoje se for o mês atual, senão até dataFim
     if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
-      diasCorridosNoMes = hoje.getDate();
+      diasCorridosAteData = hoje.getDate();
+    } else {
+      diasCorridosAteData = dataRef.getDate();
     }
-
-    diasCorridosAteData = Math.min(dataRef.getDate(), diasCorridosNoMes);
   }
 
   const params = new URLSearchParams();
