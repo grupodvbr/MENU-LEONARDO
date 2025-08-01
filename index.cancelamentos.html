@@ -1,9 +1,8 @@
-<!-- Salve como index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Cancelamentos</title>
+  <title>Cancelamentos - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     body {
@@ -12,6 +11,7 @@
       margin: 0;
       padding: 0;
     }
+
     header {
       background-color: white;
       padding: 10px 20px;
@@ -19,6 +19,12 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
+
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -29,6 +35,8 @@
 
     .container {
       padding: 20px;
+      max-width: 1200px;
+      margin: auto;
     }
 
     .filters {
@@ -42,7 +50,7 @@
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      flex: 1;
+      flex: 1 1 200px;
     }
 
     .card-cancelamento {
@@ -85,12 +93,23 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin: 0 0 10px;
+      }
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Cancelamentos</h1>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1>📋 Cancelamentos - Grupo DV</h1>
 </header>
 
 <div class="container">
@@ -110,7 +129,7 @@
 </div>
 
 <script>
-const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbyVPy_XOPH7C6Ohpu3yVD3Fx4fqPA46d4h1vE8M8GjI7iP739hxk4n3dfTA6LGLrq7ZMA/exec';
+const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwUdzUgrt9vJ7QO1JIwYPSR02zbMFiPoXw-B9A7J2JdtGqkCiWuiF4QGFsfKGMnLkIrxw/exec';
 let cancelamentos = [];
 
 async function carregarDados() {
