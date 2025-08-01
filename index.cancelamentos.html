@@ -1,3 +1,4 @@
+<!-- Salve como index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,7 +12,6 @@
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: white;
       padding: 10px 20px;
@@ -19,12 +19,6 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
-
-    header img {
-      height: 50px;
-      margin-right: 20px;
-    }
-
     header h1 {
       margin: 0 auto;
       font-size: 1.6em;
@@ -35,8 +29,6 @@
 
     .container {
       padding: 20px;
-      max-width: 1200px;
-      margin: auto;
     }
 
     .filters {
@@ -44,190 +36,150 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
-      align-items: end;
     }
 
-    .filters label {
-      font-weight: bold;
-    }
-
-    .filters select,
-    .filters input[type="date"] {
+    .filters select, .filters input {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      width: 100%;
+      flex: 1;
     }
 
-    .filters > div {
-      flex: 1 1 200px;
+    .card-cancelamento {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
     }
 
-    .filters button,
-    #btnWhats {
+    .card-cancelamento h3 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #1e1e2f;
+    }
+
+    .card-cancelamento p {
+      margin: 6px 0;
+      font-size: 1em;
+    }
+
+    .btn-whatsapp {
+      background-color: #25D366;
+      color: white;
       padding: 10px 20px;
-      border: none;
       border-radius: 8px;
+      border: none;
       font-weight: bold;
       cursor: pointer;
+      float: right;
+      margin-bottom: 10px;
     }
 
-    .filters button {
-      background-color: #1e1e2f;
-      color: white;
-    }
-
-    #btnWhats {
-      background-color: #25d366;
-      color: white;
-      margin: 10px 0;
-    }
-
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
+    .total-cancelado {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.2em;
       margin-bottom: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    .card h3 {
-      margin-top: 0;
-      color: #2c3e50;
-    }
-
-    .cancelamento {
-      padding: 4px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .cancelamento:last-child {
-      border-bottom: none;
-    }
-
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      header img {
-        margin: 0 0 10px;
-      }
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
 
 <header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>📦 Painel de Cancelamentos</h1>
+  <h1>Cancelamentos</h1>
 </header>
 
 <div class="container">
   <div class="filters">
-    <div>
-      <label for="data">Data:</label>
-      <input type="date" id="data" onchange="filtrarCancelamentos()">
-    </div>
-    <div>
-      <label for="empresa">Empresa:</label>
-      <select id="empresa" onchange="filtrarCancelamentos()">
-        <option value="todas">Todas</option>
-      </select>
-    </div>
-    <div>
-      <button onclick="filtrarCancelamentos()">Filtrar</button>
-    </div>
+    <select id="filtroEmpresa"></select>
+    <select id="filtroMes"></select>
+    <input type="text" id="filtroBusca" placeholder="Buscar item..." />
   </div>
 
-  <button id="btnWhats">📲 Enviar via WhatsApp</button>
+  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
 
-  <div id="cancelamentos"></div>
+  <div class="total-cancelado">
+    📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
+  </div>
+
+  <div id="listaCancelamentos"></div>
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzjBsvvRlITE4fCe3YBza98IlhbQXGHm2KHVxlPApWz4oL9PsSPTu0S82oLmVUKW8BleA/exec";
-let dados = [];
+const URL_SCRIPT = 'COLE_AQUI_SUA_URL_DO_WEBAPP';
+let cancelamentos = [];
 
 async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
-  dados = await res.json();
-  popularEmpresas();
-  definirDataAnterior();
-  filtrarCancelamentos();
+  cancelamentos = await res.json();
+  preencherFiltros();
+  aplicarFiltros();
 }
 
-function definirDataAnterior() {
-  const inputData = document.getElementById("data");
-  const ontem = new Date();
-  ontem.setDate(ontem.getDate() - 1);
-  const iso = ontem.toISOString().split('T')[0];
-  inputData.value = iso;
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function popularEmpresas() {
-  const select = document.getElementById("empresa");
-  const empresas = [...new Set(dados.map(d => d.empresa))];
-  empresas.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp;
-    opt.textContent = emp;
-    select.appendChild(opt);
-  });
+function preencherFiltros() {
+  const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
+  const selectEmpresa = document.getElementById('filtroEmpresa');
+  selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` + 
+    empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+
+  const meses = [...new Set(cancelamentos.map(c => c.data.substring(0,7)))];
+  const selectMes = document.getElementById('filtroMes');
+  selectMes.innerHTML = `<option value="">Todos os Meses</option>` + 
+    meses.map(m => `<option value="${m}">${m}</option>`).join('');
 }
 
-function filtrarCancelamentos() {
-  const data = document.getElementById("data").value;
-  const empresa = document.getElementById("empresa").value;
-  const container = document.getElementById("cancelamentos");
-  container.innerHTML = "";
+function aplicarFiltros() {
+  const empresa = document.getElementById('filtroEmpresa').value;
+  const mes = document.getElementById('filtroMes').value;
+  const busca = document.getElementById('filtroBusca').value.toLowerCase();
 
-  const filtrados = dados.filter(d =>
-    (!data || d.data === data) &&
-    (empresa === "todas" || d.empresa === empresa)
-  );
+  const lista = document.getElementById("listaCancelamentos");
+  lista.innerHTML = "";
+  let total = 0;
 
-  const agrupado = {};
-  filtrados.forEach(d => {
-    if (!agrupado[d.empresa]) agrupado[d.empresa] = [];
-    agrupado[d.empresa].push(d.item);
-  });
+  cancelamentos.forEach(c => {
+    if (
+      (empresa && c.empresa !== empresa) ||
+      (mes && !c.data.startsWith(mes)) ||
+      (busca && !c.motivo.toLowerCase().includes(busca))
+    ) return;
 
-  for (const emp in agrupado) {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `<h3>${emp}</h3>`;
-    agrupado[emp].forEach(item => {
-      const div = document.createElement("div");
-      div.className = "cancelamento";
-      div.textContent = item;
-      card.appendChild(div);
-    });
-    container.appendChild(card);
-  }
-}
-
-document.getElementById("btnWhats").addEventListener("click", () => {
-  const data = document.getElementById("data").value;
-  if (!data) return alert("Selecione uma data.");
-
-  const cards = document.querySelectorAll(".card");
-  if (!cards.length) return alert("Nenhum dado para enviar.");
-
-  const dataBR = data.split("-").reverse().join("/");
-  let mensagem = `📆 *Cancelamentos do dia ${dataBR}*\n\n`;
-
-  cards.forEach(card => {
-    const titulo = card.querySelector("h3").innerText;
-    const itens = [...card.querySelectorAll(".cancelamento")].map(el => `• ${el.innerText}`).join("\n");
-    mensagem += `*${titulo}*\n${itens}\n\n`;
+    total += c.valor;
+    const div = document.createElement("div");
+    div.className = "card-cancelamento";
+    div.innerHTML = `
+      <h3>${c.empresa} — ${formatarMoeda(c.valor)}</h3>
+      <p>📅 ${c.data}</p>
+      <p>📝 ${c.motivo}</p>
+    `;
+    lista.appendChild(div);
   });
 
-  const numero = "5577999761436";
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
-  window.open(link, "_blank");
-});
+  document.getElementById("totalCancelado").textContent = formatarMoeda(total);
+}
+
+function enviarWhatsapp() {
+  let mensagem = `📢 *Resumo de Cancelamentos*%0A`;
+  cancelamentos.forEach(c => {
+    mensagem += `\n🏢 *${c.empresa}* — ${formatarMoeda(c.valor)}%0A📆 ${c.data} | 📝 ${c.motivo}%0A`;
+  });
+
+  const telefone = "557799999999"; // Troque pelo número real
+  const url = `https://wa.me/${telefone}?text=${mensagem}`;
+  window.open(url, "_blank");
+}
+
+document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroMes').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
 
 carregarDados();
 </script>
