@@ -177,34 +177,25 @@
     }
   </script>
 
-  <!-- Verifica Senha -->
+ 
   <script>
-    async function verificarSenha() {
+    const SENHA_CORRETA = atob("MTAyMDQ3");
+
+    function verificarSenha() {
       const senha = document.getElementById("senha").value;
       const mensagem = document.getElementById("mensagem");
-      mensagem.textContent = "Verificando...";
 
-      try {
-        const resposta = await fetch("https://script.google.com/macros/s/AKfycbynEzaYjic9hMuhVgxP7whaxrQA1F1icWVaAbASoxxklmXd-ozfaIN3JgbzSHeneE7rhw/exec?usuario=Leonardo%20Henrique&senha=" + encodeURIComponent(senha));
-
-        if (!resposta.ok) throw new Error("Erro na requisição");
-        const dados = await resposta.json();
-
-        if (dados.autorizado) {
-  localStorage.setItem("usuarioAutenticado", "Leonardo Henrique"); // 🔐 salva login
-  mensagem.textContent = "Acesso autorizado. Bem-vindo!";
-  document.querySelector(".login-box").style.display = "none";
-  document.querySelector("header").style.display = "flex";
-  document.querySelector(".container").style.display = "grid";
-} else {
-  mensagem.textContent = "Senha incorreta.";
-}
-
-      } catch (erro) {
-        mensagem.textContent = "Erro na verificação.";
-        console.error("Erro na verificação:", erro);
+      if (senha === SENHA_CORRETA) {
+        localStorage.setItem("usuarioAutenticado", "Leonardo Henrique");
+        mensagem.textContent = "Acesso autorizado. Bem-vindo!";
+        document.querySelector(".login-box").style.display = "none";
+        document.querySelector("header").style.display = "flex";
+        document.querySelector(".container").style.display = "grid";
+      } else {
+        mensagem.textContent = "Senha incorreta.";
       }
     }
   </script>
+
 </body>
 </html>
