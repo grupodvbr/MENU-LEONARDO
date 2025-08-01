@@ -123,27 +123,6 @@
 </head>
 <body>
 
-<header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>📋 Cancelamentos - Grupo DV</h1>
-</header>
-
-<div class="container">
-  <div class="filters">
-    <select id="filtroEmpresa"></select>
-    <select id="filtroMes"></select>
-    <input type="text" id="filtroBusca" placeholder="Buscar item..." />
-  </div>
-
-  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-
-  <div class="total-cancelado">
-    📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
-  </div>
-
-  <div id="listaCancelamentos"></div>
-</div>
-
 <script>
 const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3Ue6EuQw75QYID9jadb-KezTv8y9Mg6d8HFoKUCzcBRqzM5aMBg/exec';
 let cancelamentos = [];
@@ -201,28 +180,23 @@ function aplicarFiltros() {
     const divGrupo = document.createElement("div");
     divGrupo.className = "grupo-empresa";
 
+    // cabeçalho com a primeira data, nome da empresa e subtotal
+    const primeiraData = grupo[0]?.data || "";
+    grupo.forEach(c => subtotal += c.valor);
+    totalGeral += subtotal;
+
     const titulo = document.createElement("h2");
-    titulo.textContent = `🏢 ${empresa}`;
+    titulo.textContent = `📅 ${primeiraData} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
     divGrupo.appendChild(titulo);
 
     grupo.forEach(c => {
-      subtotal += c.valor;
-      totalGeral += c.valor;
-
       const itemDiv = document.createElement("div");
       itemDiv.className = "item-cancelamento";
       itemDiv.innerHTML = `
-        <p>📅 ${c.data}</p>
-        <p>🧾 ${c.item}</p>
-        <p>💸 ${formatarMoeda(c.valor)}</p>
+        <p>🧾 ${c.item} — 💸 ${formatarMoeda(c.valor)}</p>
       `;
       divGrupo.appendChild(itemDiv);
     });
-
-    const subtotalEl = document.createElement("div");
-    subtotalEl.className = "subtotal";
-    subtotalEl.textContent = `Subtotal: ${formatarMoeda(subtotal)}`;
-    divGrupo.appendChild(subtotalEl);
 
     lista.appendChild(divGrupo);
 
@@ -270,7 +244,7 @@ function enviarWhatsapp() {
     mensagem += `\n\n🏢 *${empresa}*`;
     itens.forEach(c => {
       subtotal += c.valor;
-      mensagem += `\n📅 ${c.data} | 🧾 ${c.item} | 💸 ${formatarMoeda(c.valor)}`;
+      mensagem += `\n🧾 ${c.item} - 💸 ${formatarMoeda(c.valor)} - ${c.data}`;
     });
     mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
   });
