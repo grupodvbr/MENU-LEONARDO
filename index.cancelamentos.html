@@ -149,7 +149,7 @@ const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3U
 let cancelamentos = [];
 
 async function carregarDados() {
-  const res = await await fetch(URL_SCRIPT);
+  const res = await fetch(URL_SCRIPT);
   cancelamentos = await res.json();
   preencherFiltros();
   aplicarFiltros();
@@ -178,10 +178,10 @@ function aplicarFiltros() {
 
   const lista = document.getElementById("listaCancelamentos");
   lista.innerHTML = "";
+  document.getElementById("rankingContainer")?.remove();
 
   let totalGeral = 0;
 
-  // Agrupando por empresa
   const grupos = {};
   cancelamentos.forEach(c => {
     if (
@@ -225,9 +225,35 @@ function aplicarFiltros() {
     divGrupo.appendChild(subtotalEl);
 
     lista.appendChild(divGrupo);
+
+    if (empresaFiltro) {
+      exibirRanking(grupo);
+    }
   });
 
   document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
+}
+
+function exibirRanking(listaItens) {
+  const container = document.createElement("div");
+  container.id = "rankingContainer";
+  container.className = "grupo-empresa";
+  const titulo = document.createElement("h2");
+  titulo.textContent = "🏆 Top 7 Itens Mais Caros";
+  container.appendChild(titulo);
+
+  const ranking = listaItens
+    .slice()
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 7);
+
+  ranking.forEach((item, index) => {
+    const linha = document.createElement("p");
+    linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${item.data})`;
+    container.appendChild(linha);
+  });
+
+  document.getElementById("listaCancelamentos").prepend(container);
 }
 
 function enviarWhatsapp() {
