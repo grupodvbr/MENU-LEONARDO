@@ -245,10 +245,18 @@ function aplicarFiltro() {
     conteudo.className = "empresa-conteudo";
 
     let html = `<h2>${emp.toUpperCase()} — R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h2><ul>`;
-    dadosEmpresa.forEach(item => {
-      const emoji = emojis[item.Categoria.toUpperCase()] || "📌";
-      html += `<li>${emoji} ${item.Categoria}: R$ ${parseFloat(item.Valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</li>`;
-    });
+    const agrupado = {};
+dadosEmpresa.forEach(item => {
+  const categoria = item.Categoria.toUpperCase();
+  agrupado[categoria] = (agrupado[categoria] || 0) + parseFloat(item.Valor);
+});
+
+for (const cat in agrupado) {
+  const emoji = emojis[cat] || "📌";
+  const valor = agrupado[cat].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  html += `<li>${emoji} ${cat}: R$ ${valor}</li>`;
+}
+
     html += `</ul>`;
     conteudo.innerHTML = html;
 
