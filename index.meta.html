@@ -1,1 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Metas de Receita - Grupo DV</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e8f5e9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .filtros {
+      max-width: 600px;
+      margin: 0 auto 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .filtros label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9em;
+    }
+    .filtros input, .filtros select {
+      padding: 8px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+      display: block;
+      margin: 10px auto 10px;
+    }
+    .metas-box {
+      background: #d0f0d5;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px auto;
+      max-width: 600px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+    .metas-box h2 {
+      margin: 0 0 10px;
+    }
+    .metas-box p {
+      margin: 3px 0;
+      font-size: 0.95em;
+    }
+    #graficoContainer {
+      max-width: 700px;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
 
+<h1>📊 Painel de Metas - Grupo DV</h1>
+
+<div class="filtros">
+  <label>
+    Data Início:
+    <input type="date" id="dataInicio">
+  </label>
+  <label>
+    Data Fim:
+    <input type="date" id="dataFim">
+  </label>
+  <label>
+    Empresa:
+    <select id="empresaFiltro">
+      <option value="">Todas</option>
+    </select>
+  </label>
+  <button onclick="carregarMetas()">Filtrar</button>
+</div>
+
+<button id="btnWhats">📲 Enviar via WhatsApp</button>
+
+<div id="painelMetas"></div>
+<div id="graficoContainer">
+  <canvas id="graficoFaturamento"></canvas>
+</div>
+
+<script>
+const urlBase = 'https://script.google.com/macros/s/AKfycbzyiL6yNCj_FYWiQ2PS88mthToCvWM1wJ0q7CQy8asyg-59L8YezKzFY6d-lgQU0ni3/exec';
+let chart;
+
+function formatarNumero(valor) {
+  return parseFloat(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function formatarDataBR(dataISO) {
+  const [y, m, d] = dataISO.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function preencherDataOntem() {
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+  const data = ontem.toISOString().split('T')[0];
+  document.getElementById("dataInicio").value = data;
+  document.getElementById("dataFim").value = data;
+}
+
+async function carregarMetas() {
+  const painel = document.getElementById("painelMetas");
+  painel.innerHTML = "Carregando...";
+
+  const dataInicio = document.getElementById("dataInicio").value;
+  const dataFim = document.getElementById("dataFim").value;
+  const empresa = document.getElementById("empresaFiltro").value;
+
+  // Cálculo baseado na data final
+  let diasCorridosNoMes = 30;
+  let diasCorridosAteData = 30;
+
+  if (dataFim) {
+    const dataRef = new Date(dataFim);
+    const mesRef = dataRef.getMonth();
+    const anoRef = dataRef.getFullYear();
+    const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
+    diasCorridosNoMes = ultimoDiaMesRef.getDate();
+    diasCorridosAteData = Math.min(dataRef.getDate(), diasCorridosNoMes);
+  }
+
+  const params = new URLSearchParams();
+  if (dataInicio) params.append("dataInicio", dataInicio);
+  if (dataFim) params.append("dataFim", dataFim);
+  if (empresa) params.append("empresa", empresa);
+
+  try {
+    const resposta = await fetch(`${urlBase}?${params.toString()}`);
+    const metas = await resposta.json();
+
+    const empresas = [...new Set(metas.map(m => m.Empresa))];
+    const select = document.getElementById("empresaFiltro");
+    if (select.options.length <= 1) {
+      empresas.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e;
+        opt.textContent = e;
+        select.appendChild(opt);
+      });
+    }
+
+    painel.innerHTML = "";
+    if (metas.length === 0) {
+      painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado.</p>";
+      esconderGrafico();
+      return;
+    }
+
+    metas.forEach(linha => {
+      const previsto = parseFloat(linha["Previsto"]);
+      const realizado = parseFloat(linha["Realizado"].toString().replace(",", "."));
+      const atingido = previsto > 0 ? (realizado / previsto) * 100 : 0;
+      const mediaDiaria = realizado / diasCorridosAteData;
+      const previsaoFinal = mediaDiaria * diasCorridosNoMes;
+      const previsaoPercentual = previsto > 0 ? (previsaoFinal / previsto) * 100 : 0;
+
+      const div = document.createElement("div");
+      div.className = "metas-box";
+      div.innerHTML = `
+        <h2>${linha["Empresa"]}</h2>
+        <p>💰 Previsto: R$ ${formatarNumero(previsto)}</p>
+        <p>✅ Realizado: R$ ${formatarNumero(realizado)}</p>
+        <p>📊 Atingido: ${formatarNumero(atingido)}%</p>
+        <p>📈 Previsão: R$ ${formatarNumero(previsaoFinal)} (${formatarNumero(previsaoPercentual)}%)</p>
+      `;
+      painel.appendChild(div);
+    });
+
+    if (empresa) mostrarGrafico(metas);
+    else esconderGrafico();
+
+  } catch (e) {
+    painel.innerHTML = "Erro ao carregar dados.";
+    console.error(e);
+  }
+}
+
+function mostrarGrafico(metas) {
+  const ctx = document.getElementById('graficoFaturamento').getContext('2d');
+  metas.sort((a, b) => new Date(a.Data) - new Date(b.Data));
+  const dias = metas.map(m => m["Data"]?.split("-").reverse().join("/"));
+  const valores = metas.map(m => parseFloat(m["Realizado"].toString().replace(",", ".")));
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dias,
+      datasets: [{
+        label: 'Evolução do Faturamento',
+        data: valores,
+        fill: false,
+        borderColor: '#388e3c',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: {
+          display: true,
+          text: 'Evolução diária do faturamento'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function esconderGrafico() {
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
+}
+
+document.getElementById("btnWhats").addEventListener("click", () => {
+  const dataInicio = document.getElementById("dataInicio").value;
+  const dataFim = document.getElementById("dataFim").value;
+  const periodo = (dataInicio && dataFim)
+    ? `${formatarDataBR(dataInicio)} - ${formatarDataBR(dataFim)}`
+    : "Período não informado";
+
+  const blocos = document.querySelectorAll(".metas-box");
+  if (!blocos.length) return alert("Nenhum dado para enviar.");
+
+  let mensagem = `📆 Resumo da meta de receitas ${periodo}\n\n`;
+  blocos.forEach(box => {
+    const titulo = box.querySelector("h2").innerText;
+    const linhas = [...box.querySelectorAll("p")].map(p => p.innerText).join("\n");
+    mensagem += `*${titulo}*\n${linhas}\n\n`;
+  });
+
+  const numero = "5577999761436";
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
+  window.open(link, "_blank");
+});
+
+window.onload = () => {
+  preencherDataOntem();
+  carregarMetas();
+};
+</script>
+
+</body>
+</html>
