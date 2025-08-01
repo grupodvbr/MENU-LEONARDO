@@ -30,18 +30,35 @@
     }
 
     .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
       gap: 20px;
       padding: 20px;
+      overflow-x: auto;
     }
 
     iframe {
-      width: 100%;
+      width: 400px;
       height: 600px;
       border: none;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      background: white;
+    }
+
+    /* Scroll para dispositivos menores */
+    .grid::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .grid::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 10px;
+    }
+
+    .grid::-webkit-scrollbar-track {
+      background: #222;
     }
   </style>
 </head>
