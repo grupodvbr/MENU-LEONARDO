@@ -272,7 +272,7 @@ const ordenado = Object.entries(agrupado)
   .map(([data, valor]) => ({ data: new Date(data), valor }))
   .sort((a, b) => a.data - b.data);
 
-const labels = ordenado.map(item => item.data.toLocaleDateString('pt-BR'));
+const labels = ordenado.map(item => item.data.toISOString());
 const valores = ordenado.map(item => item.valor);
 
 
