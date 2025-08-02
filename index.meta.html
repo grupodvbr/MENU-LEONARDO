@@ -164,6 +164,7 @@ function formatarDataBR(dataISO) {
   return `${d}/${m}/${y}`;
 }
 
+// Preenche os inputs com o dia anterior ao dia atual
 function preencherDataOntem() {
   const hoje = new Date();
   const ontem = new Date(hoje);
@@ -193,7 +194,6 @@ async function carregarMetas() {
     const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
     diasCorridosNoMes = ultimoDiaMesRef.getDate();
 
-    // Corrigir previsão: usar dias até hoje se for o mês atual, senão até dataFim
     if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
       diasCorridosAteData = hoje.getDate();
     } else {
