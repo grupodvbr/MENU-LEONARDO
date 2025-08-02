@@ -88,8 +88,26 @@
       </select>
     </div>
     <div>
-      <label for="mesResumo">Mês:</label>
-      <select id="mesResumo" onchange="atualizarTudo()">
+      <label for="mesInicio">Mês Início:</label>
+      <select id="mesInicio" onchange="atualizarTudo()">
+        <option value="">Todos</option>
+        <option value="01">Janeiro</option>
+        <option value="02">Fevereiro</option>
+        <option value="03">Março</option>
+        <option value="04">Abril</option>
+        <option value="05">Maio</option>
+        <option value="06">Junho</option>
+        <option value="07">Julho</option>
+        <option value="08">Agosto</option>
+        <option value="09">Setembro</option>
+        <option value="10">Outubro</option>
+        <option value="11">Novembro</option>
+        <option value="12">Dezembro</option>
+      </select>
+    </div>
+    <div>
+      <label for="mesFim">Mês Fim:</label>
+      <select id="mesFim" onchange="atualizarTudo()">
         <option value="">Todos</option>
         <option value="01">Janeiro</option>
         <option value="02">Fevereiro</option>
@@ -122,9 +140,7 @@
   <div class="total-box">
     <h3>📊 Totais por Plataforma</h3>
     <table>
-      <thead>
-        <tr><th>Plataforma</th><th style="text-align:right">Total</th></tr>
-      </thead>
+      <thead><tr><th>Plataforma</th><th style="text-align:right">Total</th></tr></thead>
       <tbody id="tabela-plataformas"></tbody>
     </table>
   </div>
@@ -132,9 +148,7 @@
   <div class="total-box">
     <h3>🏆 Ranking de Empresas</h3>
     <table>
-      <thead>
-        <tr><th>Empresa</th><th style="text-align:right">Total</th></tr>
-      </thead>
+      <thead><tr><th>Empresa</th><th style="text-align:right">Total</th></tr></thead>
       <tbody id="tabela-ranking"></tbody>
     </table>
   </div>
@@ -152,17 +166,9 @@ const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG1
 let dados = [];
 let chart;
 
-function setDefaultDates() {
-  const hoje = new Date();
-  const mes = (hoje.getMonth()).toString().padStart(2, '0');
-  document.getElementById("mesResumo").value = mes;
-}
-
 async function carregarDados() {
-  setDefaultDates();
   const res = await fetch(URL_SCRIPT);
   dados = await res.json();
-
   const empresas = [...new Set(dados.map(d => d.empresa))].sort();
   const select = document.getElementById("empresaFiltro");
   empresas.forEach(emp => {
@@ -171,7 +177,6 @@ async function carregarDados() {
     opt.textContent = emp;
     select.appendChild(opt);
   });
-
   atualizarTudo();
 }
 
@@ -185,130 +190,124 @@ function atualizarTudo() {
 }
 
 function getFiltros() {
-  const mes = document.getElementById("mesResumo").value;
   const empresa = document.getElementById("empresaFiltro").value;
-  return dados.filter(d => (!empresa || d.empresa === empresa) && (!mes || d.data.split("-")[1] === mes));
+  const mesInicio = document.getElementById("mesInicio").value;
+  const mesFim = document.getElementById("mesFim").value;
+
+  return dados.filter(d => {
+    const mesDado = d.data.split("-")[1];
+    return (!empresa || d.empresa === empresa) &&
+           (!mesInicio || mesDado >= mesInicio) &&
+           (!mesFim || mesDado <= mesFim);
+  });
 }
 
 function atualizarTotais() {
   const filtrados = getFiltros();
-  let totalIfood = 0, totalDM = 0;
+  let ifood = 0, dm = 0;
   filtrados.forEach(d => {
-    const bruto = parseFloat(d.bruto || 0);
-    if (d.plataforma === "iFood") totalIfood += bruto;
-    if (d.plataforma === "Delivery Much") totalDM += bruto;
+    const v = parseFloat(d.bruto || 0);
+    if (d.plataforma === "iFood") ifood += v;
+    if (d.plataforma === "Delivery Much") dm += v;
   });
-  document.getElementById("total-ifood").textContent = "R$ " + totalIfood.toLocaleString('pt-BR');
-  document.getElementById("total-dm").textContent = "R$ " + totalDM.toLocaleString('pt-BR');
-  document.getElementById("total-geral").textContent = "R$ " + (totalIfood + totalDM).toLocaleString('pt-BR');
-}
-
-function filtrarGrafico() {
-  const filtrados = getFiltros();
-  const agrupado = {};
-  filtrados.forEach(d => {
-    const label = new Date(d.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    agrupado[label] = (agrupado[label] || 0) + parseFloat(d.bruto || 0);
-  });
-
-  const labels = Object.keys(agrupado).sort();
-  const valores = labels.map(k => agrupado[k]);
-
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Valor Bruto por Dia',
-        data: valores,
-        borderColor: '#2980b9',
-        backgroundColor: 'rgba(41,128,185,0.1)',
-        tension: 0.3,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: false, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } }
-      }
-    }
-  });
+  document.getElementById("total-ifood")?.remove();
+  document.getElementById("total-dm")?.remove();
+  document.getElementById("total-geral")?.remove();
 }
 
 function atualizarResumoEmpresa() {
   const filtrados = getFiltros();
   const resumo = {};
   filtrados.forEach(d => {
-    const plat = d.plataforma;
-    if (!resumo[plat]) resumo[plat] = { bruto: 0, liquido: 0, taxa: 0 };
-    resumo[plat].bruto += parseFloat(d.bruto || 0);
-    resumo[plat].liquido += parseFloat(d.liquido || 0);
-    resumo[plat].taxa += parseFloat(d.taxa || 0);
+    if (!resumo[d.plataforma]) resumo[d.plataforma] = { bruto: 0, liquido: 0, taxa: 0 };
+    resumo[d.plataforma].bruto += parseFloat(d.bruto || 0);
+    resumo[d.plataforma].liquido += parseFloat(d.liquido || 0);
+    resumo[d.plataforma].taxa += parseFloat(d.taxa || 0);
   });
-
   const div = document.getElementById("resumo-empresas");
   div.innerHTML = `<div class="resumo-linha"><strong>${document.getElementById("empresaFiltro").value || "TODAS"}</strong>`;
-  for (const plat in resumo) {
-    const r = resumo[plat];
+  for (const p in resumo) {
+    const r = resumo[p];
     const perc = (r.taxa / r.bruto) * 100 || 0;
-    div.innerHTML += `
-      <br><u>${plat}</u><br>
-      💰 Bruto: R$ ${r.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-      💵 Líquido: R$ ${r.liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-      📉 Investimento (${perc.toFixed(2)}%): R$ ${r.taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>`;
+    div.innerHTML += `<br><u>${p}</u><br>💰 Bruto: R$ ${r.bruto.toLocaleString('pt-BR')}<br>💵 Líquido: R$ ${r.liquido.toLocaleString('pt-BR')}<br>📉 Investimento (${perc.toFixed(2)}%): R$ ${r.taxa.toLocaleString('pt-BR')}<br>`;
   }
   div.innerHTML += `</div>`;
 }
 
+function filtrarGrafico() {
+  const filtrados = getFiltros();
+  const agr = {};
+  filtrados.forEach(d => {
+    const label = new Date(d.data).toLocaleDateString('pt-BR');
+    agr[label] = (agr[label] || 0) + parseFloat(d.bruto || 0);
+  });
+  const labels = Object.keys(agr).sort();
+  const valores = labels.map(k => agr[k]);
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("graficoVendas"), {
+    type: 'line',
+    data: {
+      labels, datasets: [{
+        label: 'Bruto por Dia',
+        data: valores,
+        borderColor: '#2c3e50',
+        backgroundColor: 'rgba(44, 62, 80, 0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
 function atualizarMediaMensal() {
   const filtrados = getFiltros();
-  const agrupado = {};
+  const meses = {};
   filtrados.forEach(d => {
-    const mes = d.data.substring(0, 7);
-    agrupado[mes] = (agrupado[mes] || 0) + parseFloat(d.bruto || 0);
+    const m = d.data.slice(0,7);
+    meses[m] = (meses[m] || 0) + parseFloat(d.bruto || 0);
   });
-  const totais = Object.values(agrupado);
-  const media = totais.length ? totais.reduce((a,b) => a + b, 0) / totais.length : 0;
+  const valores = Object.values(meses);
+  const media = valores.length ? valores.reduce((a,b) => a+b, 0) / valores.length : 0;
   document.getElementById("media-mensal").textContent = "R$ " + media.toLocaleString('pt-BR', { minimumFractionDigits: 3 });
 }
 
 function atualizarTotaisPorPlataforma() {
   const filtrados = getFiltros();
-  const totalPlataforma = {};
+  const soma = {};
   filtrados.forEach(d => {
-    totalPlataforma[d.plataforma] = (totalPlataforma[d.plataforma] || 0) + parseFloat(d.bruto || 0);
+    soma[d.plataforma] = (soma[d.plataforma] || 0) + parseFloat(d.bruto || 0);
   });
-  const corpo = document.getElementById("tabela-plataformas");
-  corpo.innerHTML = '';
-  Object.entries(totalPlataforma).forEach(([plat, val]) => {
-    corpo.innerHTML += `<tr><td>${plat}</td><td style="text-align:right">R$ ${val.toLocaleString('pt-BR')}</td></tr>`;
+  const el = document.getElementById("tabela-plataformas");
+  el.innerHTML = '';
+  Object.entries(soma).forEach(([p, v]) => {
+    el.innerHTML += `<tr><td>${p}</td><td style="text-align:right">R$ ${v.toLocaleString('pt-BR')}</td></tr>`;
   });
 }
 
 function atualizarRankingEmpresas() {
   const filtrados = getFiltros();
-  const totalEmpresas = {};
+  const soma = {};
   filtrados.forEach(d => {
-    totalEmpresas[d.empresa] = (totalEmpresas[d.empresa] || 0) + parseFloat(d.bruto || 0);
+    soma[d.empresa] = (soma[d.empresa] || 0) + parseFloat(d.bruto || 0);
   });
-  const ranking = Object.entries(totalEmpresas).sort((a,b) => b[1] - a[1]);
-  const corpo = document.getElementById("tabela-ranking");
-  corpo.innerHTML = '';
-  ranking.forEach(([emp, val]) => {
-    corpo.innerHTML += `<tr><td>${emp}</td><td style="text-align:right">R$ ${val.toLocaleString('pt-BR')}</td></tr>`;
+  const el = document.getElementById("tabela-ranking");
+  el.innerHTML = '';
+  Object.entries(soma).sort((a,b) => b[1] - a[1]).forEach(([e, v]) => {
+    el.innerHTML += `<tr><td>${e}</td><td style="text-align:right">R$ ${v.toLocaleString('pt-BR')}</td></tr>`;
   });
 }
 
 function enviarWhatsapp() {
-  const mes = document.getElementById("mesResumo").value || "Todos";
   const empresa = document.getElementById("empresaFiltro").value || "TODAS";
   const media = document.getElementById("media-mensal").textContent;
-  const msg = `📊 Resumo de Vendas Delivery\n🏢 Empresa: ${empresa}\n📅 Mês: ${mes}\n📈 Média por Mês: ${media}`;
-  const link = `https://wa.me/557799999999?text=${encodeURIComponent(msg)}`;
-  window.open(link, "_blank");
+  const msg = `📊 Resumo de Vendas Delivery\n🏢 Empresa: ${empresa}\n📈 Média: ${media}`;
+  const url = `https://wa.me/557799999999?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
 }
 
 carregarDados();
