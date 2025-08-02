@@ -81,12 +81,9 @@
     .filters button:hover {
       background-color: #363656;
     }
+    /* Botão verde estilo cancelamentos */
     #btnWhats {
-      width: auto;
-      max-width: 220px;
-      margin: 15px auto 30px auto;
-      display: block;
-      background-color: #25d366;
+      background-color: #25D366;
       color: white;
       padding: 12px 20px;
       border-radius: 8px;
@@ -96,6 +93,11 @@
       font-size: 1.1em;
       user-select: none;
       transition: background-color 0.3s ease;
+      float: right;
+      margin-bottom: 30px;
+      max-width: 220px;
+      width: 100%;
+      box-sizing: border-box;
     }
     #btnWhats:hover {
       background-color: #1ebe56;
@@ -107,6 +109,7 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
       color: #2c3e50;
+      clear: both; /* para o botão flutuante */
     }
     .metas-box h2 {
       margin: 0 0 12px;
@@ -147,7 +150,9 @@
         max-width: 100%;
       }
       #btnWhats {
+        float: none;
         max-width: 100%;
+        margin-bottom: 20px;
       }
     }
   </style>
@@ -205,13 +210,12 @@ function formatarDataBR(dataISO) {
 }
 
 window.onload = () => {
-  // Data fixa para simular o dia 01/08/2025
-  const hoje = new Date('2025-08-01T00:00:00');
+  const hoje = new Date();
   const ontem = new Date(hoje);
   ontem.setDate(ontem.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
-  document.getElementById("dataInicio").value = dataFormatada; // 31/07/2025
-  document.getElementById("dataFim").value = ''; // vazio para mostrar placeholder
+  document.getElementById("dataInicio").value = dataFormatada;
+  document.getElementById("dataFim").value = '';
   carregarMetas();
 };
 
