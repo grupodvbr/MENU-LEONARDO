@@ -140,7 +140,9 @@
   <div class="total-box">
     <h3>📊 Totais por Plataforma</h3>
     <table>
-      <thead><tr><th>Plataforma</th><th style="text-align:right">Total</th></tr></thead>
+      <thead>
+        <tr><th>Plataforma</th><th style="text-align:right">Total</th></tr>
+      </thead>
       <tbody id="tabela-plataformas"></tbody>
     </table>
   </div>
@@ -148,7 +150,7 @@
   <div class="total-box">
     <h3>🏆 Ranking de Empresas</h3>
     <table>
-      <thead><tr><th>Empresa</th><th style="text-align:right">Total</th></tr></thead>
+      <thead></thead>
       <tbody id="tabela-ranking"></tbody>
     </table>
   </div>
@@ -181,7 +183,6 @@ async function carregarDados() {
 }
 
 function atualizarTudo() {
-  atualizarTotais();
   atualizarResumoEmpresa();
   filtrarGrafico();
   atualizarMediaMensal();
@@ -195,61 +196,31 @@ function getFiltros() {
   const mesFim = document.getElementById("mesFim").value;
 
   return dados.filter(d => {
-    const mesDado = d.data.split("-")[1];
+    const mes = d.data.split("-")[1];
     return (!empresa || d.empresa === empresa) &&
-           (!mesInicio || mesDado >= mesInicio) &&
-           (!mesFim || mesDado <= mesFim);
+           (!mesInicio || mes >= mesInicio) &&
+           (!mesFim || mes <= mesFim);
   });
-}
-
-function atualizarTotais() {
-  const filtrados = getFiltros();
-  let ifood = 0, dm = 0;
-  filtrados.forEach(d => {
-    const v = parseFloat(d.bruto || 0);
-    if (d.plataforma === "iFood") ifood += v;
-    if (d.plataforma === "Delivery Much") dm += v;
-  });
-  document.getElementById("total-ifood")?.remove();
-  document.getElementById("total-dm")?.remove();
-  document.getElementById("total-geral")?.remove();
-}
-
-function atualizarResumoEmpresa() {
-  const filtrados = getFiltros();
-  const resumo = {};
-  filtrados.forEach(d => {
-    if (!resumo[d.plataforma]) resumo[d.plataforma] = { bruto: 0, liquido: 0, taxa: 0 };
-    resumo[d.plataforma].bruto += parseFloat(d.bruto || 0);
-    resumo[d.plataforma].liquido += parseFloat(d.liquido || 0);
-    resumo[d.plataforma].taxa += parseFloat(d.taxa || 0);
-  });
-  const div = document.getElementById("resumo-empresas");
-  div.innerHTML = `<div class="resumo-linha"><strong>${document.getElementById("empresaFiltro").value || "TODAS"}</strong>`;
-  for (const p in resumo) {
-    const r = resumo[p];
-    const perc = (r.taxa / r.bruto) * 100 || 0;
-    div.innerHTML += `<br><u>${p}</u><br>💰 Bruto: R$ ${r.bruto.toLocaleString('pt-BR')}<br>💵 Líquido: R$ ${r.liquido.toLocaleString('pt-BR')}<br>📉 Investimento (${perc.toFixed(2)}%): R$ ${r.taxa.toLocaleString('pt-BR')}<br>`;
-  }
-  div.innerHTML += `</div>`;
 }
 
 function filtrarGrafico() {
   const filtrados = getFiltros();
-  const agr = {};
+  const agrupado = {};
   filtrados.forEach(d => {
-    const label = new Date(d.data).toLocaleDateString('pt-BR');
-    agr[label] = (agr[label] || 0) + parseFloat(d.bruto || 0);
+    const mes = d.data.slice(0, 7); // YYYY-MM
+    agrupado[mes] = (agrupado[mes] || 0) + parseFloat(d.bruto || 0);
   });
-  const labels = Object.keys(agr).sort();
-  const valores = labels.map(k => agr[k]);
+
+  const labels = Object.keys(agrupado).sort();
+  const valores = labels.map(l => agrupado[l]);
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas"), {
     type: 'line',
     data: {
-      labels, datasets: [{
-        label: 'Bruto por Dia',
+      labels: labels,
+      datasets: [{
+        label: 'Bruto por Mês',
         data: valores,
         borderColor: '#2c3e50',
         backgroundColor: 'rgba(44, 62, 80, 0.2)',
@@ -266,40 +237,81 @@ function filtrarGrafico() {
 
 function atualizarMediaMensal() {
   const filtrados = getFiltros();
-  const meses = {};
+  const agrupado = {};
   filtrados.forEach(d => {
-    const m = d.data.slice(0,7);
-    meses[m] = (meses[m] || 0) + parseFloat(d.bruto || 0);
+    const mes = d.data.slice(0,7);
+    agrupado[mes] = (agrupado[mes] || 0) + parseFloat(d.bruto || 0);
   });
-  const valores = Object.values(meses);
-  const media = valores.length ? valores.reduce((a,b) => a+b, 0) / valores.length : 0;
-  document.getElementById("media-mensal").textContent = "R$ " + media.toLocaleString('pt-BR', { minimumFractionDigits: 3 });
+  const valores = Object.values(agrupado);
+  const media = valores.length ? valores.reduce((a,b) => a + b, 0) / valores.length : 0;
+  document.getElementById("media-mensal").textContent = "R$ " + media.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
 
 function atualizarTotaisPorPlataforma() {
   const filtrados = getFiltros();
-  const soma = {};
+  const totais = {};
   filtrados.forEach(d => {
-    soma[d.plataforma] = (soma[d.plataforma] || 0) + parseFloat(d.bruto || 0);
+    totais[d.plataforma] = (totais[d.plataforma] || 0) + parseFloat(d.bruto || 0);
   });
   const el = document.getElementById("tabela-plataformas");
   el.innerHTML = '';
-  Object.entries(soma).forEach(([p, v]) => {
-    el.innerHTML += `<tr><td>${p}</td><td style="text-align:right">R$ ${v.toLocaleString('pt-BR')}</td></tr>`;
+  Object.entries(totais).forEach(([plat, val]) => {
+    el.innerHTML += `<tr><td>${plat}</td><td style="text-align:right">R$ ${val.toLocaleString('pt-BR')}</td></tr>`;
   });
 }
 
 function atualizarRankingEmpresas() {
   const filtrados = getFiltros();
-  const soma = {};
+  const dadosMesEmpresa = {};
+
   filtrados.forEach(d => {
-    soma[d.empresa] = (soma[d.empresa] || 0) + parseFloat(d.bruto || 0);
+    const mes = d.data.slice(0, 7);
+    const empresa = d.empresa;
+    const valor = parseFloat(d.bruto || 0);
+
+    if (!dadosMesEmpresa[mes]) dadosMesEmpresa[mes] = {};
+    if (!dadosMesEmpresa[mes][empresa]) dadosMesEmpresa[mes][empresa] = 0;
+
+    dadosMesEmpresa[mes][empresa] += valor;
   });
-  const el = document.getElementById("tabela-ranking");
-  el.innerHTML = '';
-  Object.entries(soma).sort((a,b) => b[1] - a[1]).forEach(([e, v]) => {
-    el.innerHTML += `<tr><td>${e}</td><td style="text-align:right">R$ ${v.toLocaleString('pt-BR')}</td></tr>`;
+
+  const mesesOrdenados = Object.keys(dadosMesEmpresa).sort();
+  const todasEmpresas = [...new Set(filtrados.map(d => d.empresa))].sort();
+
+  const corpo = document.getElementById("tabela-ranking");
+  const thead = corpo.parentElement.querySelector('thead');
+  thead.innerHTML = `<tr><th>Mês</th>${todasEmpresas.map(emp => `<th style="text-align:right">${emp}</th>`).join('')}</tr>`;
+  corpo.innerHTML = '';
+
+  mesesOrdenados.forEach(mes => {
+    const linha = [`<td>${mes}</td>`];
+    todasEmpresas.forEach(emp => {
+      const valor = dadosMesEmpresa[mes][emp] || 0;
+      linha.push(`<td style="text-align:right">R$ ${valor.toLocaleString('pt-BR')}</td>`);
+    });
+    corpo.innerHTML += `<tr>${linha.join('')}</tr>`;
   });
+}
+
+function atualizarResumoEmpresa() {
+  const filtrados = getFiltros();
+  const resumo = {};
+  filtrados.forEach(d => {
+    const p = d.plataforma;
+    if (!resumo[p]) resumo[p] = { bruto: 0, liquido: 0, taxa: 0 };
+    resumo[p].bruto += parseFloat(d.bruto || 0);
+    resumo[p].liquido += parseFloat(d.liquido || 0);
+    resumo[p].taxa += parseFloat(d.taxa || 0);
+  });
+
+  const div = document.getElementById("resumo-empresas");
+  div.innerHTML = `<div class="resumo-linha"><strong>${document.getElementById("empresaFiltro").value || "TODAS"}</strong>`;
+  for (const p in resumo) {
+    const r = resumo[p];
+    const perc = (r.taxa / r.bruto) * 100 || 0;
+    div.innerHTML += `<br><u>${p}</u><br>💰 Bruto: R$ ${r.bruto.toLocaleString('pt-BR')}<br>💵 Líquido: R$ ${r.liquido.toLocaleString('pt-BR')}<br>📉 Investimento (${perc.toFixed(2)}%): R$ ${r.taxa.toLocaleString('pt-BR')}<br>`;
+  }
+  div.innerHTML += `</div>`;
 }
 
 function enviarWhatsapp() {
