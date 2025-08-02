@@ -71,13 +71,6 @@
       background-color: #25d366;
       color: white;
       margin: 10px 0;
-      float: right;
-      max-width: 220px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    #btnWhats:hover {
-      background-color: #1ebe56;
     }
     .metas-box {
       background: white;
@@ -85,7 +78,6 @@
       padding: 20px;
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      clear: both;
     }
     .metas-box h2 {
       margin: 0 0 10px;
@@ -102,7 +94,6 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
       padding: 20px;
       margin-bottom: 20px;
-      clear: both;
     }
     .chart-box h3 {
       margin-top: 0;
@@ -119,10 +110,6 @@
       header img {
         margin: 0 0 10px;
       }
-      #btnWhats {
-        float: none;
-        max-width: 100%;
-      }
     }
   </style>
 </head>
@@ -130,18 +117,18 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1></h1>Painel de Metas</h1>
+  <h1>📊 Painel de Metas - Grupo DV</h1>
 </header>
 
 <div class="container">
   <div class="filters">
     <div>
       <label>Data Início:</label>
-      <input type="date" id="dataInicio" />
+      <input type="date" id="dataInicio">
     </div>
     <div>
       <label>Data Fim:</label>
-      <input type="date" id="dataFim" />
+      <input type="date" id="dataFim">
     </div>
     <div>
       <label>Empresa:</label>
@@ -158,7 +145,7 @@
 
   <div id="painelMetas"></div>
 
-  <div class="chart-box" id="graficoContainer" style="display:none;">
+  <div class="chart-box" id="graficoContainer">
     <h3>📈 Evolução do Faturamento</h3>
     <canvas id="graficoFaturamento"></canvas>
   </div>
@@ -183,13 +170,12 @@ function preencherDataOntem() {
   ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split("T")[0];
   document.getElementById("dataInicio").value = dataFormatada;
-  document.getElementById("dataFim").value = '';
+  document.getElementById("dataFim").value = dataFormatada;
 }
 
 async function carregarMetas() {
   const painel = document.getElementById("painelMetas");
   painel.innerHTML = "Carregando...";
-  esconderGrafico();
 
   const dataInicio = document.getElementById("dataInicio").value;
   const dataFim = document.getElementById("dataFim").value;
