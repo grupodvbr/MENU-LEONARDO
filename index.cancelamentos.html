@@ -146,8 +146,8 @@
     const res = await fetch(URL_SCRIPT);
     cancelamentos = await res.json();
     preencherFiltros();
-    aplicarFiltros();
     preencherDataPadrao();
+    aplicarFiltros();
   }
 
   function formatarMoeda(valor) {
