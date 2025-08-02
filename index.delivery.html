@@ -19,7 +19,7 @@
     header img { height: 50px; margin-right: 20px; }
     header h1 { margin: 0; font-size: 1.6em; font-weight: bold; }
     .container { padding: 20px; }
-    .chart-box, .total-box, .resumo-box {
+    .chart-box, .total-box, .resumo-box, .ranking-box {
       background: white;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
@@ -54,9 +54,13 @@
       cursor: pointer;
       float: right;
     }
-    .resumo-box table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .resumo-box th, .resumo-box td { padding: 8px; border: 1px solid #ddd; text-align: left; }
-    .resumo-box th { background: #f5f5f5; }
+    .resumo-box table, .ranking-box table {
+      width: 100%; border-collapse: collapse; margin-top: 10px;
+    }
+    .resumo-box th, .resumo-box td, .ranking-box th, .ranking-box td {
+      padding: 8px; border: 1px solid #ddd; text-align: left;
+    }
+    .resumo-box th, .ranking-box th { background: #f5f5f5; }
   </style>
 </head>
 <body>
@@ -109,25 +113,30 @@
       <tbody id="tabelaResumo"></tbody>
     </table>
   </div>
+
+  <div class="ranking-box" id="rankingEmpresas">
+    <h3>🏆 Ranking de Empresas</h3>
+    <table>
+      <thead><tr><th>Empresa</th><th>Total</th></tr></thead>
+      <tbody id="tabelaRanking"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
 let chart;
-
 const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 window.onload = async () => {
   const hoje = new Date();
   const mesAtual = hoje.getMonth();
-
   const mesInicial = document.getElementById("mesInicial");
   const mesFinal = document.getElementById("mesFinal");
   meses.forEach((m, i) => {
     mesInicial.innerHTML += `<option value="${i + 1}" ${i === 0 ? 'selected' : ''}>${m}</option>`;
     mesFinal.innerHTML += `<option value="${i + 1}" ${i === mesAtual ? 'selected' : ''}>${m}</option>`;
   });
-
   await carregarEmpresas();
   carregarDados();
 };
@@ -149,7 +158,6 @@ async function carregarEmpresas() {
 async function carregarDados() {
   const res = await fetch(URL_SCRIPT);
   const dados = await res.json();
-
   const mesIni = parseInt(document.getElementById("mesInicial").value);
   const mesFim = parseInt(document.getElementById("mesFinal").value);
   const empresasSelecionadas = [...document.getElementById("empresa").selectedOptions].map(o => o.value);
@@ -164,11 +172,13 @@ async function carregarDados() {
   });
 
   const dadosPorEmpresa = {};
+  const rankingTotal = {};
   filtrado.forEach(d => {
     const data = new Date(d.data);
     const mesAno = luxon.DateTime.fromJSDate(data).toFormat('MM/yyyy');
     if (!dadosPorEmpresa[d.empresa]) dadosPorEmpresa[d.empresa] = {};
     dadosPorEmpresa[d.empresa][mesAno] = (dadosPorEmpresa[d.empresa][mesAno] || 0) + parseFloat(d.bruto || 0);
+    rankingTotal[d.empresa] = (rankingTotal[d.empresa] || 0) + parseFloat(d.bruto || 0);
   });
 
   const datasets = Object.keys(dadosPorEmpresa).map((empresa, idx) => {
@@ -197,6 +207,9 @@ async function carregarDados() {
   });
   const tbody = document.getElementById("tabelaResumo");
   tbody.innerHTML = Object.entries(totaisPorPlataforma).map(([p, v]) => `<tr><td>${p}</td><td>R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`).join("");
+
+  const rankingBody = document.getElementById("tabelaRanking");
+  rankingBody.innerHTML = Object.entries(rankingTotal).sort((a,b) => b[1] - a[1]).map(([empresa, valor]) => `<tr><td>${empresa}</td><td>R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`).join("");
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext("2d"), {
