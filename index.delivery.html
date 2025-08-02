@@ -26,7 +26,7 @@
       padding: 20px;
       margin-bottom: 20px;
     }
-    .chart-box canvas { max-width: 100%; height: 180px !important; }
+    .chart-box canvas { max-width: 100%; height: 200px !important; }
     .filters {
       display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end;
     }
@@ -82,7 +82,7 @@
     </div>
     <div>
       <label for="empresa">Empresa</label>
-      <select id="empresa" multiple size="4"></select>
+      <select id="empresa"></select>
     </div>
     <div>
       <label for="plataforma">Plataforma</label>
@@ -146,13 +146,14 @@ async function carregarEmpresas() {
   const dados = await res.json();
   const empresas = [...new Set(dados.map(d => d.empresa))].sort();
   const empresaSelect = document.getElementById("empresa");
+  empresaSelect.innerHTML = `<option value="Todas">Todas</option>`;
   empresas.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp;
     opt.textContent = emp;
-    opt.selected = true;
     empresaSelect.appendChild(opt);
   });
+  empresaSelect.value = "Todas";
 }
 
 async function carregarDados() {
@@ -160,14 +161,14 @@ async function carregarDados() {
   const dados = await res.json();
   const mesIni = parseInt(document.getElementById("mesInicial").value);
   const mesFim = parseInt(document.getElementById("mesFinal").value);
-  const empresasSelecionadas = [...document.getElementById("empresa").selectedOptions].map(o => o.value);
+  const empresaSelecionada = document.getElementById("empresa").value;
   const plataforma = document.getElementById("plataforma").value;
 
   const filtrado = dados.filter(d => {
     const dt = new Date(d.data);
     const mes = dt.getMonth() + 1;
     return mes >= mesIni && mes <= mesFim &&
-      (empresasSelecionadas.includes(d.empresa)) &&
+      (empresaSelecionada === "Todas" || d.empresa === empresaSelecionada) &&
       (plataforma === "Todas" || plataforma === d.plataforma);
   });
 
