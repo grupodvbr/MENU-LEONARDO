@@ -5,11 +5,15 @@
   <title>Vendas Delivery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: white;
+      margin: 0;
+      padding: 0;
+    }
     header {
       background-color: white;
       padding: 10px 20px;
@@ -17,9 +21,18 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
-    header img { height: 50px; margin-right: 20px; }
-    header h1 { margin: 0; font-size: 1.6em; font-weight: bold; }
-    .container { padding: 20px; }
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
     .chart-box, .total-box, .resumo-box {
       background: white;
       border-radius: 10px;
@@ -27,20 +40,38 @@
       padding: 20px;
       margin-bottom: 20px;
     }
-    .chart-box canvas { max-width: 100%; height: 300px; }
-    .total-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1em; }
-    .total-line strong { font-weight: bold; }
-    .filters {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end;
+    .chart-box canvas {
+      max-width: 100%;
+      height: 200px !important;
     }
-    .filters label { font-weight: bold; }
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 1.1em;
+    }
+    .total-line strong {
+      font-weight: bold;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
+    }
+    .filters label {
+      font-weight: bold;
+    }
     .filters select {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       width: 100%;
     }
-    .filters > div { flex: 1 1 200px; }
+    .filters > div {
+      flex: 1 1 200px;
+    }
     .filters button {
       padding: 10px 20px;
       border: none;
@@ -59,13 +90,10 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       border: 1px solid #eee;
     }
-    .resumo-linha strong { display: block; font-size: 1.1em; margin-bottom: 4px; }
-    .total-box select#empresaResumo {
-      margin-top: 5px;
-      margin-left: 10px;
-      padding: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+    .resumo-linha strong {
+      display: block;
+      font-size: 1.1em;
+      margin-bottom: 4px;
     }
     .btn-whatsapp {
       background-color: #25D366;
@@ -81,112 +109,111 @@
   </style>
 </head>
 <body>
+  <header>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+    <h1>Vendas Delivery</h1>
+  </header>
 
-<header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Vendas Delivery</h1>
-</header>
-
-<div class="container">
-  <div class="total-box">
-    <div style="float:right">
-      <label for="mesResumo">Mês:</label>
-      <select id="mesResumo" onchange="atualizarTotais()">
-        <option value="">Todos</option>
-        <option value="01">Janeiro</option>
-        <option value="02">Fevereiro</option>
-        <option value="03">Março</option>
-        <option value="04">Abril</option>
-        <option value="05">Maio</option>
-        <option value="06">Junho</option>
-        <option value="07">Julho</option>
-        <option value="08">Agosto</option>
-        <option value="09">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
-      </select>
-      <br>
-      <label for="empresaResumo">Empresa:</label>
-      <select id="empresaResumo" onchange="atualizarTotais()">
-        <option value="">Todas</option>
-      </select>
+  <div class="container">
+    <div class="total-box">
+      <div style="float:right">
+        <label for="mesResumo">Mês:</label>
+        <select id="mesResumo" onchange="atualizarTotais()">
+          <option value="">Todos</option>
+          <option value="01">Janeiro</option>
+          <option value="02">Fevereiro</option>
+          <option value="03">Março</option>
+          <option value="04">Abril</option>
+          <option value="05">Maio</option>
+          <option value="06">Junho</option>
+          <option value="07">Julho</option>
+          <option value="08">Agosto</option>
+          <option value="09">Setembro</option>
+          <option value="10">Outubro</option>
+          <option value="11">Novembro</option>
+          <option value="12">Dezembro</option>
+        </select>
+        <br>
+        <label for="empresaResumo">Empresa:</label>
+        <select id="empresaResumo" onchange="atualizarTotais()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <h3>💰 Totais por Plataforma</h3>
+      <div class="total-line"><span>iFood</span><span id="total-ifood">R$ 0,00</span></div>
+      <div class="total-line"><span>Delivery Much</span><span id="total-dm">R$ 0,00</span></div>
+      <hr />
+      <div class="total-line"><strong>Total Geral</strong><strong id="total-geral">R$ 0,00</strong></div>
     </div>
-    <h3>💰 Totais por Plataforma</h3>
-    <div class="total-line"><span>iFood</span><span id="total-ifood">R$ 0,00</span></div>
-    <div class="total-line"><span>Delivery Much</span><span id="total-dm">R$ 0,00</span></div>
-    <hr />
-    <div class="total-line"><strong>Total Geral</strong><strong id="total-geral">R$ 0,00</strong></div>
+
+    <div class="chart-box">
+      <h3>📈 Vendas Brutas por Dia</h3>
+      <canvas id="graficoVendas"></canvas>
+    </div>
+
+    <div class="filters">
+      <div>
+        <label for="mesInicio">Mês Inicial</label>
+        <select id="mesInicio">
+          <option value="">Todos</option>
+          <option value="01">Janeiro</option>
+          <option value="02">Fevereiro</option>
+          <option value="03">Março</option>
+          <option value="04">Abril</option>
+          <option value="05">Maio</option>
+          <option value="06">Junho</option>
+          <option value="07">Julho</option>
+          <option value="08">Agosto</option>
+          <option value="09">Setembro</option>
+          <option value="10">Outubro</option>
+          <option value="11">Novembro</option>
+          <option value="12">Dezembro</option>
+        </select>
+      </div>
+      <div>
+        <label for="mesFim">Mês Final</label>
+        <select id="mesFim">
+          <option value="">Todos</option>
+          <option value="01">Janeiro</option>
+          <option value="02">Fevereiro</option>
+          <option value="03">Março</option>
+          <option value="04">Abril</option>
+          <option value="05">Maio</option>
+          <option value="06">Junho</option>
+          <option value="07">Julho</option>
+          <option value="08">Agosto</option>
+          <option value="09">Setembro</option>
+          <option value="10">Outubro</option>
+          <option value="11">Novembro</option>
+          <option value="12">Dezembro</option>
+        </select>
+      </div>
+      <div>
+        <label for="empresa">Empresa</label>
+        <select id="empresa">
+          <option value="todas">Todas</option>
+        </select>
+      </div>
+      <div>
+        <label for="plataforma">Plataforma</label>
+        <select id="plataforma">
+          <option value="todas">Todas</option>
+          <option value="iFood">iFood</option>
+          <option value="Delivery Much">Delivery Much</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="atualizarResumoEmpresa(); filtrarGrafico()">Filtrar Resumo</button>
+      </div>
+    </div>
+
+    <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
+    <div class="resumo-box">
+      <h3>🏪 Resumo por Empresa</h3>
+      <div id="resumo-empresas"></div>
+    </div>
   </div>
-
-  <div class="chart-box">
-    <h3>📈 Vendas Brutas por Mês</h3>
-    <canvas id="graficoVendas"></canvas>
-  </div>
-
-  <div class="filters">
-    <div>
-      <label for="mesInicio">Mês Inicial</label>
-      <select id="mesInicio">
-        <option value="">Todos</option>
-        <option value="01">Janeiro</option>
-        <option value="02">Fevereiro</option>
-        <option value="03">Março</option>
-        <option value="04">Abril</option>
-        <option value="05">Maio</option>
-        <option value="06">Junho</option>
-        <option value="07">Julho</option>
-        <option value="08">Agosto</option>
-        <option value="09">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
-      </select>
-    </div>
-    <div>
-      <label for="mesFim">Mês Final</label>
-      <select id="mesFim">
-        <option value="">Todos</option>
-        <option value="01">Janeiro</option>
-        <option value="02">Fevereiro</option>
-        <option value="03">Março</option>
-        <option value="04">Abril</option>
-        <option value="05">Maio</option>
-        <option value="06">Junho</option>
-        <option value="07">Julho</option>
-        <option value="08">Agosto</option>
-        <option value="09">Setembro</option>
-        <option value="10">Outubro</option>
-        <option value="11">Novembro</option>
-        <option value="12">Dezembro</option>
-      </select>
-    </div>
-    <div>
-      <label for="empresa">Empresa</label>
-      <select id="empresa">
-        <option value="todas">Todas</option>
-      </select>
-    </div>
-    <div>
-      <label for="plataforma">Plataforma</label>
-      <select id="plataforma">
-        <option value="todas">Todas</option>
-        <option value="iFood">iFood</option>
-        <option value="Delivery Much">Delivery Much</option>
-      </select>
-    </div>
-    <div>
-      <button onclick="atualizarResumoEmpresa(); filtrarGrafico()">Filtrar Resumo</button>
-    </div>
-  </div>
-
-  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-
-  <div class="resumo-box">
-    <h3>🏪 Resumo por Empresa</h3>
-    <div id="resumo-empresas"></div>
-  </div>
-</div>
 
 <script>
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
@@ -252,29 +279,18 @@ function filtrarGrafico() {
   const plataforma = document.getElementById("plataforma").value;
 
   const agrupado = {};
-
   dados.forEach(d => {
     const mesDado = d.data.split("-")[1];
-    if ((mesInicio && mesDado < mesInicio) || 
-        (mesFim && mesDado > mesFim) || 
-        (empresa !== "todas" && d.empresa !== empresa) ||
-        (plataforma !== "todas" && d.plataforma !== plataforma)) {
-      return;
-    }
-
-    const data = d.data;
-    const bruto = parseFloat(d.bruto || 0);
-   const chave = new Date(data).toISOString().split('T')[0]; // formato yyyy-mm-dd
-agrupado[chave] = (agrupado[chave] || 0) + bruto;
+    if ((mesInicio && mesDado < mesInicio) || (mesFim && mesDado > mesFim) || (empresa !== "todas" && d.empresa !== empresa) || (plataforma !== "todas" && d.plataforma !== plataforma)) return;
+    agrupado[d.data] = (agrupado[d.data] || 0) + parseFloat(d.bruto || 0);
   });
 
-const ordenado = Object.entries(agrupado)
-  .map(([data, valor]) => ({ data: new Date(data), valor }))
-  .sort((a, b) => a.data - b.data);
+  const ordenado = Object.entries(agrupado)
+    .map(([data, valor]) => ({ data: new Date(data), valor }))
+    .sort((a, b) => a.data - b.data);
 
-const labels = ordenado.map(item => item.data.toISOString());
-const valores = ordenado.map(item => item.valor);
-
+  const labels = ordenado.map(item => item.data.toLocaleDateString('pt-BR'));
+  const valores = ordenado.map(item => item.valor);
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
@@ -296,24 +312,21 @@ const valores = ordenado.map(item => item.valor);
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-  x: {
-    type: 'time',
-    time: {
-      unit: 'day',
-      tooltipFormat: 'dd/MM/yyyy',
-      displayFormats: {
-        day: 'dd/MM'
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day',
+            tooltipFormat: 'dd/MM/yyyy',
+            displayFormats: { day: 'dd/MM' }
+          }
+        },
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+          }
+        }
       }
-    }
-  },
-  y: {
-    beginAtZero: false,
-    ticks: {
-      callback: value => 'R$ ' + value.toLocaleString('pt-BR')
-    }
-  }
-}
-
     }
   });
 }
