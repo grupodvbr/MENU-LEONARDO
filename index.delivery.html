@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 0; }
     header {
@@ -43,6 +44,20 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .total-box { text-align: center; font-size: 1.2em; font-weight: bold; }
+    .export-btn, .whatsapp-btn {
+      background-color: #27ae60;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .whatsapp-btn { float: right; margin-left: 10px; background-color: #25d366; }
+    .resumo-box table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .resumo-box th, .resumo-box td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+    .resumo-box th { background: #f5f5f5; }
   </style>
 </head>
 <body>
@@ -80,8 +95,21 @@
   </div>
 
   <div class="chart-box">
-    <h3>📈 Vendas Brutas por Dia</h3>
+    <h3>📈 Vendas Brutas por Dia
+      <button class="whatsapp-btn" onclick="enviarWhatsapp()">Enviar via WhatsApp</button>
+      <button class="export-btn" onclick="exportarPDF()">Exportar PDF</button>
+    </h3>
     <canvas id="graficoVendas"></canvas>
+  </div>
+
+  <div class="total-box" id="mediaMensal"></div>
+
+  <div class="resumo-box" id="resumo">
+    <h3>📊 Totais por Plataforma</h3>
+    <table>
+      <thead><tr><th>Plataforma</th><th>Total</th></tr></thead>
+      <tbody id="tabelaResumo"></tbody>
+    </table>
   </div>
 </div>
 
@@ -110,7 +138,6 @@ async function carregarEmpresas() {
   const res = await fetch(URL_SCRIPT);
   const dados = await res.json();
   const empresas = [...new Set(dados.map(d => d.empresa))].sort();
-
   const empresaSelect = document.getElementById("empresa");
   empresas.forEach(emp => {
     const opt = document.createElement("option");
@@ -143,11 +170,23 @@ async function carregarDados() {
     const key = data.toISOString().split("T")[0];
     agrupado[key] = (agrupado[key] || 0) + parseFloat(d.bruto || 0);
   });
-
   const pontos = Object.entries(agrupado).map(([x, y]) => ({ x, y })).sort((a, b) => new Date(a.x) - new Date(b.x));
 
-  if (chart) chart.destroy();
+  const mesesUnicos = new Set(filtrado.map(d => new Date(d.data).getMonth()));
+  const totalGeral = filtrado.reduce((soma, d) => soma + parseFloat(d.bruto || 0), 0);
+  const media = totalGeral / mesesUnicos.size;
+  document.getElementById("mediaMensal").innerText = `📊 Média por Mês: R$ ${media.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
+  // Tabela resumo por plataforma
+  const totaisPorPlataforma = {};
+  filtrado.forEach(d => {
+    const plat = d.plataforma || "Outros";
+    totaisPorPlataforma[plat] = (totaisPorPlataforma[plat] || 0) + parseFloat(d.bruto || 0);
+  });
+  const tbody = document.getElementById("tabelaResumo");
+  tbody.innerHTML = Object.entries(totaisPorPlataforma).map(([p, v]) => `<tr><td>${p}</td><td>R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`).join("");
+
+  if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext("2d"), {
     type: "line",
     data: {
@@ -164,35 +203,32 @@ async function carregarDados() {
     },
     options: {
       responsive: true,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
         x: {
           type: "time",
-          time: {
-            unit: "day",
-            tooltipFormat: "dd/MM/yyyy",
-            displayFormats: { day: "dd/MM" }
-          },
-          title: {
-            display: true,
-            text: "Data"
-          }
+          time: { unit: "day", tooltipFormat: "dd/MM/yyyy", displayFormats: { day: "dd/MM" } },
+          title: { display: true, text: "Data" }
         },
         y: {
           beginAtZero: false,
-          ticks: {
-            callback: value => "R$ " + value.toLocaleString("pt-BR")
-          },
-          title: {
-            display: true,
-            text: "Valor Bruto"
-          }
+          ticks: { callback: value => "R$ " + value.toLocaleString("pt-BR") },
+          title: { display: true, text: "Valor Bruto" }
         }
       }
     }
   });
+}
+
+function exportarPDF() {
+  html2pdf().from(document.querySelector(".container")).save();
+}
+
+function enviarWhatsapp() {
+  const texto = document.getElementById("mediaMensal").innerText + "\n";
+  const linhas = [...document.querySelectorAll("#tabelaResumo tr")].map(l => l.innerText).join("\n");
+  const mensagem = encodeURIComponent(texto + linhas);
+  window.open(`https://wa.me/?text=${mensagem}`, "_blank");
 }
 </script>
 
