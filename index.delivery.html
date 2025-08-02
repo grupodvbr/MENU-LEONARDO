@@ -206,8 +206,12 @@ async function carregarDados() {
       scales: {
         x: {
           type: "time",
-          time: { unit: "day", tooltipFormat: "dd/MM/yyyy", displayFormats: { day: "dd/MM" } },
-          title: { display: true, text: "Data" }
+          time: {
+            unit: "month",
+            tooltipFormat: "MM/yy",
+            displayFormats: { month: "MM/yy" }
+          },
+          title: { display: true, text: "Mês" }
         },
         y: {
           beginAtZero: false,
