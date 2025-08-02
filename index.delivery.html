@@ -5,6 +5,9 @@
   <title>Vendas Delivery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+
   <style>
     body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 0; }
     header {
@@ -261,12 +264,17 @@ function filtrarGrafico() {
 
     const data = d.data;
     const bruto = parseFloat(d.bruto || 0);
-    const label = new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    agrupado[label] = (agrupado[label] || 0) + bruto;
+   const chave = new Date(data).toISOString().split('T')[0]; // formato yyyy-mm-dd
+agrupado[chave] = (agrupado[chave] || 0) + bruto;
   });
 
-  const labels = Object.keys(agrupado).sort();
-  const valores = labels.map(d => agrupado[d]);
+const ordenado = Object.entries(agrupado)
+  .map(([data, valor]) => ({ data: new Date(data), valor }))
+  .sort((a, b) => a.data - b.data);
+
+const labels = ordenado.map(item => item.data.toLocaleDateString('pt-BR'));
+const valores = ordenado.map(item => item.valor);
+
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext('2d'), {
@@ -288,13 +296,24 @@ function filtrarGrafico() {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        y: {
-          beginAtZero: false,
-          ticks: {
-            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
-          }
-        }
+  x: {
+    type: 'time',
+    time: {
+      unit: 'day',
+      tooltipFormat: 'dd/MM/yyyy',
+      displayFormats: {
+        day: 'dd/MM'
       }
+    }
+  },
+  y: {
+    beginAtZero: false,
+    ticks: {
+      callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+    }
+  }
+}
+
     }
   });
 }
