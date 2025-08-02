@@ -17,18 +17,21 @@
       display: flex;
       align-items: center;
       border-bottom: 1px solid #ccc;
+      gap: 10px; /* Espaço entre logo e título */
     }
     header img {
       height: 50px;
-      margin-right: 20px;
+      flex-shrink: 0; /* Não deixar a logo encolher */
     }
     header h1 {
-      margin: 0 auto;
+      margin: 0;
       font-size: 1.6em;
       font-weight: bold;
-      text-align: center;
-      flex: 1;
       color: #000;
+      flex-grow: 1;       /* Ocupa o espaço restante */
+      white-space: nowrap; /* Não quebra linha */
+      overflow: hidden;
+      text-overflow: ellipsis; /* Texto com reticências se ultrapassar */
     }
     .container {
       padding: 20px;
