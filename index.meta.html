@@ -156,7 +156,7 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems" />
-  <h2>Painel de Metas</h2>
+  <h1>Painel de Metas</h1>
 </header>
 
 <div class="container">
@@ -204,14 +204,16 @@ function formatarDataBR(dataISO) {
   return `${d}/${m}/${y}`;
 }
 
-function preencherDataOntem() {
-  const hoje = new Date();
+window.onload = () => {
+  // Data fixa para simular o dia 01/08/2025
+  const hoje = new Date('2025-08-01T00:00:00');
   const ontem = new Date(hoje);
-  ontem.setDate(hoje.getDate() - 1);
-  const dataFormatada = ontem.toISOString().split("T")[0];
-  document.getElementById("dataInicio").value = dataFormatada;
-  document.getElementById("dataFim").value = dataFormatada;
-}
+  ontem.setDate(ontem.getDate() - 1);
+  const dataFormatada = ontem.toISOString().split('T')[0];
+  document.getElementById("dataInicio").value = dataFormatada; // 31/07/2025
+  document.getElementById("dataFim").value = ''; // vazio para mostrar placeholder
+  carregarMetas();
+};
 
 async function carregarMetas() {
   const painel = document.getElementById("painelMetas");
@@ -374,11 +376,6 @@ document.getElementById("btnWhats").addEventListener("click", () => {
   const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
   window.open(link, "_blank");
 });
-
-window.onload = () => {
-  preencherDataOntem();
-  carregarMetas();
-};
 </script>
 
 </body>
