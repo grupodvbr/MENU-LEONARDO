@@ -172,7 +172,7 @@
     ontem.setDate(hoje.getDate() - 1);
     const formato = d => d.toISOString().split('T')[0];
     document.getElementById("dataInicio").value = formato(ontem);
-    document.getElementById("dataFim").value = formato(ontem);
+    document.getElementById("dataFim").value = ""; // campo vazio por padrão
   }
 
   function aplicarFiltros() {
