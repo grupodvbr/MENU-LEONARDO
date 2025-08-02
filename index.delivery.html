@@ -289,11 +289,16 @@ function atualizarRankingEmpresas() {
   corpo.innerHTML = '';
 
   mesesOrdenados.forEach(mes => {
+    const valores = todasEmpresas.map(emp => dadosMesEmpresa[mes][emp] || 0);
+    const max = Math.max(...valores);
+
     const linha = [`<td>${traduzMes(mes)}</td>`];
     todasEmpresas.forEach(emp => {
       const valor = dadosMesEmpresa[mes][emp] || 0;
-      linha.push(`<td style="text-align:right">R$ ${valor.toLocaleString('pt-BR')}</td>`);
+      const destaque = valor === max ? ' style="text-align:right; color:green; font-weight:bold"' : ' style="text-align:right"';
+      linha.push(`<td${destaque}>R$ ${valor.toLocaleString('pt-BR')}</td>`);
     });
+
     corpo.innerHTML += `<tr>${linha.join('')}</tr>`;
   });
 }
@@ -337,5 +342,6 @@ function enviarWhatsapp() {
 
 carregarDados();
 </script>
+
 </body>
 </html>
