@@ -10,17 +10,18 @@
       background: #f7f7f7;
       margin: 0;
       padding: 0;
+      font-size: 14px;
     }
     header {
       background-color: white;
-      padding: 10px 20px;
+      padding: 20px;
       display: flex;
       align-items: center;
       border-bottom: 1px solid #ccc;
       gap: 10px;
     }
     header img {
-      height: 50px;
+      height: 60px;
       flex-shrink: 0;
     }
     header h1 {
@@ -32,6 +33,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-align: center;
     }
     .container {
       padding: 20px;
@@ -43,12 +45,14 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
+      align-items: end;
     }
     .filters select, .filters input {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       flex: 1 1 200px;
+      font-size: 0.95em;
     }
     .grupo-empresa {
       background: white;
@@ -56,10 +60,11 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
       margin-bottom: 30px;
       padding: 15px 20px;
+      font-size: 0.95em;
     }
     .grupo-empresa h2 {
       margin-top: 0;
-      font-size: 1.4em;
+      font-size: 1.2em;
       color: #2c3e50;
     }
     .item-cancelamento {
@@ -76,25 +81,26 @@
     .subtotal {
       font-weight: bold;
       margin-top: 10px;
-      font-size: 1.1em;
+      font-size: 1.05em;
     }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 20px;
       border-radius: 8px;
       border: none;
       font-weight: bold;
       cursor: pointer;
       float: right;
       margin-bottom: 10px;
+      font-size: 0.95em;
     }
     .total-cancelado {
       background: #fff;
       padding: 15px;
       border-radius: 12px;
       font-weight: bold;
-      font-size: 1.2em;
+      font-size: 1.1em;
       margin-bottom: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
@@ -287,7 +293,6 @@
   document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
   document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
 
-  // Executa após carregamento da página
   window.onload = () => {
     preencherDataPadrao();
     carregarDados();
