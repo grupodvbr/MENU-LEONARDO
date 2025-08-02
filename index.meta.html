@@ -164,15 +164,15 @@ function formatarDataBR(dataISO) {
   return `${d}/${m}/${y}`;
 }
 
-// Preenche os inputs com o dia anterior ao dia atual
-function preencherDataOntem() {
-  const hoje = new Date();
+window.onload = () => {
+  const hoje = new Date(); // usa a data real do navegador
   const ontem = new Date(hoje);
   ontem.setDate(hoje.getDate() - 1);
-  const dataFormatada = ontem.toISOString().split("T")[0];
+  const dataFormatada = ontem.toISOString().split('T')[0];
   document.getElementById("dataInicio").value = dataFormatada;
   document.getElementById("dataFim").value = dataFormatada;
-}
+  carregarDados();
+};
 
 async function carregarMetas() {
   const painel = document.getElementById("painelMetas");
