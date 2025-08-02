@@ -1,3 +1,4 @@
+<!-- CÓDIGO ATUALIZADO COMPLETO -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -205,7 +206,7 @@ function filtrarGrafico() {
   const filtrados = getFiltros();
   const agrupado = {};
   filtrados.forEach(d => {
-    const mes = d.data.slice(0, 7); // YYYY-MM
+    const mes = d.data.slice(0, 7);
     agrupado[mes] = (agrupado[mes] || 0) + parseFloat(d.bruto || 0);
   });
 
@@ -273,7 +274,7 @@ function atualizarRankingEmpresas() {
     dadosMesEmpresa[mes][empresa] += valor;
   });
 
-  const mesesOrdenados = Object.keys(dadosMesEmpresa).sort();
+  const mesesOrdenados = Object.keys(dadosMesEmpresa).sort().reverse();
   const todasEmpresas = [...new Set(filtrados.map(d => d.empresa))].sort();
 
   const corpo = document.getElementById("tabela-ranking");
@@ -296,21 +297,22 @@ function atualizarResumoEmpresa() {
   const resumo = {};
 
   filtrados.forEach(d => {
-    const emp = d.empresa;
-    if (!resumo[emp]) resumo[emp] = { bruto: 0, liquido: 0, taxa: 0 };
-    resumo[emp].bruto += parseFloat(d.bruto || 0);
-    resumo[emp].liquido += parseFloat(d.liquido || 0);
-    resumo[emp].taxa += parseFloat(d.taxa || 0);
+    const chave = `${d.empresa} | ${d.plataforma}`;
+    if (!resumo[chave]) resumo[chave] = { bruto: 0, liquido: 0, taxa: 0 };
+    resumo[chave].bruto += parseFloat(d.bruto || 0);
+    resumo[chave].liquido += parseFloat(d.liquido || 0);
+    resumo[chave].taxa += parseFloat(d.taxa || 0);
   });
 
   const div = document.getElementById("resumo-empresas");
   div.innerHTML = '';
 
-  Object.entries(resumo).sort().forEach(([empresa, valores]) => {
+  Object.entries(resumo).sort().forEach(([chave, valores]) => {
+    const [empresa, plataforma] = chave.split(" | ");
     const perc = (valores.taxa / valores.bruto) * 100 || 0;
     div.innerHTML += `
       <div class="resumo-linha">
-        <strong>${empresa}</strong>
+        <strong>${empresa} - ${plataforma}</strong>
         💰 Bruto: R$ ${valores.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
         💵 Líquido: R$ ${valores.liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
         📉 Investimento (${perc.toFixed(2)}%): R$ ${valores.taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
