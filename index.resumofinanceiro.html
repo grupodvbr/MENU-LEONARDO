@@ -143,15 +143,15 @@ const emojis = {
 let dados = [];
 
 window.onload = () => {
-  // Data fixa para simular o dia 01/08/2025
-  const hoje = new Date('2025-08-01T00:00:00');
+  const hoje = new Date(); // usa a data real do navegador
   const ontem = new Date(hoje);
-  ontem.setDate(ontem.getDate() - 1);
+  ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
-  document.getElementById("dataInicio").value = dataFormatada; // 31/07/2025
-  document.getElementById("dataFim").value = ''; // vazio para mostrar placeholder
+  document.getElementById("dataInicio").value = dataFormatada;
+  document.getElementById("dataFim").value = dataFormatada;
   carregarDados();
 };
+
 
 async function carregarDados() {
   const resposta = await fetch(url);
