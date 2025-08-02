@@ -7,7 +7,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: white; margin: 0; padding: 0; }
     header {
@@ -27,7 +26,7 @@
       padding: 20px;
       margin-bottom: 20px;
     }
-    .chart-box canvas { max-width: 100%; height: 220px !important; }
+    .chart-box canvas { max-width: 100%; height: 180px !important; }
     .filters {
       display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end;
     }
@@ -45,16 +44,16 @@
       cursor: pointer;
     }
     .total-box { text-align: center; font-size: 1.2em; font-weight: bold; }
-    .export-btn, .whatsapp-btn {
-      background-color: #27ae60;
+    .whatsapp-btn {
+      background-color: #25d366;
       color: white;
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
+      float: right;
     }
-    .whatsapp-btn { float: right; margin-left: 10px; background-color: #25d366; }
     .resumo-box table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     .resumo-box th, .resumo-box td { padding: 8px; border: 1px solid #ddd; text-align: left; }
     .resumo-box th { background: #f5f5f5; }
@@ -79,7 +78,9 @@
     </div>
     <div>
       <label for="empresa">Empresa</label>
-      <select id="empresa"></select>
+      <select id="empresa">
+        <option value="Todas">Todas</option>
+      </select>
     </div>
     <div>
       <label for="plataforma">Plataforma</label>
@@ -97,7 +98,6 @@
   <div class="chart-box">
     <h3>📈 Vendas Brutas por Dia
       <button class="whatsapp-btn" onclick="enviarWhatsapp()">Enviar via WhatsApp</button>
-      <button class="export-btn" onclick="exportarPDF()">Exportar PDF</button>
     </h3>
     <canvas id="graficoVendas"></canvas>
   </div>
@@ -160,7 +160,7 @@ async function carregarDados() {
     const dt = new Date(d.data);
     const mes = dt.getMonth() + 1;
     return mes >= mesIni && mes <= mesFim &&
-      (empresa === d.empresa) &&
+      (empresa === "Todas" || empresa === d.empresa) &&
       (plataforma === "Todas" || plataforma === d.plataforma);
   });
 
@@ -177,7 +177,6 @@ async function carregarDados() {
   const media = totalGeral / mesesUnicos.size;
   document.getElementById("mediaMensal").innerText = `📊 Média por Mês: R$ ${media.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
-  // Tabela resumo por plataforma
   const totaisPorPlataforma = {};
   filtrado.forEach(d => {
     const plat = d.plataforma || "Outros";
@@ -218,10 +217,6 @@ async function carregarDados() {
       }
     }
   });
-}
-
-function exportarPDF() {
-  html2pdf().from(document.querySelector(".container")).save();
 }
 
 function enviarWhatsapp() {
