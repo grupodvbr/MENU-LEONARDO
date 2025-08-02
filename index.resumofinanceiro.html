@@ -147,7 +147,7 @@ window.onload = () => {
   ontem.setDate(ontem.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
   document.getElementById("dataInicio").value = dataFormatada;
-  document.getElementById("dataFim").value = dataFormatada;
+  document.getElementById("dataFim").value = ''; // deixa vazio
   carregarDados();
 };
 
