@@ -78,9 +78,7 @@
     </div>
     <div>
       <label for="empresa">Empresa</label>
-      <select id="empresa">
-        <option value="Todas">Todas</option>
-      </select>
+      <select id="empresa" multiple size="4"></select>
     </div>
     <div>
       <label for="plataforma">Plataforma</label>
@@ -96,7 +94,7 @@
   </div>
 
   <div class="chart-box">
-    <h3>📈 Vendas Brutas por Dia
+    <h3>📈 Vendas por Semana por Empresa
       <button class="whatsapp-btn" onclick="enviarWhatsapp()">Enviar via WhatsApp</button>
     </h3>
     <canvas id="graficoVendas"></canvas>
@@ -143,6 +141,7 @@ async function carregarEmpresas() {
     const opt = document.createElement("option");
     opt.value = emp;
     opt.textContent = emp;
+    opt.selected = true;
     empresaSelect.appendChild(opt);
   });
 }
@@ -153,24 +152,38 @@ async function carregarDados() {
 
   const mesIni = parseInt(document.getElementById("mesInicial").value);
   const mesFim = parseInt(document.getElementById("mesFinal").value);
-  const empresa = document.getElementById("empresa").value;
+  const empresasSelecionadas = [...document.getElementById("empresa").selectedOptions].map(o => o.value);
   const plataforma = document.getElementById("plataforma").value;
 
   const filtrado = dados.filter(d => {
     const dt = new Date(d.data);
     const mes = dt.getMonth() + 1;
     return mes >= mesIni && mes <= mesFim &&
-      (empresa === "Todas" || empresa === d.empresa) &&
+      (empresasSelecionadas.includes(d.empresa)) &&
       (plataforma === "Todas" || plataforma === d.plataforma);
   });
 
-  const agrupado = {};
+  const dadosPorEmpresa = {};
   filtrado.forEach(d => {
     const data = new Date(d.data);
-    const key = data.toISOString().split("T")[0];
-    agrupado[key] = (agrupado[key] || 0) + parseFloat(d.bruto || 0);
+    const semana = `${data.getFullYear()}-W${('0'+luxon.DateTime.fromJSDate(data).weekNumber).slice(-2)}`;
+    if (!dadosPorEmpresa[d.empresa]) dadosPorEmpresa[d.empresa] = {};
+    dadosPorEmpresa[d.empresa][semana] = (dadosPorEmpresa[d.empresa][semana] || 0) + parseFloat(d.bruto || 0);
   });
-  const pontos = Object.entries(agrupado).map(([x, y]) => ({ x, y })).sort((a, b) => new Date(a.x) - new Date(b.x));
+
+  const datasets = Object.keys(dadosPorEmpresa).map((empresa, idx) => {
+    const cor = `hsl(${idx * 60}, 70%, 50%)`;
+    const pontos = Object.entries(dadosPorEmpresa[empresa]).map(([x, y]) => ({ x, y })).sort((a, b) => new Date(a.x) - new Date(b.x));
+    return {
+      label: empresa,
+      data: pontos,
+      borderColor: cor,
+      backgroundColor: cor + '33',
+      tension: 0.3,
+      pointRadius: 3,
+      fill: false
+    };
+  });
 
   const mesesUnicos = new Set(filtrado.map(d => new Date(d.data).getMonth()));
   const totalGeral = filtrado.reduce((soma, d) => soma + parseFloat(d.bruto || 0), 0);
@@ -188,30 +201,19 @@ async function carregarDados() {
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById("graficoVendas").getContext("2d"), {
     type: "line",
-    data: {
-      datasets: [{
-        label: "Valor Bruto por Dia",
-        data: pontos,
-        borderColor: "#2980b9",
-        backgroundColor: "rgba(41,128,185,0.1)",
-        borderWidth: 2,
-        tension: 0.3,
-        pointRadius: 4,
-        fill: true
-      }]
-    },
+    data: { datasets },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: true } },
       scales: {
         x: {
           type: "time",
           time: {
-            unit: "month",
+            unit: "week",
             tooltipFormat: "MM/yy",
-            displayFormats: { month: "MM/yy" }
+            displayFormats: { week: "MM/yy" }
           },
-          title: { display: true, text: "Mês" }
+          title: { display: true, text: "Semana" }
         },
         y: {
           beginAtZero: false,
