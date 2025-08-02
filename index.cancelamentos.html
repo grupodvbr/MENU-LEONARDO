@@ -17,21 +17,21 @@
       display: flex;
       align-items: center;
       border-bottom: 1px solid #ccc;
-      gap: 10px; /* Espaço entre logo e título */
+      gap: 10px;
     }
     header img {
       height: 50px;
-      flex-shrink: 0; /* Não deixar a logo encolher */
+      flex-shrink: 0;
     }
     header h1 {
       margin: 0;
       font-size: 1.6em;
       font-weight: bold;
       color: #000;
-      flex-grow: 1;       /* Ocupa o espaço restante */
-      white-space: nowrap; /* Não quebra linha */
+      flex-grow: 1;
+      white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* Texto com reticências se ultrapassar */
+      text-overflow: ellipsis;
     }
     .container {
       padding: 20px;
@@ -142,11 +142,19 @@
   const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbzaS3QgsNyePSGRlpy3Ue6EuQw75QYID9jadb-KezTv8y9Mg6d8HFoKUCzcBRqzM5aMBg/exec';
   let cancelamentos = [];
 
+  function preencherDataPadrao() {
+    const hoje = new Date();
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const formato = d => d.toISOString().split('T')[0];
+    document.getElementById("dataInicio").value = formato(ontem);
+    document.getElementById("dataFim").value = formato(ontem);
+  }
+
   async function carregarDados() {
     const res = await fetch(URL_SCRIPT);
     cancelamentos = await res.json();
     preencherFiltros();
-    preencherDataPadrao();
     aplicarFiltros();
   }
 
@@ -164,16 +172,6 @@
     const selectEmpresa = document.getElementById('filtroEmpresa');
     selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
       empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
-  }
-
-  // Preenche os campos dataInicio e dataFim com o dia anterior (ontem)
-  function preencherDataPadrao() {
-    const hoje = new Date();
-    const ontem = new Date(hoje);
-    ontem.setDate(hoje.getDate() - 1);
-    const formato = d => d.toISOString().split('T')[0];
-    document.getElementById("dataInicio").value = formato(ontem);
-    document.getElementById("dataFim").value = formato(ontem);
   }
 
   function aplicarFiltros() {
@@ -289,7 +287,11 @@
   document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
   document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
 
-  carregarDados();
+  // Executa após carregamento da página
+  window.onload = () => {
+    preencherDataPadrao();
+    carregarDados();
+  };
 </script>
 
 </body>
