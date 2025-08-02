@@ -140,9 +140,7 @@
   <div class="total-box">
     <h3>📊 Totais por Plataforma</h3>
     <table>
-      <thead>
-        <tr><th>Plataforma</th><th style="text-align:right">Total</th></tr>
-      </thead>
+      <thead><tr><th>Plataforma</th><th style="text-align:right">Total</th></tr></thead>
       <tbody id="tabela-plataformas"></tbody>
     </table>
   </div>
@@ -158,7 +156,7 @@
   <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
 
   <div class="resumo-box">
-    <h3>📦 Resumo por Plataforma</h3>
+    <h3>📦 Resumo por Empresa</h3>
     <div id="resumo-empresas"></div>
   </div>
 </div>
@@ -296,22 +294,29 @@ function atualizarRankingEmpresas() {
 function atualizarResumoEmpresa() {
   const filtrados = getFiltros();
   const resumo = {};
+
   filtrados.forEach(d => {
-    const p = d.plataforma;
-    if (!resumo[p]) resumo[p] = { bruto: 0, liquido: 0, taxa: 0 };
-    resumo[p].bruto += parseFloat(d.bruto || 0);
-    resumo[p].liquido += parseFloat(d.liquido || 0);
-    resumo[p].taxa += parseFloat(d.taxa || 0);
+    const emp = d.empresa;
+    if (!resumo[emp]) resumo[emp] = { bruto: 0, liquido: 0, taxa: 0 };
+    resumo[emp].bruto += parseFloat(d.bruto || 0);
+    resumo[emp].liquido += parseFloat(d.liquido || 0);
+    resumo[emp].taxa += parseFloat(d.taxa || 0);
   });
 
   const div = document.getElementById("resumo-empresas");
-  div.innerHTML = `<div class="resumo-linha"><strong>${document.getElementById("empresaFiltro").value || "TODAS"}</strong>`;
-  for (const p in resumo) {
-    const r = resumo[p];
-    const perc = (r.taxa / r.bruto) * 100 || 0;
-    div.innerHTML += `<br><u>${p}</u><br>💰 Bruto: R$ ${r.bruto.toLocaleString('pt-BR')}<br>💵 Líquido: R$ ${r.liquido.toLocaleString('pt-BR')}<br>📉 Investimento (${perc.toFixed(2)}%): R$ ${r.taxa.toLocaleString('pt-BR')}<br>`;
-  }
-  div.innerHTML += `</div>`;
+  div.innerHTML = '';
+
+  Object.entries(resumo).sort().forEach(([empresa, valores]) => {
+    const perc = (valores.taxa / valores.bruto) * 100 || 0;
+    div.innerHTML += `
+      <div class="resumo-linha">
+        <strong>${empresa}</strong>
+        💰 Bruto: R$ ${valores.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+        💵 Líquido: R$ ${valores.liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+        📉 Investimento (${perc.toFixed(2)}%): R$ ${valores.taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      </div>
+    `;
+  });
 }
 
 function enviarWhatsapp() {
