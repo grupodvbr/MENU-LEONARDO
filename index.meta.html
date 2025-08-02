@@ -164,14 +164,18 @@ function formatarDataBR(dataISO) {
   return `${d}/${m}/${y}`;
 }
 
-window.onload = () => {
-  const hoje = new Date(); // usa a data real do navegador
+function preencherDataOntem() {
+  const hoje = new Date();
   const ontem = new Date(hoje);
   ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
   document.getElementById("dataInicio").value = dataFormatada;
   document.getElementById("dataFim").value = dataFormatada;
-  carregarDados();
+}
+
+window.onload = () => {
+  preencherDataOntem();
+  carregarMetas();
 };
 
 async function carregarMetas() {
@@ -327,11 +331,6 @@ document.getElementById("btnWhats").addEventListener("click", () => {
   const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem.trim())}`;
   window.open(link, "_blank");
 });
-
-window.onload = () => {
-  preencherDataOntem();
-  carregarMetas();
-};
 </script>
 
 </body>
