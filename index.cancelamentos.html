@@ -1,5 +1,3 @@
-
-<!-- INÍCIO DO CÓDIGO HTML -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -119,6 +117,29 @@
       font-size: 0.95em;
       margin-top: 20px;
     }
+
+    /* Botão flutuante neon */
+    #botaoChatFlutuante {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle at 30% 30%, #00f0ff, #a900ff);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+      cursor: pointer;
+      z-index: 9999;
+    }
+
+    #botaoChatFlutuante img {
+      width: 28px;
+      height: 28px;
+    }
+
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -162,9 +183,17 @@
   <div class="dados-analisados" id="resumoDados"></div>
 </div>
 
+<!-- Botão Neon Flutuante -->
+<div id="botaoChatFlutuante" onclick="abrirAssistente()">
+  <img src="https://img.icons8.com/ios-filled/50/ffffff/topic.png" alt="Chat" />
+</div>
+
 <!-- Assistente Virtual -->
-<div id="chatAssistente" style="position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;background:#fff;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.2);overflow:hidden;font-size:13px;display:flex;flex-direction:column;z-index:9999">
-  <div style="background:#25D366;color:white;padding:10px;font-weight:bold;text-align:center">🤖 Assistente Virtual</div>
+<div id="chatAssistente" style="position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;background:#fff;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.2);overflow:hidden;font-size:13px;display:none;flex-direction:column;z-index:9999">
+  <div style="background:#25D366;color:white;padding:10px;font-weight:bold;text-align:center;display:flex;justify-content:space-between;align-items:center">
+    🤖 Assistente Virtual
+    <button onclick="fecharAssistente()" style="background:none;border:none;color:white;font-size:16px;cursor:pointer">✖</button>
+  </div>
   <div id="chatMensagens" style="flex:1;padding:10px;overflow-y:auto"></div>
   <div style="display:flex;border-top:1px solid #eee">
     <input id="chatInput" type="text" placeholder="Pergunte algo..." style="flex:1;border:none;padding:10px;font-size:13px" onkeypress="if(event.key==='Enter')responderPergunta()">
@@ -344,6 +373,16 @@
     chat.scrollTop = chat.scrollHeight;
   }
 
+  function abrirAssistente() {
+    document.getElementById("chatAssistente").style.display = "flex";
+    document.getElementById("botaoChatFlutuante").style.display = "none";
+  }
+
+  function fecharAssistente() {
+    document.getElementById("chatAssistente").style.display = "none";
+    document.getElementById("botaoChatFlutuante").style.display = "flex";
+  }
+
   document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
   document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
   document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
@@ -356,4 +395,3 @@
 </script>
 </body>
 </html>
-<!-- FIM DO CÓDIGO HTML -->
