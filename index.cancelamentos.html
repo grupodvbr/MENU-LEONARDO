@@ -161,10 +161,29 @@
   <div class="dados-analisados" id="resumoDados"></div>
 </div>
 
+<!-- Assistente Virtual -->
+<div id="chatAssistente" style="position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;background:#fff;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.2);overflow:hidden;font-size:13px;display:flex;flex-direction:column;z-index:9999">
+  <div style="background:#25D366;color:white;padding:10px;font-weight:bold;text-align:center">🤖 Assistente Virtual</div>
+  <div id="chatMensagens" style="flex:1;padding:10px;overflow-y:auto"></div>
+  <div style="display:flex;border-top:1px solid #eee">
+    <input id="chatInput" type="text" placeholder="Pergunte algo..." style="flex:1;border:none;padding:10px;font-size:13px" onkeypress="if(event.key==='Enter')responderPergunta()">
+    <button onclick="responderPergunta()" style="background:#25D366;color:white;border:none;padding:10px 15px;cursor:pointer">➤</button>
+  </div>
+</div>
+
 <script>
   const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
   let cancelamentos = [];
   let chartCancelamentos = null;
+
+  function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatarDataBR(dataISO) {
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
 
   function preencherDataPadrao() {
     const hoje = new Date();
@@ -182,15 +201,6 @@
     aplicarFiltros();
   }
 
-  function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
-  function formatarDataBR(dataISO) {
-    const [ano, mes, dia] = dataISO.split("-");
-    return `${dia}/${mes}/${ano}`;
-  }
-
   function preencherFiltros() {
     const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
     const selectEmpresa = document.getElementById('filtroEmpresa');
@@ -204,21 +214,9 @@
     const dataInicio = document.getElementById('dataInicio').value;
     const dataFim = document.getElementById('dataFim').value;
 
-    document.getElementById("tituloPainel").innerText = "Cancelamentos";
-
-    const infoPeriodo = document.getElementById("infoPeriodo");
-    if (dataInicio && dataFim) {
-      infoPeriodo.innerText = `📅 Período: ${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)}`;
-    } else {
-      infoPeriodo.innerText = "";
-    }
-
     const lista = document.getElementById("listaCancelamentos");
     lista.innerHTML = "";
-    document.getElementById("rankingContainer")?.remove();
-
     let totalGeral = 0;
-    let registrosContados = 0;
     const grupos = {};
 
     cancelamentos.forEach(c => {
@@ -229,7 +227,6 @@
         (dataFim && c.data > dataFim)
       ) return;
 
-      registrosContados++;
       if (!grupos[c.empresa]) grupos[c.empresa] = [];
       grupos[c.empresa].push(c);
     });
@@ -252,7 +249,6 @@
       grupo.forEach(c => {
         const itemDiv = document.createElement("div");
         itemDiv.className = "item-cancelamento";
-
         const [nomeItem, valorInfo] = c.item.split(" – ");
         itemDiv.innerHTML = `
           <p>${nomeItem}</p>
@@ -264,29 +260,12 @@
       lista.appendChild(divGrupo);
 
       if (empresaFiltro === empresa) {
-        exibirRanking(grupo);
+        desenharGrafico(grupo);
       }
     });
 
     document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
-
-    document.getElementById("resumoDados").innerText =
-      `🔍 Dados analisados: ${registrosContados} item${registrosContados !== 1 ? 's' : ''} encontrado${registrosContados !== 1 ? 's' : ''} após os filtros aplicados.`;
-
-    const canvas = document.getElementById("graficoCancelamentos");
-
-    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
-      canvas.style.display = "block";
-      setTimeout(() => {
-        desenharGrafico(grupos[empresaFiltro]);
-      }, 50);
-    } else {
-      canvas.style.display = "none";
-      if (chartCancelamentos) {
-        chartCancelamentos.destroy();
-        chartCancelamentos = null;
-      }
-    }
+    document.getElementById("graficoCancelamentos").style.display = empresaFiltro ? "block" : "none";
   }
 
   function desenharGrafico(lista) {
@@ -328,45 +307,40 @@
     });
   }
 
-  function enviarWhatsapp() {
-    const empresaFiltro = document.getElementById('filtroEmpresa').value;
-    const busca = document.getElementById('filtroBusca').value.toLowerCase();
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
+  function responderPergunta() {
+    const input = document.getElementById("chatInput");
+    const pergunta = input.value.trim();
+    if (!pergunta) return;
 
-    const cancelamentosFiltrados = cancelamentos.filter(c => {
-      return (!empresaFiltro || c.empresa === empresaFiltro) &&
-             (!busca || c.item.toLowerCase().includes(busca)) &&
-             (!dataInicio || c.data >= dataInicio) &&
-             (!dataFim || c.data <= dataFim);
-    });
+    adicionarMensagem("Você", pergunta);
+    input.value = "";
 
-    if (cancelamentosFiltrados.length === 0) {
-      alert("Nenhum cancelamento encontrado com os filtros atuais.");
-      return;
+    let resposta = "Desculpe, não entendi sua pergunta.";
+    const mesAnterior = new Date();
+    mesAnterior.setMonth(mesAnterior.getMonth() - 1);
+    const mesAnteriorStr = mesAnterior.toISOString().slice(0, 7);
+
+    if (/cancelado.*mes.*passado/.test(pergunta.toLowerCase())) {
+      const total = cancelamentos.filter(c => c.data.startsWith(mesAnteriorStr)).reduce((acc, cur) => acc + cur.valor, 0);
+      resposta = `No mês passado foram cancelados ${formatarMoeda(total)}.`;
+    } else if (/empresa.*rod[ií]zio/.test(pergunta.toLowerCase())) {
+      const empresas = [...new Set(cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio")).map(c => c.empresa))];
+      resposta = empresas.length ? `Empresas com cancelamentos de rodízio: ${empresas.join(", ")}` : "Nenhuma empresa teve cancelamentos de rodízio.";
+    } else if (/valor.*rod[ií]zio/.test(pergunta.toLowerCase())) {
+      const total = cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio")).reduce((acc, cur) => acc + cur.valor, 0);
+      resposta = `O valor total dos cancelamentos de rodízio foi ${formatarMoeda(total)}.`;
     }
 
-    let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
-    const agrupado = {};
+    adicionarMensagem("Assistente", resposta);
+  }
 
-    cancelamentosFiltrados.forEach(c => {
-      if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
-      agrupado[c.empresa].push(c);
-    });
-
-    Object.entries(agrupado).forEach(([empresa, itens]) => {
-      let subtotal = 0;
-      mensagem += `\n\n🏢 *${empresa}*`;
-      itens.forEach(c => {
-        subtotal += c.valor;
-        mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
-      });
-      mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
-    });
-
-    const telefone = "5577999761436";
-    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
+  function adicionarMensagem(remetente, mensagem) {
+    const chat = document.getElementById("chatMensagens");
+    const div = document.createElement("div");
+    div.innerHTML = `<strong>${remetente}:</strong> ${mensagem}`;
+    div.style.marginBottom = "8px";
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
   }
 
   document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
@@ -379,7 +353,6 @@
     carregarDados();
   };
 </script>
-
 </body>
 </html>
 <!-- FIM DO CÓDIGO HTML -->
