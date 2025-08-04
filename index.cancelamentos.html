@@ -226,7 +226,7 @@
 
         const [nomeItem, valorInfo] = c.item.split(" – ");
         itemDiv.innerHTML = `
-          <p> ${nomeItem}</p>
+          <p>${nomeItem}</p>
           <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
         `;
         divGrupo.appendChild(itemDiv);
@@ -265,10 +265,27 @@
   }
 
   function enviarWhatsapp() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const cancelamentosFiltrados = cancelamentos.filter(c => {
+      return (!empresaFiltro || c.empresa === empresaFiltro) &&
+             (!busca || c.item.toLowerCase().includes(busca)) &&
+             (!dataInicio || c.data >= dataInicio) &&
+             (!dataFim || c.data <= dataFim);
+    });
+
+    if (cancelamentosFiltrados.length === 0) {
+      alert("Nenhum cancelamento encontrado com os filtros atuais.");
+      return;
+    }
+
     let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
     const agrupado = {};
 
-    cancelamentos.forEach(c => {
+    cancelamentosFiltrados.forEach(c => {
       if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
       agrupado[c.empresa].push(c);
     });
