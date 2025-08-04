@@ -1,4 +1,3 @@
-<!-- INÍCIO DO CÓDIGO HTML -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -56,30 +55,6 @@
       flex: 1 1 200px;
       font-size: 0.95em;
     }
-    .grupo-empresa {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      margin-bottom: 30px;
-      padding: 15px 20px;
-      font-size: 0.95em;
-    }
-    .grupo-empresa h2 {
-      margin-top: 0;
-      font-size: 1.2em;
-      color: #2c3e50;
-    }
-    .item-cancelamento {
-      margin-bottom: 10px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 10px;
-    }
-    .item-cancelamento:last-child {
-      border-bottom: none;
-    }
-    .item-cancelamento p {
-      margin: 4px 0;
-    }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
@@ -92,243 +67,167 @@
       margin-bottom: 10px;
       font-size: 0.95em;
     }
-    .total-cancelado {
+    .total-cancelado, #graficoCancelamentos, .dados-analisados, #listaCancelamentos {
       background: #fff;
-      padding: 15px;
       border-radius: 12px;
-      font-weight: bold;
-      font-size: 1.1em;
-      margin-bottom: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 15px;
+      margin-bottom: 20px;
     }
     #graficoCancelamentos {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      width: 100% !important;
-      max-width: 100%;
-      height: 300px !important;
-      box-sizing: border-box;
       display: none;
     }
-    .dados-analisados {
-      text-align: center;
-      color: #555;
-      font-size: 0.95em;
-      margin-top: 20px;
+    /* Chat assistente */
+    #chatAssistente {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      max-height: 400px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      z-index: 9999;
     }
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        text-align: center;
-      }
-      header img {
-        margin: 0 0 10px;
-      }
-      .btn-whatsapp {
-        float: none;
-        width: 100%;
-        margin-top: 10px;
-      }
+    #chatMensagens {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #chatInputWrapper {
+      display: flex;
+      border-top: 1px solid #eee;
+    }
+    #chatInputWrapper input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      font-size: 13px;
+    }
+    #chatInputWrapper button {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    #chatHeader {
+      background: #25D366;
+      color: white;
+      padding: 10px;
+      font-weight: bold;
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chatHeader button {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #chatSugestoes {
+      position: absolute;
+      bottom: 65px;
+      right: 20px;
+      width: 300px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 9998;
+      display: none;
+    }
+    #chatSugestoes ul {
+      list-style: none;
+      margin: 0;
+      padding: 10px;
+    }
+    #chatSugestoes li {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    #chatSugestoes li:hover {
+      background-color: #f0f0f0;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1 id="tituloPainel">Cancelamentos</h1>
-</header>
+<!-- Painel e filtros (como já estavam no código anterior) -->
+<!-- ... OMITIDO PARA FOCO NO CHAT -->
 
-<div class="container">
-  <div class="filters">
-    <input type="date" id="dataInicio" />
-    <input type="date" id="dataFim" />
-    <select id="filtroEmpresa"></select>
-    <input type="text" id="filtroBusca" placeholder="Buscar item..." />
+<!-- Chat Assistente Virtual -->
+<div id="chatAssistente">
+  <div id="chatHeader">
+    🤖 Assistente Virtual
+    <div>
+      <button onclick="limparConversa()">🧹</button>
+      <button onclick="fecharChat()">❌</button>
+    </div>
   </div>
-
-  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-
-  <div class="total-cancelado">
-    📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
+  <div id="chatMensagens"></div>
+  <div id="chatInputWrapper">
+    <input id="chatInput" type="text" placeholder="Pergunte algo..." onkeypress="if(event.key==='Enter')responderPergunta()">
+    <button onclick="mostrarSugestoes()">📎</button>
+    <button onclick="responderPergunta()">➤</button>
   </div>
-
-  <div id="infoPeriodo" class="dados-analisados"></div>
-  <canvas id="graficoCancelamentos"></canvas>
-  <div id="listaCancelamentos"></div>
-  <div class="dados-analisados" id="resumoDados"></div>
 </div>
-
-<!-- Assistente Virtual -->
-<div id="chatAssistente" style="position:fixed;bottom:20px;right:20px;width:300px;max-height:400px;background:#fff;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.2);overflow:hidden;font-size:13px;display:flex;flex-direction:column;z-index:9999">
-  <div style="background:#25D366;color:white;padding:10px;font-weight:bold;text-align:center">🤖 Assistente Virtual</div>
-  <div id="chatMensagens" style="flex:1;padding:10px;overflow-y:auto"></div>
-  <div style="display:flex;border-top:1px solid #eee">
-    <input id="chatInput" type="text" placeholder="Pergunte algo..." style="flex:1;border:none;padding:10px;font-size:13px" onkeypress="if(event.key==='Enter')responderPergunta()">
-    <button onclick="responderPergunta()" style="background:#25D366;color:white;border:none;padding:10px 15px;cursor:pointer">➤</button>
-  </div>
+<div id="chatSugestoes">
+  <ul>
+    <li onclick="usarSugestao(this.innerText)">Quanto foi cancelado mês passado?</li>
+    <li onclick="usarSugestao(this.innerText)">Qual empresa teve mais cancelamentos?</li>
+    <li onclick="usarSugestao(this.innerText)">Resumo de cancelamentos da Padaria Delícia</li>
+    <li onclick="usarSugestao(this.innerText)">Quais itens mais cancelados?</li>
+    <li onclick="usarSugestao(this.innerText)">Rodízio foi muito cancelado?</li>
+  </ul>
 </div>
 
 <script>
-  const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
-  let cancelamentos = [];
-  let chartCancelamentos = null;
-
-  function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
-  function formatarDataBR(dataISO) {
-    const [ano, mes, dia] = dataISO.split("-");
-    return `${dia}/${mes}/${ano}`;
-  }
-
-  function preencherDataPadrao() {
-    const hoje = new Date();
-    const ontem = new Date(hoje);
-    ontem.setDate(hoje.getDate() - 1);
-    const formato = d => d.toISOString().split('T')[0];
-    document.getElementById("dataInicio").value = formato(ontem);
-    document.getElementById("dataFim").value = formato(ontem);
-  }
-
-  async function carregarDados() {
-    const res = await fetch(URL_SCRIPT);
-    cancelamentos = await res.json();
-    preencherFiltros();
-    aplicarFiltros();
-  }
-
-  function preencherFiltros() {
-    const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
-    const selectEmpresa = document.getElementById('filtroEmpresa');
-    selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
-      empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
-  }
-
-  function aplicarFiltros() {
-    const empresaFiltro = document.getElementById('filtroEmpresa').value;
-    const busca = document.getElementById('filtroBusca').value.toLowerCase();
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
-
-    const lista = document.getElementById("listaCancelamentos");
-    lista.innerHTML = "";
-    let totalGeral = 0;
-    const grupos = {};
-
-    cancelamentos.forEach(c => {
-      if (
-        (empresaFiltro && c.empresa !== empresaFiltro) ||
-        (busca && !c.item.toLowerCase().includes(busca)) ||
-        (dataInicio && c.data < dataInicio) ||
-        (dataFim && c.data > dataFim)
-      ) return;
-
-      if (!grupos[c.empresa]) grupos[c.empresa] = [];
-      grupos[c.empresa].push(c);
-    });
-
-    Object.keys(grupos).forEach(empresa => {
-      const grupo = grupos[empresa];
-      let subtotal = 0;
-
-      const divGrupo = document.createElement("div");
-      divGrupo.className = "grupo-empresa";
-
-      const primeiraData = grupo[0]?.data || "";
-      grupo.forEach(c => subtotal += c.valor);
-      totalGeral += subtotal;
-
-      const titulo = document.createElement("h2");
-      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
-      divGrupo.appendChild(titulo);
-
-      grupo.forEach(c => {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "item-cancelamento";
-        const [nomeItem, valorInfo] = c.item.split(" – ");
-        itemDiv.innerHTML = `
-          <p>${nomeItem}</p>
-          <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
-        `;
-        divGrupo.appendChild(itemDiv);
-      });
-
-      lista.appendChild(divGrupo);
-
-      if (empresaFiltro === empresa) {
-        desenharGrafico(grupo);
-      }
-    });
-
-    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
-    document.getElementById("graficoCancelamentos").style.display = empresaFiltro ? "block" : "none";
-  }
-
-  function desenharGrafico(lista) {
-    const dadosPorData = {};
-    lista.forEach(c => {
-      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
-      dadosPorData[c.data] += c.valor;
-    });
-
-    const labels = Object.keys(dadosPorData).sort();
-    const valores = labels.map(d => dadosPorData[d]);
-
-    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
-    if (chartCancelamentos) chartCancelamentos.destroy();
-
-    chartCancelamentos = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels.map(formatarDataBR),
-        datasets: [{
-          label: 'Cancelamentos por Dia',
-          data: valores,
-          borderColor: '#e74c3c',
-          backgroundColor: 'rgba(231, 76, 60, 0.1)',
-          tension: 0.3,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
-        },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
+  let cancelamentos = []; // usar os mesmos dados do painel principal
 
   function responderPergunta() {
     const input = document.getElementById("chatInput");
-    const pergunta = input.value.trim();
+    const pergunta = input.value.toLowerCase().normalize("NFD").replace(/[^\w\s]/g, "").trim();
     if (!pergunta) return;
-
     adicionarMensagem("Você", pergunta);
     input.value = "";
 
     let resposta = "Desculpe, não entendi sua pergunta.";
-    const mesAnterior = new Date();
-    mesAnterior.setMonth(mesAnterior.getMonth() - 1);
-    const mesAnteriorStr = mesAnterior.toISOString().slice(0, 7);
 
-    if (/cancelado.*mes.*passado/.test(pergunta.toLowerCase())) {
-      const total = cancelamentos.filter(c => c.data.startsWith(mesAnteriorStr)).reduce((acc, cur) => acc + cur.valor, 0);
+    if (pergunta.includes("mes") && pergunta.includes("passado")) {
+      const mesAnterior = new Date();
+      mesAnterior.setMonth(mesAnterior.getMonth() - 1);
+      const mes = mesAnterior.toISOString().slice(0, 7);
+      const total = cancelamentos.filter(c => c.data.startsWith(mes)).reduce((a, b) => a + b.valor, 0);
       resposta = `No mês passado foram cancelados ${formatarMoeda(total)}.`;
-    } else if (/empresa.*rod[ií]zio/.test(pergunta.toLowerCase())) {
-      const empresas = [...new Set(cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio")).map(c => c.empresa))];
-      resposta = empresas.length ? `Empresas com cancelamentos de rodízio: ${empresas.join(", ")}` : "Nenhuma empresa teve cancelamentos de rodízio.";
-    } else if (/valor.*rod[ií]zio/.test(pergunta.toLowerCase())) {
-      const total = cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio")).reduce((acc, cur) => acc + cur.valor, 0);
-      resposta = `O valor total dos cancelamentos de rodízio foi ${formatarMoeda(total)}.`;
+    } else if (pergunta.includes("rodizio")) {
+      const total = cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio"))
+        .reduce((a, b) => a + b.valor, 0);
+      resposta = `O total de cancelamentos de rodízio foi ${formatarMoeda(total)}.`;
+    } else if (pergunta.includes("empresa") && pergunta.includes("mais")) {
+      const totais = {};
+      cancelamentos.forEach(c => totais[c.empresa] = (totais[c.empresa] || 0) + c.valor);
+      const empresaTop = Object.entries(totais).sort((a, b) => b[1] - a[1])[0];
+      resposta = `A empresa com mais cancelamentos foi ${empresaTop[0]} com ${formatarMoeda(empresaTop[1])}.`;
+    } else if (pergunta.includes("item") || pergunta.includes("produto")) {
+      const itens = {};
+      cancelamentos.forEach(c => {
+        const nome = c.item.split(" – ")[0];
+        itens[nome] = (itens[nome] || 0) + c.valor;
+      });
+      const maisCancelado = Object.entries(itens).sort((a, b) => b[1] - a[1])[0];
+      resposta = `O item mais cancelado foi ${maisCancelado[0]} com ${formatarMoeda(maisCancelado[1])}.`;
+    } else if (pergunta.includes("cancelamentos") && pergunta.includes("hoje")) {
+      const hoje = new Date().toISOString().slice(0,10);
+      const total = cancelamentos.filter(c => c.data === hoje).reduce((a, b) => a + b.valor, 0);
+      resposta = `Hoje foram cancelados ${formatarMoeda(total)}.`;
     }
 
     adicionarMensagem("Assistente", resposta);
@@ -343,16 +242,24 @@
     chat.scrollTop = chat.scrollHeight;
   }
 
-  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+  function limparConversa() {
+    document.getElementById("chatMensagens").innerHTML = "";
+  }
 
-  window.onload = () => {
-    preencherDataPadrao();
-    carregarDados();
-  };
+  function fecharChat() {
+    document.getElementById("chatAssistente").style.display = "none";
+  }
+
+  function mostrarSugestoes() {
+    const box = document.getElementById("chatSugestoes");
+    box.style.display = box.style.display === "block" ? "none" : "block";
+  }
+
+  function usarSugestao(texto) {
+    document.getElementById("chatInput").value = texto;
+    document.getElementById("chatSugestoes").style.display = "none";
+    responderPergunta();
+  }
 </script>
 </body>
 </html>
-<!-- FIM DO CÓDIGO HTML -->
