@@ -79,11 +79,6 @@
     .item-cancelamento p {
       margin: 4px 0;
     }
-    .subtotal {
-      font-weight: bold;
-      margin-top: 10px;
-      font-size: 1.05em;
-    }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
@@ -111,6 +106,12 @@
       padding: 20px;
       margin-bottom: 30px;
     }
+    .dados-analisados {
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+      margin-top: 20px;
+    }
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -131,7 +132,7 @@
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Cancelamentos</h1>
+  <h1 id="tituloPainel">Cancelamentos</h1>
 </header>
 
 <div class="container">
@@ -145,11 +146,12 @@
   <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
 
   <div class="total-cancelado">
-    📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
+    📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
   </div>
 
   <canvas id="graficoCancelamentos"></canvas>
   <div id="listaCancelamentos"></div>
+  <div class="dados-analisados" id="resumoDados"></div>
 </div>
 
 <script>
@@ -195,11 +197,19 @@
     const dataInicio = document.getElementById('dataInicio').value;
     const dataFim = document.getElementById('dataFim').value;
 
+    const tituloPainel = document.getElementById("tituloPainel");
+    if (dataInicio && dataFim) {
+      tituloPainel.innerText = `Cancelamentos (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})`;
+    } else {
+      tituloPainel.innerText = "Cancelamentos";
+    }
+
     const lista = document.getElementById("listaCancelamentos");
     lista.innerHTML = "";
     document.getElementById("rankingContainer")?.remove();
 
     let totalGeral = 0;
+    let registrosContados = 0;
     const grupos = {};
 
     cancelamentos.forEach(c => {
@@ -210,6 +220,7 @@
         (dataFim && c.data > dataFim)
       ) return;
 
+      registrosContados++;
       if (!grupos[c.empresa]) grupos[c.empresa] = [];
       grupos[c.empresa].push(c);
     });
@@ -226,7 +237,7 @@
       totalGeral += subtotal;
 
       const titulo = document.createElement("h2");
-      titulo.textContent = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — Subtotal: ${formatarMoeda(subtotal)}`;
+      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
       divGrupo.appendChild(titulo);
 
       grupo.forEach(c => {
@@ -248,7 +259,8 @@
       }
     });
 
-    document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
+    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
+    document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
 
     if (empresaFiltro && grupos[empresaFiltro]) {
       desenharGrafico(grupos[empresaFiltro]);
@@ -258,28 +270,6 @@
         chartCancelamentos = null;
       }
     }
-  }
-
-  function exibirRanking(listaItens) {
-    const container = document.createElement("div");
-    container.id = "rankingContainer";
-    container.className = "grupo-empresa";
-    const titulo = document.createElement("h2");
-    titulo.textContent = "🏆 Top 7 Itens Mais Caros";
-    container.appendChild(titulo);
-
-    const ranking = listaItens
-      .slice()
-      .sort((a, b) => b.valor - a.valor)
-      .slice(0, 7);
-
-    ranking.forEach((item, index) => {
-      const linha = document.createElement("p");
-      linha.textContent = `${index + 1}. ${item.item} — ${formatarMoeda(item.valor)} (${formatarDataBR(item.data)})`;
-      container.appendChild(linha);
-    });
-
-    document.getElementById("listaCancelamentos").prepend(container);
   }
 
   function desenharGrafico(lista) {
