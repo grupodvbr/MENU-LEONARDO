@@ -267,11 +267,15 @@
     document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
     document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
 
-    if (empresaFiltro && grupos[empresaFiltro]) {
-      document.getElementById("graficoCancelamentos").style.display = "block";
-      desenharGrafico(grupos[empresaFiltro]);
+    const canvas = document.getElementById("graficoCancelamentos");
+
+    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
+      canvas.style.display = "block";
+      setTimeout(() => {
+        desenharGrafico(grupos[empresaFiltro]);
+      }, 50);
     } else {
-      document.getElementById("graficoCancelamentos").style.display = "none";
+      canvas.style.display = "none";
       if (chartCancelamentos) {
         chartCancelamentos.destroy();
         chartCancelamentos = null;
