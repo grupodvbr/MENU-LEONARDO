@@ -55,6 +55,30 @@
       flex: 1 1 200px;
       font-size: 0.95em;
     }
+    .grupo-empresa {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      padding: 15px 20px;
+      font-size: 0.95em;
+    }
+    .grupo-empresa h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    .item-cancelamento {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .item-cancelamento:last-child {
+      border-bottom: none;
+    }
+    .item-cancelamento p {
+      margin: 4px 0;
+    }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
@@ -93,172 +117,262 @@
       font-size: 0.95em;
       margin-top: 20px;
     }
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin: 0 0 10px;
+      }
+      .btn-whatsapp {
+        float: none;
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-    <h1 id="tituloPainel">Cancelamentos</h1>
-  </header>
 
-  <div class="container">
-    <div class="filters">
-      <input type="date" id="dataInicio" />
-      <input type="date" id="dataFim" />
-      <select id="filtroEmpresa"></select>
-      <input type="text" id="filtroBusca" placeholder="Buscar item..." />
-    </div>
+<header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1 id="tituloPainel">Cancelamentos</h1>
+</header>
 
-    <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-
-    <div class="total-cancelado">
-      📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
-    </div>
-
-    <canvas id="graficoCancelamentos"></canvas>
-    <div id="listaCancelamentos"></div>
-    <div class="dados-analisados" id="resumoDados"></div>
+<div class="container">
+  <div class="filters">
+    <input type="date" id="dataInicio" />
+    <input type="date" id="dataFim" />
+    <select id="filtroEmpresa"></select>
+    <input type="text" id="filtroBusca" placeholder="Buscar item..." />
   </div>
 
-  <!-- Assistente DV -->
-  <div id="botaoAssistente" onclick="abrirChat()">DV</div>
-  <div id="chatAssistente">
-    <header>
-      <span>Assistente DV</span>
-      <div>
-        <button onclick="limparChat()">🧹</button>
-        <button onclick="fecharChat()">✖</button>
-      </div>
-    </header>
-    <div class="mensagens" id="mensagens"></div>
-    <div class="entrada">
-      <input type="text" id="pergunta" placeholder="Faça uma pergunta..." onkeypress="if(event.key==='Enter') responderPergunta()">
-      <button onclick="responderPergunta()">Enviar</button>
-    </div>
+  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
+  <div class="total-cancelado">
+    📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
   </div>
 
-  <style>
-    #botaoAssistente {
-      position: fixed;
-      bottom: 25px;
-      right: 25px;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle at 30% 30%, #25D366, #128C7E);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      font-weight: bold;
-      font-size: 20px;
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      animation: pulsar 2s infinite ease-in-out;
-      z-index: 9999;
-    }
-    #chatAssistente {
-      position: fixed;
-      bottom: 100px;
-      right: 25px;
-      width: 300px;
-      max-height: 400px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      display: none;
-      flex-direction: column;
-      z-index: 9998;
-      overflow: hidden;
-    }
-    #chatAssistente header {
-      background: #128C7E;
-      color: white;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    #chatAssistente .mensagens {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      font-size: 0.9em;
-    }
-    #chatAssistente .entrada {
-      display: flex;
-      border-top: 1px solid #ccc;
-    }
-    #chatAssistente input {
-      flex: 1;
-      border: none;
-      padding: 10px;
-    }
-    #chatAssistente button {
-      border: none;
-      background: #128C7E;
-      color: white;
-      padding: 10px 15px;
-      cursor: pointer;
-    }
-    @keyframes pulsar {
-      0% { box-shadow: 0 0 10px rgba(37, 211, 102, 0.4), 0 0 20px rgba(37, 211, 102, 0.3); }
-      50% { box-shadow: 0 0 20px rgba(37, 211, 102, 0.8), 0 0 40px rgba(37, 211, 102, 0.5); }
-      100% { box-shadow: 0 0 10px rgba(37, 211, 102, 0.4), 0 0 20px rgba(37, 211, 102, 0.3); }
-    }
-  </style>
+  <canvas id="graficoCancelamentos"></canvas>
+  <div id="listaCancelamentos"></div>
+  <div class="dados-analisados" id="resumoDados"></div>
+</div>
 
-  <script>
-    function abrirChat() {
-      document.getElementById("chatAssistente").style.display = "flex";
-    }
-    function fecharChat() {
-      document.getElementById("chatAssistente").style.display = "none";
-    }
-    function limparChat() {
-      document.getElementById("mensagens").innerHTML = "";
-    }
-    function adicionarMensagem(remetente, texto) {
-      const div = document.createElement("div");
-      div.innerHTML = `<strong>${remetente}:</strong> ${texto}`;
-      document.getElementById("mensagens").appendChild(div);
-    }
-    function responderPergunta() {
-      const entrada = document.getElementById("pergunta");
-      const pergunta = entrada.value.trim().toLowerCase();
-      if (!pergunta) return;
-      adicionarMensagem("Você", pergunta);
-      entrada.value = "";
+<script>
+  const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
+  let cancelamentos = [];
+  let chartCancelamentos = null;
 
-      let resposta = "Desculpe, não entendi a pergunta.";
-      const hoje = new Date().toISOString().split("T")[0];
-      const mesAtual = hoje.slice(0, 7);
+  function preencherDataPadrao() {
+    const hoje = new Date();
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const formato = d => d.toISOString().split('T')[0];
+    document.getElementById("dataInicio").value = formato(ontem);
+    document.getElementById("dataFim").value = formato(ontem);
+  }
 
-      const filtradosHoje = cancelamentos.filter(c => c.data === hoje);
-      const filtradosMes = cancelamentos.filter(c => c.data.startsWith(mesAtual));
-      const totalHoje = filtradosHoje.reduce((acc, c) => acc + c.valor, 0);
-      const totalMes = filtradosMes.reduce((acc, c) => acc + c.valor, 0);
+  async function carregarDados() {
+    const res = await fetch(URL_SCRIPT);
+    cancelamentos = await res.json();
+    preencherFiltros();
+    aplicarFiltros();
+  }
 
-      if (pergunta.includes("cancelado hoje")) {
-        resposta = `Hoje foram cancelados ${formatarMoeda(totalHoje)}.`;
-      } else if (pergunta.includes("total do mês") || pergunta.includes("cancelado no mês")) {
-        resposta = `No mês atual foram cancelados ${formatarMoeda(totalMes)}.`;
-      } else if (pergunta.includes("padaria")) {
-        const padaria = filtradosMes.filter(c => c.empresa.toLowerCase().includes("padaria"));
-        const total = padaria.reduce((acc, c) => acc + c.valor, 0);
-        resposta = `A Padaria Delícia cancelou ${formatarMoeda(total)} neste mês.`;
-      } else if (pergunta.includes("rodízio")) {
-        const rodizio = filtradosMes.filter(c => c.item.toLowerCase().includes("rodízio"));
-        const total = rodizio.reduce((acc, c) => acc + c.valor, 0);
-        resposta = `Cancelamentos de rodízio neste mês: ${formatarMoeda(total)}.`;
-      } else if (pergunta.includes("qual empresa") || pergunta.includes("quem mais cancelou")) {
-        const empresas = {};
-        filtradosMes.forEach(c => empresas[c.empresa] = (empresas[c.empresa] || 0) + c.valor);
-        const top = Object.entries(empresas).sort((a, b) => b[1] - a[1])[0];
-        resposta = `A empresa que mais cancelou neste mês foi ${top[0]} com ${formatarMoeda(top[1])}.`;
+  function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatarDataBR(dataISO) {
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  function preencherFiltros() {
+    const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
+    const selectEmpresa = document.getElementById('filtroEmpresa');
+    selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
+      empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+  }
+
+  function aplicarFiltros() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const tituloPainel = document.getElementById("tituloPainel");
+    if (dataInicio && dataFim) {
+      tituloPainel.innerText = `Cancelamentos (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})`;
+    } else {
+      tituloPainel.innerText = "Cancelamentos";
+    }
+
+    const lista = document.getElementById("listaCancelamentos");
+    lista.innerHTML = "";
+    document.getElementById("rankingContainer")?.remove();
+
+    let totalGeral = 0;
+    let registrosContados = 0;
+    const grupos = {};
+
+    cancelamentos.forEach(c => {
+      if (
+        (empresaFiltro && c.empresa !== empresaFiltro) ||
+        (busca && !c.item.toLowerCase().includes(busca)) ||
+        (dataInicio && c.data < dataInicio) ||
+        (dataFim && c.data > dataFim)
+      ) return;
+
+      registrosContados++;
+      if (!grupos[c.empresa]) grupos[c.empresa] = [];
+      grupos[c.empresa].push(c);
+    });
+
+    Object.keys(grupos).forEach(empresa => {
+      const grupo = grupos[empresa];
+      let subtotal = 0;
+
+      const divGrupo = document.createElement("div");
+      divGrupo.className = "grupo-empresa";
+
+      const primeiraData = grupo[0]?.data || "";
+      grupo.forEach(c => subtotal += c.valor);
+      totalGeral += subtotal;
+
+      const titulo = document.createElement("h2");
+      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
+      divGrupo.appendChild(titulo);
+
+      grupo.forEach(c => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "item-cancelamento";
+
+        const [nomeItem, valorInfo] = c.item.split(" – ");
+        itemDiv.innerHTML = `
+          <p>${nomeItem}</p>
+          <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
+        `;
+        divGrupo.appendChild(itemDiv);
+      });
+
+      lista.appendChild(divGrupo);
+
+      if (empresaFiltro === empresa) {
+        exibirRanking(grupo);
       }
-      adicionarMensagem("DV", resposta);
+    });
+
+    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
+    document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
+
+    const canvas = document.getElementById("graficoCancelamentos");
+
+    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
+      canvas.style.display = "block";
+      setTimeout(() => {
+        desenharGrafico(grupos[empresaFiltro]);
+      }, 50);
+    } else {
+      canvas.style.display = "none";
+      if (chartCancelamentos) {
+        chartCancelamentos.destroy();
+        chartCancelamentos = null;
+      }
     }
-  </script>
+  }
+
+  function desenharGrafico(lista) {
+    const dadosPorData = {};
+    lista.forEach(c => {
+      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
+      dadosPorData[c.data] += c.valor;
+    });
+
+    const labels = Object.keys(dadosPorData).sort();
+    const valores = labels.map(d => dadosPorData[d]);
+
+    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
+    if (chartCancelamentos) chartCancelamentos.destroy();
+
+    chartCancelamentos = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(formatarDataBR),
+        datasets: [{
+          label: 'Cancelamentos por Dia',
+          data: valores,
+          borderColor: '#e74c3c',
+          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function enviarWhatsapp() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const cancelamentosFiltrados = cancelamentos.filter(c => {
+      return (!empresaFiltro || c.empresa === empresaFiltro) &&
+             (!busca || c.item.toLowerCase().includes(busca)) &&
+             (!dataInicio || c.data >= dataInicio) &&
+             (!dataFim || c.data <= dataFim);
+    });
+
+    if (cancelamentosFiltrados.length === 0) {
+      alert("Nenhum cancelamento encontrado com os filtros atuais.");
+      return;
+    }
+
+    let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
+    const agrupado = {};
+
+    cancelamentosFiltrados.forEach(c => {
+      if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
+      agrupado[c.empresa].push(c);
+    });
+
+    Object.entries(agrupado).forEach(([empresa, itens]) => {
+      let subtotal = 0;
+      mensagem += `\n\n🏢 *${empresa}*`;
+      itens.forEach(c => {
+        subtotal += c.valor;
+        mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
+      });
+      mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
+    });
+
+    const telefone = "5577999761436";
+    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, "_blank");
+  }
+
+  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+
+  window.onload = () => {
+    preencherDataPadrao();
+    carregarDados();
+  };
+</script>
+
 </body>
 </html>
