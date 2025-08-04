@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Cancelamentos - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -104,6 +105,12 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    #graficoCancelamentos {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -141,12 +148,14 @@
     📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
   </div>
 
+  <canvas id="graficoCancelamentos"></canvas>
   <div id="listaCancelamentos"></div>
 </div>
 
 <script>
   const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
   let cancelamentos = [];
+  let chartCancelamentos = null;
 
   function preencherDataPadrao() {
     const hoje = new Date();
@@ -234,12 +243,21 @@
 
       lista.appendChild(divGrupo);
 
-      if (empresaFiltro) {
+      if (empresaFiltro === empresa) {
         exibirRanking(grupo);
       }
     });
 
     document.getElementById("totalCancelado").textContent = formatarMoeda(totalGeral);
+
+    if (empresaFiltro && grupos[empresaFiltro]) {
+      desenharGrafico(grupos[empresaFiltro]);
+    } else {
+      if (chartCancelamentos) {
+        chartCancelamentos.destroy();
+        chartCancelamentos = null;
+      }
+    }
   }
 
   function exibirRanking(listaItens) {
@@ -262,6 +280,45 @@
     });
 
     document.getElementById("listaCancelamentos").prepend(container);
+  }
+
+  function desenharGrafico(lista) {
+    const dadosPorData = {};
+    lista.forEach(c => {
+      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
+      dadosPorData[c.data] += c.valor;
+    });
+
+    const labels = Object.keys(dadosPorData).sort();
+    const valores = labels.map(d => dadosPorData[d]);
+
+    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
+    if (chartCancelamentos) chartCancelamentos.destroy();
+
+    chartCancelamentos = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(formatarDataBR),
+        datasets: [{
+          label: 'Cancelamentos por Dia',
+          data: valores,
+          borderColor: '#e74c3c',
+          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
   }
 
   function enviarWhatsapp() {
