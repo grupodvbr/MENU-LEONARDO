@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <title>Cancelamentos - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: 'Roboto', Arial, sans-serif;
+      font-family: Arial, sans-serif;
       background: #f7f7f7;
       margin: 0;
       padding: 0;
@@ -79,11 +79,6 @@
     .item-cancelamento p {
       margin: 4px 0;
     }
-    .subtotal {
-      font-weight: bold;
-      margin-top: 10px;
-      font-size: 1.05em;
-    }
     .btn-whatsapp {
       background-color: #25D366;
       color: white;
@@ -105,6 +100,23 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    #graficoCancelamentos {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      width: 100% !important;
+      max-width: 100%;
+      height: 300px !important;
+      box-sizing: border-box;
+      display: none;
+    }
+    .dados-analisados {
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+      margin-top: 20px;
+    }
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -119,40 +131,13 @@
         margin-top: 10px;
       }
     }
-    #btnAbrirAssistente {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: none;
-      background: conic-gradient(from 0deg, #ff0080, #7928ca, #2afadf, #00ff6a, #ff0080);
-      background-size: 300% 300%;
-      animation: siriPulse 4s linear infinite;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 28px;
-      z-index: 9999;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-    #chatAssistente {
-      font-family: 'Roboto', sans-serif;
-    }
-    @keyframes siriPulse {
-      0% { filter: hue-rotate(0deg); }
-      100% { filter: hue-rotate(360deg); }
-    }
   </style>
 </head>
 <body>
 
 <header>
   <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1>Cancelamentos</h1>
+  <h1 id="tituloPainel">Cancelamentos</h1>
 </header>
 
 <div class="container">
@@ -162,26 +147,24 @@
     <select id="filtroEmpresa"></select>
     <input type="text" id="filtroBusca" placeholder="Buscar item..." />
   </div>
-  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-  <div class="total-cancelado">
-    📊 Total Cancelado: <span id="totalCancelado">R$ 0,00</span>
-  </div>
-  <div id="listaCancelamentos"></div>
-</div>
 
-<!-- Botão Assistente -->
-<button id="btnAbrirAssistente" onclick="document.getElementById('chatAssistente').style.display='flex'">💬</button>
-<div id="chatAssistente" style="display:none; position: fixed; bottom: 90px; right: 20px; width: 300px; max-height: 400px; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; z-index: 9998; font-family: Arial, sans-serif;">
-  <div style="background: #343a40; color: white; padding: 10px; text-align: center; font-weight: bold;">Assistente</div>
-  <div id="chatMensagens" style="padding: 10px; height: 250px; overflow-y: auto; display: flex; flex-direction: column;"></div>
-  <div style="display: flex; border-top: 1px solid #ccc;">
-    <input id="inputMensagem" type="text" placeholder="Pergunte algo..." style="flex:1; border:none; padding: 10px; outline: none;">
-    <button onclick="responderPergunta()" style="background:#25D366;color:white;border:none;padding: 0 15px;">➤</button>
+  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
+  <div class="total-cancelado">
+    📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
   </div>
+
+  <canvas id="graficoCancelamentos"></canvas>
+  <div id="listaCancelamentos"></div>
+  <div class="dados-analisados" id="resumoDados"></div>
 </div>
 
 <script>
-  window.onload = () => {
+  const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
+  let cancelamentos = [];
+  let chartCancelamentos = null;
+
+  function preencherDataPadrao() {
     const hoje = new Date();
     const ontem = new Date(hoje);
     ontem.setDate(hoje.getDate() - 1);
@@ -190,35 +173,205 @@
     document.getElementById("dataFim").value = formato(ontem);
   }
 
-  function responderPergunta() {
-    const input = document.getElementById("inputMensagem");
-    const texto = input.value.trim();
-    if (!texto) return;
-    const chat = document.getElementById("chatMensagens");
-
-    const divUser = document.createElement("div");
-    divUser.textContent = texto;
-    divUser.style.background = "#dcf8c6";
-    divUser.style.margin = "5px 0";
-    divUser.style.padding = "8px";
-    divUser.style.borderRadius = "8px";
-    divUser.style.alignSelf = "flex-end";
-    chat.appendChild(divUser);
-
-    const divResp = document.createElement("div");
-    divResp.style.background = "#f1f0f0";
-    divResp.style.margin = "5px 0";
-    divResp.style.padding = "8px";
-    divResp.style.borderRadius = "8px";
-    divResp.textContent = "🔍 Consultando...";
-    chat.appendChild(divResp);
-
-    setTimeout(() => {
-      divResp.textContent = "❓ Ainda estou aprendendo! Tente perguntar sobre cancelamentos do mês passado, hoje, rodízio, ou empresa com mais cancelamentos.";
-      input.value = "";
-      chat.scrollTop = chat.scrollHeight;
-    }, 600);
+  async function carregarDados() {
+    const res = await fetch(URL_SCRIPT);
+    cancelamentos = await res.json();
+    preencherFiltros();
+    aplicarFiltros();
   }
+
+  function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatarDataBR(dataISO) {
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  function preencherFiltros() {
+    const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
+    const selectEmpresa = document.getElementById('filtroEmpresa');
+    selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
+      empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+  }
+
+  function aplicarFiltros() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const tituloPainel = document.getElementById("tituloPainel");
+    if (dataInicio && dataFim) {
+      tituloPainel.innerText = `Cancelamentos (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})`;
+    } else {
+      tituloPainel.innerText = "Cancelamentos";
+    }
+
+    const lista = document.getElementById("listaCancelamentos");
+    lista.innerHTML = "";
+    document.getElementById("rankingContainer")?.remove();
+
+    let totalGeral = 0;
+    let registrosContados = 0;
+    const grupos = {};
+
+    cancelamentos.forEach(c => {
+      if (
+        (empresaFiltro && c.empresa !== empresaFiltro) ||
+        (busca && !c.item.toLowerCase().includes(busca)) ||
+        (dataInicio && c.data < dataInicio) ||
+        (dataFim && c.data > dataFim)
+      ) return;
+
+      registrosContados++;
+      if (!grupos[c.empresa]) grupos[c.empresa] = [];
+      grupos[c.empresa].push(c);
+    });
+
+    Object.keys(grupos).forEach(empresa => {
+      const grupo = grupos[empresa];
+      let subtotal = 0;
+
+      const divGrupo = document.createElement("div");
+      divGrupo.className = "grupo-empresa";
+
+      const primeiraData = grupo[0]?.data || "";
+      grupo.forEach(c => subtotal += c.valor);
+      totalGeral += subtotal;
+
+      const titulo = document.createElement("h2");
+      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
+      divGrupo.appendChild(titulo);
+
+      grupo.forEach(c => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "item-cancelamento";
+
+        const [nomeItem, valorInfo] = c.item.split(" – ");
+        itemDiv.innerHTML = `
+          <p>${nomeItem}</p>
+          <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
+        `;
+        divGrupo.appendChild(itemDiv);
+      });
+
+      lista.appendChild(divGrupo);
+
+      if (empresaFiltro === empresa) {
+        exibirRanking(grupo);
+      }
+    });
+
+    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
+    document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
+
+    const canvas = document.getElementById("graficoCancelamentos");
+
+    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
+      canvas.style.display = "block";
+      setTimeout(() => {
+        desenharGrafico(grupos[empresaFiltro]);
+      }, 50);
+    } else {
+      canvas.style.display = "none";
+      if (chartCancelamentos) {
+        chartCancelamentos.destroy();
+        chartCancelamentos = null;
+      }
+    }
+  }
+
+  function desenharGrafico(lista) {
+    const dadosPorData = {};
+    lista.forEach(c => {
+      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
+      dadosPorData[c.data] += c.valor;
+    });
+
+    const labels = Object.keys(dadosPorData).sort();
+    const valores = labels.map(d => dadosPorData[d]);
+
+    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
+    if (chartCancelamentos) chartCancelamentos.destroy();
+
+    chartCancelamentos = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(formatarDataBR),
+        datasets: [{
+          label: 'Cancelamentos por Dia',
+          data: valores,
+          borderColor: '#e74c3c',
+          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function enviarWhatsapp() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const cancelamentosFiltrados = cancelamentos.filter(c => {
+      return (!empresaFiltro || c.empresa === empresaFiltro) &&
+             (!busca || c.item.toLowerCase().includes(busca)) &&
+             (!dataInicio || c.data >= dataInicio) &&
+             (!dataFim || c.data <= dataFim);
+    });
+
+    if (cancelamentosFiltrados.length === 0) {
+      alert("Nenhum cancelamento encontrado com os filtros atuais.");
+      return;
+    }
+
+    let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
+    const agrupado = {};
+
+    cancelamentosFiltrados.forEach(c => {
+      if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
+      agrupado[c.empresa].push(c);
+    });
+
+    Object.entries(agrupado).forEach(([empresa, itens]) => {
+      let subtotal = 0;
+      mensagem += `\n\n🏢 *${empresa}*`;
+      itens.forEach(c => {
+        subtotal += c.valor;
+        mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
+      });
+      mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
+    });
+
+    const telefone = "5577999761436";
+    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, "_blank");
+  }
+
+  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+
+  window.onload = () => {
+    preencherDataPadrao();
+    carregarDados();
+  };
 </script>
 
 </body>
