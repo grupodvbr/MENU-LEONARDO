@@ -105,6 +105,11 @@
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 30px;
+      width: 100% !important;
+      max-width: 100%;
+      height: 300px !important;
+      box-sizing: border-box;
+      display: none;
     }
     .dados-analisados {
       text-align: center;
@@ -263,8 +268,10 @@
     document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
 
     if (empresaFiltro && grupos[empresaFiltro]) {
+      document.getElementById("graficoCancelamentos").style.display = "block";
       desenharGrafico(grupos[empresaFiltro]);
     } else {
+      document.getElementById("graficoCancelamentos").style.display = "none";
       if (chartCancelamentos) {
         chartCancelamentos.destroy();
         chartCancelamentos = null;
