@@ -159,219 +159,162 @@
   <div class="dados-analisados" id="resumoDados"></div>
 </div>
 
+<!-- AQUI SERÁ INSERIDO O ASSISTENTE FLUTUANTE -->
+<script src="https://cdn.jsdelivr.net/gh/openai-labs/chatgpt-assistente/cancelamento-assistente.js"></script>
+
 <script>
-  const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
-  let cancelamentos = [];
-  let chartCancelamentos = null;
+// Script do assistente flutuante
+const botao = document.createElement('button');
+botao.id = 'botaoAssistente';
+botao.innerText = '💬';
+document.body.appendChild(botao);
 
-  function preencherDataPadrao() {
-    const hoje = new Date();
-    const ontem = new Date(hoje);
-    ontem.setDate(hoje.getDate() - 1);
-    const formato = d => d.toISOString().split('T')[0];
-    document.getElementById("dataInicio").value = formato(ontem);
-    document.getElementById("dataFim").value = formato(ontem);
-  }
+const chat = document.createElement('div');
+chat.id = 'chatAssistente';
+chat.innerHTML = `
+  <div id="mensagensAssistente">
+    <div id="clipSugestoes">
+      💡 Tente perguntar:<br>
+      • Quanto foi cancelado mês passado?<br>
+      • Qual item mais cancelado?<br>
+      • Qual empresa teve mais cancelamentos ontem?
+    </div>
+  </div>
+  <div id="inputAssistente">
+    <input type="text" id="perguntaAssistente" placeholder="Digite sua pergunta..." />
+    <button id="enviarPergunta">🔍</button>
+  </div>
+`;
+document.body.appendChild(chat);
 
-  async function carregarDados() {
-    const res = await fetch(URL_SCRIPT);
-    cancelamentos = await res.json();
-    preencherFiltros();
-    aplicarFiltros();
-  }
+const estilo = document.createElement('style');
+estilo.innerHTML = `
+#botaoAssistente {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(45deg, #0ff, #80f);
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 28px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0,255,255,0.6);
+  z-index: 999;
+}
+#chatAssistente {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 340px;
+  max-height: 500px;
+  background: #111;
+  border: 2px solid #0ff;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  display: none;
+  flex-direction: column;
+  z-index: 998;
+}
+#mensagensAssistente {
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 400px;
+  font-size: 14px;
+  color: #0ff;
+  font-family: monospace;
+}
+#inputAssistente {
+  display: flex;
+  border-top: 1px solid #0ff;
+}
+#perguntaAssistente {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 0 0 0 16px;
+  background: #000;
+  color: #0ff;
+  font-size: 14px;
+}
+#enviarPergunta {
+  background: #0ff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 0 0 16px 0;
+  color: #000;
+  cursor: pointer;
+  font-weight: bold;
+}
+#clipSugestoes {
+  background: rgba(0,255,255,0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #0ff;
+  font-size: 13px;
+  font-style: italic;
+  margin: 6px;
+}`;
+document.head.appendChild(estilo);
 
-  function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+botao.addEventListener('click', () => {
+  chat.style.display = chat.style.display === 'none' ? 'flex' : 'none';
+});
 
-  function formatarDataBR(dataISO) {
-    const [ano, mes, dia] = dataISO.split("-");
-    return `${dia}/${mes}/${ano}`;
-  }
+document.getElementById('enviarPergunta').addEventListener('click', interpretarPergunta);
 
-  function preencherFiltros() {
-    const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
-    const selectEmpresa = document.getElementById('filtroEmpresa');
-    selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
-      empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
-  }
+function interpretarPergunta() {
+  const entrada = document.getElementById('perguntaAssistente').value.toLowerCase();
+  const mensagens = document.getElementById('mensagensAssistente');
+  const resposta = document.createElement('div');
+  resposta.style.marginTop = '10px';
+  resposta.innerHTML = `<strong>🤖 Assistente:</strong><br>`;
 
-  function aplicarFiltros() {
-    const empresaFiltro = document.getElementById('filtroEmpresa').value;
-    const busca = document.getElementById('filtroBusca').value.toLowerCase();
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
-
-    const tituloPainel = document.getElementById("tituloPainel");
-    if (dataInicio && dataFim) {
-      tituloPainel.innerText = `Cancelamentos (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})`;
-    } else {
-      tituloPainel.innerText = "Cancelamentos";
-    }
-
-    const lista = document.getElementById("listaCancelamentos");
-    lista.innerHTML = "";
-    document.getElementById("rankingContainer")?.remove();
-
-    let totalGeral = 0;
-    let registrosContados = 0;
-    const grupos = {};
-
+  if (entrada.includes("ontem") && entrada.includes("mais")) {
+    let ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    const dataStr = ontem.toISOString().split('T')[0];
+    const porEmpresa = {};
     cancelamentos.forEach(c => {
-      if (
-        (empresaFiltro && c.empresa !== empresaFiltro) ||
-        (busca && !c.item.toLowerCase().includes(busca)) ||
-        (dataInicio && c.data < dataInicio) ||
-        (dataFim && c.data > dataFim)
-      ) return;
-
-      registrosContados++;
-      if (!grupos[c.empresa]) grupos[c.empresa] = [];
-      grupos[c.empresa].push(c);
-    });
-
-    Object.keys(grupos).forEach(empresa => {
-      const grupo = grupos[empresa];
-      let subtotal = 0;
-
-      const divGrupo = document.createElement("div");
-      divGrupo.className = "grupo-empresa";
-
-      const primeiraData = grupo[0]?.data || "";
-      grupo.forEach(c => subtotal += c.valor);
-      totalGeral += subtotal;
-
-      const titulo = document.createElement("h2");
-      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
-      divGrupo.appendChild(titulo);
-
-      grupo.forEach(c => {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "item-cancelamento";
-
-        const [nomeItem, valorInfo] = c.item.split(" – ");
-        itemDiv.innerHTML = `
-          <p>${nomeItem}</p>
-          <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
-        `;
-        divGrupo.appendChild(itemDiv);
-      });
-
-      lista.appendChild(divGrupo);
-
-      if (empresaFiltro === empresa) {
-        exibirRanking(grupo);
+      if (c.data === dataStr) {
+        if (!porEmpresa[c.empresa]) porEmpresa[c.empresa] = 0;
+        porEmpresa[c.empresa] += c.valor;
       }
     });
+    const maior = Object.entries(porEmpresa).sort((a,b)=>b[1]-a[1])[0];
+    resposta.innerHTML += `A empresa com mais cancelamentos ontem (${formatarDataBR(dataStr)}) foi <strong>${maior[0]}</strong> com <strong>${formatarMoeda(maior[1])}</strong>`;
 
-    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
-    document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
+  } else if (entrada.includes("cancelado") && entrada.includes("mês")) {
+    const hoje = new Date();
+    const mes = hoje.getMonth();
+    const ano = hoje.getFullYear();
+    let total = 0;
+    cancelamentos.forEach(c => {
+      const d = new Date(c.data);
+      if (d.getMonth() === mes && d.getFullYear() === ano) total += c.valor;
+    });
+    resposta.innerHTML += `O total de cancelamentos neste mês é <strong>${formatarMoeda(total)}</strong>`;
 
-    const canvas = document.getElementById("graficoCancelamentos");
+  } else if (entrada.includes("item") && entrada.includes("cancelado")) {
+    const contagem = {};
+    cancelamentos.forEach(c => {
+      const nome = c.item.split("–")[0].trim();
+      if (!contagem[nome]) contagem[nome] = 0;
+      contagem[nome] += c.valor;
+    });
+    const mais = Object.entries(contagem).sort((a,b)=>b[1]-a[1])[0];
+    resposta.innerHTML += `O item mais cancelado é <strong>${mais[0]}</strong> com <strong>${formatarMoeda(mais[1])}</strong>`;
 
-    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
-      canvas.style.display = "block";
-      setTimeout(() => {
-        desenharGrafico(grupos[empresaFiltro]);
-      }, 50);
-    } else {
-      canvas.style.display = "none";
-      if (chartCancelamentos) {
-        chartCancelamentos.destroy();
-        chartCancelamentos = null;
-      }
-    }
+  } else {
+    resposta.innerHTML += `Desculpe, não entendi sua pergunta. Tente algo como: \"Qual empresa teve mais cancelamentos ontem?\"`;
   }
 
-  function desenharGrafico(lista) {
-    const dadosPorData = {};
-    lista.forEach(c => {
-      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
-      dadosPorData[c.data] += c.valor;
-    });
-
-    const labels = Object.keys(dadosPorData).sort();
-    const valores = labels.map(d => dadosPorData[d]);
-
-    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
-    if (chartCancelamentos) chartCancelamentos.destroy();
-
-    chartCancelamentos = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels.map(formatarDataBR),
-        datasets: [{
-          label: 'Cancelamentos por Dia',
-          data: valores,
-          borderColor: '#e74c3c',
-          backgroundColor: 'rgba(231, 76, 60, 0.1)',
-          tension: 0.3,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
-        },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
-
-  function enviarWhatsapp() {
-    const empresaFiltro = document.getElementById('filtroEmpresa').value;
-    const busca = document.getElementById('filtroBusca').value.toLowerCase();
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
-
-    const cancelamentosFiltrados = cancelamentos.filter(c => {
-      return (!empresaFiltro || c.empresa === empresaFiltro) &&
-             (!busca || c.item.toLowerCase().includes(busca)) &&
-             (!dataInicio || c.data >= dataInicio) &&
-             (!dataFim || c.data <= dataFim);
-    });
-
-    if (cancelamentosFiltrados.length === 0) {
-      alert("Nenhum cancelamento encontrado com os filtros atuais.");
-      return;
-    }
-
-    let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
-    const agrupado = {};
-
-    cancelamentosFiltrados.forEach(c => {
-      if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
-      agrupado[c.empresa].push(c);
-    });
-
-    Object.entries(agrupado).forEach(([empresa, itens]) => {
-      let subtotal = 0;
-      mensagem += `\n\n🏢 *${empresa}*`;
-      itens.forEach(c => {
-        subtotal += c.valor;
-        mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
-      });
-      mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
-    });
-
-    const telefone = "5577999761436";
-    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
-  }
-
-  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
-
-  window.onload = () => {
-    preencherDataPadrao();
-    carregarDados();
-  };
+  mensagens.appendChild(resposta);
+  mensagens.scrollTop = mensagens.scrollHeight;
+  document.getElementById('perguntaAssistente').value = '';
+}
 </script>
 
 </body>
