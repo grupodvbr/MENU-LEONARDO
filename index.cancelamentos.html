@@ -119,21 +119,53 @@
     }
 
     /* Botão flutuante neon */
-    #botaoChatFlutuante {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle at 30% 30%, #00f0ff, #a900ff);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
-      cursor: pointer;
-      z-index: 9999;
-    }
+   #botaoChatFlutuante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #00f0ff, #a900ff); /* gradiente da logo */
+  color: white;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  text-shadow:
+    0 0 5px #fff,
+    0 0 10px #00f0ff,
+    0 0 20px #a900ff,
+    0 0 30px #a900ff;
+  box-shadow:
+    0 0 10px #00f0ff,
+    0 0 20px #a900ff,
+    0 0 30px #a900ff;
+  cursor: pointer;
+  z-index: 9999;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulsarNeon 2s infinite;
+}
+
+/* Efeito pulsar */
+@keyframes pulsarNeon {
+  0%, 100% {
+    box-shadow:
+      0 0 5px #00f0ff,
+      0 0 15px #a900ff,
+      0 0 25px #a900ff;
+  }
+  50% {
+    box-shadow:
+      0 0 15px #00f0ff,
+      0 0 25px #a900ff,
+      0 0 35px #a900ff;
+  }
+}
+
 
     #botaoChatFlutuante img {
       width: 28px;
@@ -185,7 +217,7 @@
 
 <!-- Botão Neon Flutuante -->
 <div id="botaoChatFlutuante" onclick="abrirAssistente()">
-  <img src="https://img.icons8.com/ios-filled/50/ffffff/topic.png" alt="Chat" />
+  DV
 </div>
 
 <!-- Assistente Virtual -->
@@ -374,7 +406,7 @@
     return true;
   });
 
-  let resposta = "Desculpe, não entendi sua pergunta.";
+  let resposta = "Desculpe, não estendi, Nalbert esta me configurando ainda.";
 
   if (pergunta.includes("últimos") || pergunta.includes("recentes")) {
     const ultimos = cancelamentos.slice(-5).reverse().map(c =>
