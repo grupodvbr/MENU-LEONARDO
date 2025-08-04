@@ -346,7 +346,9 @@
   input.value = "";
 
   let resposta = "Desculpe, não entendi sua pergunta.";
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const hoje = new Date();
+  const hojeStr = hoje.toISOString().slice(0, 10);
+  const mesAtual = hoje.toISOString().slice(0, 7);
   const mesAnterior = new Date();
   mesAnterior.setMonth(mesAnterior.getMonth() - 1);
   const mesAnteriorStr = mesAnterior.toISOString().slice(0, 7);
@@ -365,6 +367,11 @@
     cancelamentos.forEach(c => totais[c.empresa] = (totais[c.empresa] || 0) + c.valor);
     const mais = Object.entries(totais).sort((a,b) => b[1]-a[1])[0];
     resposta = `A empresa que mais cancelou foi ${mais[0]} com ${formatarMoeda(mais[1])}.`;
+  } else if (/empresa.*menos.*cancelou/.test(pergunta)) {
+    const totais = {};
+    cancelamentos.forEach(c => totais[c.empresa] = (totais[c.empresa] || 0) + c.valor);
+    const menos = Object.entries(totais).sort((a,b) => a[1]-b[1])[0];
+    resposta = `A empresa que menos cancelou foi ${menos[0]} com ${formatarMoeda(menos[1])}.`;
   } else if (/cancelamento.*(mais|menos).*caro/.test(pergunta)) {
     const ordenado = cancelamentos.sort((a,b) => b.valor - a.valor);
     const maisCaro = ordenado[0];
@@ -383,13 +390,29 @@
     const maisFrequente = Object.entries(itens).sort((a,b) => b[1]-a[1])[0];
     resposta = `O item mais frequentemente cancelado foi "${maisFrequente[0]}", com ${maisFrequente[1]} ocorrências.`;
   } else if (/cancelamento.*hoje/.test(pergunta)) {
-    const hoje = new Date().toISOString().slice(0,10);
-    const totalHoje = cancelamentos.filter(c => c.data === hoje).reduce((acc, c) => acc + c.valor, 0);
+    const totalHoje = cancelamentos.filter(c => c.data === hojeStr).reduce((acc, c) => acc + c.valor, 0);
     resposta = `Hoje foram cancelados ${formatarMoeda(totalHoje)}.`;
+  } else if (/quantos.*cancelamentos.*(hoje|dia)/.test(pergunta)) {
+    const totalHoje = cancelamentos.filter(c => c.data === hojeStr).length;
+    resposta = `Hoje foram registrados ${totalHoje} cancelamento(s).`;
+  } else if (/média.*diária/.test(pergunta)) {
+    const datasUnicas = [...new Set(cancelamentos.map(c => c.data))];
+    const total = cancelamentos.reduce((acc, c) => acc + c.valor, 0);
+    const media = total / datasUnicas.length;
+    resposta = `A média diária de cancelamentos é ${formatarMoeda(media)}.`;
+  } else if (/total.*cancelado/.test(pergunta)) {
+    const total = cancelamentos.reduce((acc, c) => acc + c.valor, 0);
+    resposta = `O total cancelado até agora é ${formatarMoeda(total)}.`;
+  } else if (/cancelamento.*(rod[ií]zio|rodizio)/.test(pergunta)) {
+    const totalRodizio = cancelamentos
+      .filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio"))
+      .reduce((acc, c) => acc + c.valor, 0);
+    resposta = `O valor total dos cancelamentos de rodízio foi ${formatarMoeda(totalRodizio)}.`;
   }
 
   adicionarMensagem("Assistente", resposta);
 }
+
 
 
   function adicionarMensagem(remetente, mensagem) {
