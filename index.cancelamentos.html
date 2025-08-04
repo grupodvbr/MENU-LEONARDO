@@ -337,77 +337,69 @@
     });
   }
 
-  function responderPergunta() {
+  function responderPergunta(perguntaManual = null) {
   const input = document.getElementById("chatInput");
-  const pergunta = input.value.trim().toLowerCase();
+  const pergunta = perguntaManual || input.value.trim().toLowerCase();
   if (!pergunta) return;
 
   adicionarMensagem("Você", pergunta);
   input.value = "";
 
-  let resposta = "Desculpe, não entendi sua pergunta.";
   const hoje = new Date();
   const hojeStr = hoje.toISOString().slice(0, 10);
-  const mesAtual = hoje.toISOString().slice(0, 7);
-  const mesAnterior = new Date();
+  const mesAtual = hojeStr.slice(0, 7);
+  const mesAnterior = new Date(hoje);
   mesAnterior.setMonth(mesAnterior.getMonth() - 1);
   const mesAnteriorStr = mesAnterior.toISOString().slice(0, 7);
 
-  const totalPorMes = (mes) =>
-    cancelamentos
-      .filter(c => c.data.startsWith(mes))
-      .reduce((acc, cur) => acc + cur.valor, 0);
+  const formatarDataEntrada = (frase) => {
+    const regex = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/;
+    const match = frase.match(regex);
+    if (!match) return null;
+    const [ , dia, mes, ano ] = match;
+    return `${ano.length === 2 ? '20' + ano : ano}-${mes.padStart(2,'0')}-${dia.padStart(2,'0')}`;
+  };
 
-  if (/cancelado.*mes.*passado/.test(pergunta)) {
-    resposta = `No mês passado foram cancelados ${formatarMoeda(totalPorMes(mesAnteriorStr))}.`;
-  } else if (/cancelado.*este.*mes/.test(pergunta)) {
-    resposta = `Neste mês foram cancelados ${formatarMoeda(totalPorMes(mesAtual))}.`;
-  } else if (/qual.*empresa.*mais.*cancelou/.test(pergunta)) {
-    const totais = {};
-    cancelamentos.forEach(c => totais[c.empresa] = (totais[c.empresa] || 0) + c.valor);
-    const mais = Object.entries(totais).sort((a,b) => b[1]-a[1])[0];
-    resposta = `A empresa que mais cancelou foi ${mais[0]} com ${formatarMoeda(mais[1])}.`;
-  } else if (/empresa.*menos.*cancelou/.test(pergunta)) {
-    const totais = {};
-    cancelamentos.forEach(c => totais[c.empresa] = (totais[c.empresa] || 0) + c.valor);
-    const menos = Object.entries(totais).sort((a,b) => a[1]-b[1])[0];
-    resposta = `A empresa que menos cancelou foi ${menos[0]} com ${formatarMoeda(menos[1])}.`;
-  } else if (/cancelamento.*(mais|menos).*caro/.test(pergunta)) {
-    const ordenado = cancelamentos.sort((a,b) => b.valor - a.valor);
-    const maisCaro = ordenado[0];
-    const menosCaro = ordenado[ordenado.length - 1];
-    if (pergunta.includes("mais")) {
-      resposta = `O cancelamento mais caro foi ${maisCaro.item} em ${formatarDataBR(maisCaro.data)} no valor de ${formatarMoeda(maisCaro.valor)} (${maisCaro.empresa}).`;
-    } else {
-      resposta = `O cancelamento mais barato foi ${menosCaro.item} em ${formatarDataBR(menosCaro.data)} no valor de ${formatarMoeda(menosCaro.valor)} (${menosCaro.empresa}).`;
-    }
-  } else if (/cancelamento.*frequente/.test(pergunta)) {
-    const itens = {};
-    cancelamentos.forEach(c => {
-      const nome = c.item.split(" – ")[0].trim();
-      itens[nome] = (itens[nome] || 0) + 1;
-    });
-    const maisFrequente = Object.entries(itens).sort((a,b) => b[1]-a[1])[0];
-    resposta = `O item mais frequentemente cancelado foi "${maisFrequente[0]}", com ${maisFrequente[1]} ocorrências.`;
-  } else if (/cancelamento.*hoje/.test(pergunta)) {
+  const dataEncontrada = formatarDataEntrada(pergunta);
+  const empresaMatch = cancelamentos.find(c => pergunta.includes(c.empresa.toLowerCase()));
+  const empresaSelecionada = empresaMatch ? empresaMatch.empresa : null;
+
+  const palavraChaveMatch = ["rodízio", "rodizio", "pizza", "bebida", "hamburguer", "combo", "entrada"]
+    .filter(p => pergunta.includes(p));
+  
+  const filtrados = cancelamentos.filter(c => {
+    if (dataEncontrada && c.data !== dataEncontrada) return false;
+    if (empresaSelecionada && c.empresa !== empresaSelecionada) return false;
+    if (palavraChaveMatch.length && !palavraChaveMatch.some(p => c.item.toLowerCase().includes(p))) return false;
+    return true;
+  });
+
+  let resposta = "Desculpe, não entendi sua pergunta.";
+
+  if (pergunta.includes("últimos") || pergunta.includes("recentes")) {
+    const ultimos = cancelamentos.slice(-5).reverse().map(c =>
+      `• ${formatarDataBR(c.data)} - ${c.empresa}: ${c.item} (${formatarMoeda(c.valor)})`);
+    resposta = "🕒 Últimos 5 registros de cancelamentos:\n" + ultimos.join("\n");
+  }
+  else if (filtrados.length && pergunta.includes("cancelado")) {
+    const total = filtrados.reduce((acc, c) => acc + c.valor, 0);
+    resposta = `Total cancelado${empresaSelecionada ? ` pela empresa ${empresaSelecionada}` : ""}${dataEncontrada ? ` em ${formatarDataBR(dataEncontrada)}` : ""}${palavraChaveMatch.length ? ` com "${palavraChaveMatch[0]}"` : ""}: ${formatarMoeda(total)}.`;
+  }
+  else if (filtrados.length && (pergunta.includes("item") || pergunta.includes("quais"))) {
+    const itens = filtrados.map(c => `• ${c.item} (${formatarMoeda(c.valor)})`);
+    resposta = `Itens cancelados${empresaSelecionada ? ` pela empresa ${empresaSelecionada}` : ""}${dataEncontrada ? ` em ${formatarDataBR(dataEncontrada)}` : ""}:\n${itens.join('\n')}`;
+  }
+  else if (/cancelado.*mes.*passado/.test(pergunta)) {
+    const total = cancelamentos.filter(c => c.data.startsWith(mesAnteriorStr)).reduce((acc, cur) => acc + cur.valor, 0);
+    resposta = `No mês passado foram cancelados ${formatarMoeda(total)}.`;
+  }
+  else if (/cancelado.*este.*mes/.test(pergunta)) {
+    const total = cancelamentos.filter(c => c.data.startsWith(mesAtual)).reduce((acc, cur) => acc + cur.valor, 0);
+    resposta = `Neste mês foram cancelados ${formatarMoeda(total)}.`;
+  }
+  else if (/cancelamento.*hoje/.test(pergunta)) {
     const totalHoje = cancelamentos.filter(c => c.data === hojeStr).reduce((acc, c) => acc + c.valor, 0);
     resposta = `Hoje foram cancelados ${formatarMoeda(totalHoje)}.`;
-  } else if (/quantos.*cancelamentos.*(hoje|dia)/.test(pergunta)) {
-    const totalHoje = cancelamentos.filter(c => c.data === hojeStr).length;
-    resposta = `Hoje foram registrados ${totalHoje} cancelamento(s).`;
-  } else if (/média.*diária/.test(pergunta)) {
-    const datasUnicas = [...new Set(cancelamentos.map(c => c.data))];
-    const total = cancelamentos.reduce((acc, c) => acc + c.valor, 0);
-    const media = total / datasUnicas.length;
-    resposta = `A média diária de cancelamentos é ${formatarMoeda(media)}.`;
-  } else if (/total.*cancelado/.test(pergunta)) {
-    const total = cancelamentos.reduce((acc, c) => acc + c.valor, 0);
-    resposta = `O total cancelado até agora é ${formatarMoeda(total)}.`;
-  } else if (/cancelamento.*(rod[ií]zio|rodizio)/.test(pergunta)) {
-    const totalRodizio = cancelamentos
-      .filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio"))
-      .reduce((acc, c) => acc + c.valor, 0);
-    resposta = `O valor total dos cancelamentos de rodízio foi ${formatarMoeda(totalRodizio)}.`;
   }
 
   adicionarMensagem("Assistente", resposta);
@@ -424,10 +416,37 @@
     chat.scrollTop = chat.scrollHeight;
   }
 
-  function abrirAssistente() {
-    document.getElementById("chatAssistente").style.display = "flex";
-    document.getElementById("botaoChatFlutuante").style.display = "none";
+ function abrirAssistente() {
+  document.getElementById("chatAssistente").style.display = "flex";
+  document.getElementById("botaoChatFlutuante").style.display = "none";
+  const chat = document.getElementById("chatMensagens");
+  if (!document.getElementById("botoesSugestoes")) {
+    const sugestoes = [
+      "Quanto foi cancelado hoje?",
+      "Cancelados do Mercatto no dia 01/08/2025",
+      "Quais itens foram cancelados em 25/07?",
+      "Total cancelado com rodízio",
+      "Últimos cancelamentos"
+    ];
+    const div = document.createElement("div");
+    div.id = "botoesSugestoes";
+    div.style.marginBottom = "10px";
+    sugestoes.forEach(texto => {
+      const btn = document.createElement("button");
+      btn.textContent = texto;
+      btn.style.margin = "2px";
+      btn.style.padding = "6px 10px";
+      btn.style.borderRadius = "6px";
+      btn.style.border = "1px solid #ccc";
+      btn.style.cursor = "pointer";
+      btn.style.fontSize = "12px";
+      btn.onclick = () => responderPergunta(texto.toLowerCase());
+      div.appendChild(btn);
+    });
+    chat.appendChild(div);
   }
+}
+
 
   function fecharAssistente() {
     document.getElementById("chatAssistente").style.display = "none";
