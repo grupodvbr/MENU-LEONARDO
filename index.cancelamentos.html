@@ -5,6 +5,352 @@
   <title>Cancelamentos - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let cancelamentos = [];
+
+const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
+
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarDataBR(dataISO) {
+  const [ano, mes, dia] = dataISO.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+async function carregarDados() {
+  const res = await fetch(URL_SCRIPT);
+  cancelamentos = await res.json();
+  aplicarFiltros?.();
+}
+
+window.onload = () => {
+  preencherDataPadrao?.();
+  carregarDados();
+};
+</script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+    }
+    header {
+      background-color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+      gap: 10px;
+    }
+    header img {
+      height: 60px;
+      flex-shrink: 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #000;
+      flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
+    }
+    .filters select, .filters input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      flex: 1 1 200px;
+      font-size: 0.95em;
+    }
+    .grupo-empresa {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      padding: 15px 20px;
+      font-size: 0.95em;
+    }
+    .grupo-empresa h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    .item-cancelamento {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .item-cancelamento:last-child {
+      border-bottom: none;
+    }
+    .item-cancelamento p {
+      margin: 4px 0;
+    }
+    .btn-whatsapp {
+      background-color: #25D366;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      float: right;
+      margin-bottom: 10px;
+      font-size: 0.95em;
+    }
+    .total-cancelado {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    #graficoCancelamentos {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      width: 100% !important;
+      max-width: 100%;
+      height: 300px !important;
+      box-sizing: border-box;
+      display: none;
+    }
+    .dados-analisados {
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+      margin-top: 20px;
+    }
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin: 0 0 10px;
+      }
+      .btn-whatsapp {
+        float: none;
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+  <h1 id="tituloPainel">Cancelamentos</h1>
+</header>
+
+<div class="container">
+  <div class="filters">
+    <input type="date" id="dataInicio" />
+    <input type="date" id="dataFim" />
+    <select id="filtroEmpresa"></select>
+    <input type="text" id="filtroBusca" placeholder="Buscar item..." />
+  </div>
+
+  <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
+
+  <div class="total-cancelado">
+    📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span>
+  </div>
+
+  <canvas id="graficoCancelamentos"></canvas>
+  <div id="listaCancelamentos"></div>
+  <div class="dados-analisados" id="resumoDados"></div>
+</div>
+
+<!-- AQUI SERÁ INSERIDO O ASSISTENTE FLUTUANTE -->
+<script src="https://cdn.jsdelivr.net/gh/openai-labs/chatgpt-assistente/cancelamento-assistente.js"></script>
+
+<script>
+// Script do assistente flutuante
+const botao = document.createElement('button');
+botao.id = 'botaoAssistente';
+botao.innerText = '💬';
+document.body.appendChild(botao);
+
+const chat = document.createElement('div');
+chat.id = 'chatAssistente';
+chat.innerHTML = `
+  <div id="mensagensAssistente">
+    <div id="clipSugestoes">
+      💡 Tente perguntar:<br>
+      • Quanto foi cancelado mês passado?<br>
+      • Qual item mais cancelado?<br>
+      • Qual empresa teve mais cancelamentos ontem?
+    </div>
+  </div>
+  <div id="inputAssistente">
+    <input type="text" id="perguntaAssistente" placeholder="Digite sua pergunta..." />
+    <button id="enviarPergunta">🔍</button>
+  </div>
+`;
+document.body.appendChild(chat);
+
+const estilo = document.createElement('style');
+estilo.innerHTML = `
+#botaoAssistente {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(45deg, #0ff, #80f);
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 28px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0,255,255,0.6);
+  z-index: 999;
+}
+#chatAssistente {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 340px;
+  max-height: 500px;
+  background: #111;
+  border: 2px solid #0ff;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  display: none;
+  flex-direction: column;
+  z-index: 998;
+}
+#mensagensAssistente {
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 400px;
+  font-size: 14px;
+  color: #0ff;
+  font-family: monospace;
+}
+#inputAssistente {
+  display: flex;
+  border-top: 1px solid #0ff;
+}
+#perguntaAssistente {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 0 0 0 16px;
+  background: #000;
+  color: #0ff;
+  font-size: 14px;
+}
+#enviarPergunta {
+  background: #0ff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 0 0 16px 0;
+  color: #000;
+  cursor: pointer;
+  font-weight: bold;
+}
+#clipSugestoes {
+  background: rgba(0,255,255,0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #0ff;
+  font-size: 13px;
+  font-style: italic;
+  margin: 6px;
+}`;
+document.head.appendChild(estilo);
+
+botao.addEventListener('click', () => {
+  chat.style.display = chat.style.display === 'none' ? 'flex' : 'none';
+});
+
+document.getElementById('enviarPergunta').addEventListener('click', interpretarPergunta);
+
+function interpretarPergunta() {
+  const entrada = document.getElementById('perguntaAssistente').value.toLowerCase();
+  const mensagens = document.getElementById('mensagensAssistente');
+  const resposta = document.createElement('div');
+  resposta.style.marginTop = '10px';
+  resposta.innerHTML = `<strong>🤖 Assistente:</strong><br>`;
+
+  if (entrada.includes("ontem") && entrada.includes("mais")) {
+    let ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    const dataStr = ontem.toISOString().split('T')[0];
+    const porEmpresa = {};
+    cancelamentos.forEach(c => {
+      if (c.data === dataStr) {
+        if (!porEmpresa[c.empresa]) porEmpresa[c.empresa] = 0;
+        porEmpresa[c.empresa] += c.valor;
+      }
+    });
+    const maior = Object.entries(porEmpresa).sort((a,b)=>b[1]-a[1])[0];
+    resposta.innerHTML += `A empresa com mais cancelamentos ontem (${formatarDataBR(dataStr)}) foi <strong>${maior[0]}</strong> com <strong>${formatarMoeda(maior[1])}</strong>`;
+
+  } else if (entrada.includes("cancelado") && entrada.includes("mês")) {
+    const hoje = new Date();
+    const mes = hoje.getMonth();
+    const ano = hoje.getFullYear();
+    let total = 0;
+    cancelamentos.forEach(c => {
+      const d = new Date(c.data);
+      if (d.getMonth() === mes && d.getFullYear() === ano) total += c.valor;
+    });
+    resposta.innerHTML += `O total de cancelamentos neste mês é <strong>${formatarMoeda(total)}</strong>`;
+
+  } else if (entrada.includes("item") && entrada.includes("cancelado")) {
+    const contagem = {};
+    cancelamentos.forEach(c => {
+      const nome = c.item.split("–")[0].trim();
+      if (!contagem[nome]) contagem[nome] = 0;
+      contagem[nome] += c.valor;
+    });
+    const mais = Object.entries(contagem).sort((a,b)=>b[1]-a[1])[0];
+    resposta.innerHTML += `O item mais cancelado é <strong>${mais[0]}</strong> com <strong>${formatarMoeda(mais[1])}</strong>`;
+
+  } else {
+    resposta.innerHTML += `Desculpe, não entendi sua pergunta. Tente algo como: \"Qual empresa teve mais cancelamentos ontem?\"`;
+  }
+
+  mensagens.appendChild(resposta);
+  mensagens.scrollTop = mensagens.scrollHeight;
+  document.getElementById('perguntaAssistente').value = '';
+}
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cancelamentos - Grupo DV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
