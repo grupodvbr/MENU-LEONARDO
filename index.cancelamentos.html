@@ -131,7 +131,6 @@
         margin-top: 10px;
       }
     }
-
     #btnAbrirAssistente {
       position: fixed;
       bottom: 20px;
@@ -152,7 +151,6 @@
       cursor: pointer;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
     }
-
     @keyframes siriPulse {
       0% { filter: hue-rotate(0deg); }
       100% { filter: hue-rotate(360deg); }
@@ -161,7 +159,28 @@
 </head>
 <body>
 
-<!-- Botão Assistente com Efeito Siri -->
+<!-- Cabeçalho -->
+<header>
+  <img src="logo.png" alt="Logo Grupo DV">
+  <h1 id="tituloPainel">Cancelamentos</h1>
+</header>
+
+<div class="container">
+  <div class="filters">
+    <select id="filtroEmpresa"></select>
+    <input type="date" id="dataInicio">
+    <input type="date" id="dataFim">
+    <input type="text" id="filtroBusca" placeholder="Buscar por item...">
+    <button class="btn-whatsapp" onclick="enviarWhatsapp()">Enviar WhatsApp</button>
+  </div>
+
+  <div class="total-cancelado" id="totalCancelado">R$ 0,00</div>
+  <canvas id="graficoCancelamentos"></canvas>
+  <div id="listaCancelamentos"></div>
+  <div class="dados-analisados" id="resumoDados"></div>
+</div>
+
+<!-- Botão Assistente -->
 <button id="btnAbrirAssistente" onclick="document.getElementById('chatAssistente').style.display='flex'">💬</button>
 <div id="chatAssistente" style="display:none; position: fixed; bottom: 90px; right: 20px; width: 300px; max-height: 400px; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; z-index: 9998; font-family: Arial, sans-serif;">
   <div style="background: #343a40; color: white; padding: 10px; text-align: center;">Assistente</div>
@@ -171,68 +190,6 @@
     <button onclick="responderPergunta()" style="background:#25D366;color:white;border:none;padding: 0 15px;">➤</button>
   </div>
 </div>
-
-<script>
-  function responderPergunta() {
-    const input = document.getElementById("inputMensagem");
-    const texto = input.value.trim();
-    if (!texto) return;
-    const chat = document.getElementById("chatMensagens");
-
-    const divUser = document.createElement("div");
-    divUser.textContent = texto;
-    divUser.style.background = "#dcf8c6";
-    divUser.style.margin = "5px 0";
-    divUser.style.padding = "8px";
-    divUser.style.borderRadius = "8px";
-    divUser.style.alignSelf = "flex-end";
-    chat.appendChild(divUser);
-
-    const divResp = document.createElement("div");
-    divResp.style.background = "#f1f0f0";
-    divResp.style.margin = "5px 0";
-    divResp.style.padding = "8px";
-    divResp.style.borderRadius = "8px";
-    divResp.textContent = "🔍 Consultando...";
-    chat.appendChild(divResp);
-
-    setTimeout(() => {
-      let resposta = "❓ Ainda estou aprendendo! Tente perguntar sobre cancelamentos do mês passado, hoje, rodízio, ou empresa com mais cancelamentos.";
-      const hoje = new Date();
-      const ontem = new Date(hoje);
-      ontem.setDate(hoje.getDate() - 1);
-      const mesPassado = new Date();
-      mesPassado.setMonth(hoje.getMonth() - 1);
-      const mes = String(mesPassado.getMonth() + 1).padStart(2, '0');
-      const ano = mesPassado.getFullYear();
-
-      if (texto.includes("mês passado")) {
-        const total = cancelamentos.filter(c => c.data.startsWith(`${ano}-${mes}`)).reduce((s, c) => s + c.valor, 0);
-        resposta = `💰 Total cancelado em ${mes}/${ano}: ${formatarMoeda(total)}`;
-      } else if (texto.includes("rodízio") || texto.includes("rodizio")) {
-        const rodizios = cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio"));
-        const total = rodizios.reduce((s, c) => s + c.valor, 0);
-        resposta = `🍽️ Cancelamentos de rodízio: ${rodizios.length} itens, total ${formatarMoeda(total)}`;
-      } else if (texto.includes("empresa") && texto.includes("mais")) {
-        const totais = {};
-        cancelamentos.forEach(c => { totais[c.empresa] = (totais[c.empresa] || 0) + c.valor; });
-        const maior = Object.entries(totais).sort((a,b)=>b[1]-a[1])[0];
-        resposta = `🏢 Empresa com mais cancelamentos: ${maior[0]} (${formatarMoeda(maior[1])})`;
-      } else if (texto.includes("hoje")) {
-        const hojeStr = hoje.toISOString().split('T')[0];
-        const total = cancelamentos.filter(c => c.data === hojeStr).reduce((s, c) => s + c.valor, 0);
-        resposta = `📅 Cancelamentos de hoje: ${formatarMoeda(total)}`;
-      } else if (texto.includes("ontem")) {
-        const ontemStr = ontem.toISOString().split('T')[0];
-        const total = cancelamentos.filter(c => c.data === ontemStr).reduce((s, c) => s + c.valor, 0);
-        resposta = `📆 Cancelamentos de ontem: ${formatarMoeda(total)}`;
-      }
-
-      divResp.textContent = resposta;
-      input.value = "";
-      chat.scrollTop = chat.scrollHeight;
-    }, 600);
-  }
 <script>
   const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
   let cancelamentos = [];
