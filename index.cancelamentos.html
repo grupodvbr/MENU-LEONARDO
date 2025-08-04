@@ -1,4 +1,3 @@
-<!-- Painel de Cancelamentos com Assistente Virtual Integrado -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -7,145 +6,447 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; font-size: 14px; }
-    header { background-color: white; padding: 20px; display: flex; align-items: center; border-bottom: 1px solid #ccc; gap: 10px; }
-    header img { height: 60px; flex-shrink: 0; }
-    header h1 { margin: 0; font-size: 1.6em; font-weight: bold; color: #000; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
-    .container { padding: 20px; max-width: 1200px; margin: auto; }
-    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end; }
-    .filters select, .filters input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1 1 200px; font-size: 0.95em; }
-    .grupo-empresa { background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; padding: 15px 20px; font-size: 0.95em; }
-    .grupo-empresa h2 { margin-top: 0; font-size: 1.2em; color: #2c3e50; }
-    .item-cancelamento { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-    .item-cancelamento:last-child { border-bottom: none; }
-    .item-cancelamento p { margin: 4px 0; }
-    .btn-whatsapp { background-color: #25D366; color: white; padding: 12px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; float: right; margin-bottom: 10px; font-size: 0.95em; }
-    .total-cancelado { background: #fff; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1em; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    #graficoCancelamentos { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 30px; width: 100%; max-width: 100%; height: 300px; box-sizing: border-box; display: none; }
-    .dados-analisados { text-align: center; color: #555; font-size: 0.95em; margin-top: 20px; }
-    #btnAbrirAssistente { position: fixed; bottom: 20px; right: 20px; z-index: 998; background-color: #007bff; color: white; border: none; padding: 12px 18px; border-radius: 50px; font-size: 16px; cursor: pointer; }
-    #chatAssistente { position: fixed; bottom: 20px; right: 20px; width: 320px; max-height: 480px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; overflow: hidden; font-size: 14px; z-index: 999; }
-    #chatAssistente header { background: #343a40; color: #fff; padding: 10px; text-align: center; font-weight: bold; }
-    #chatMensagens { flex: 1; padding: 10px; overflow-y: auto; background: #f9f9f9; }
-    #chatMensagens div { margin-bottom: 10px; }
-    .assistente { background: #e0f7fa; padding: 8px 12px; border-radius: 8px; max-width: 90%; }
-    .usuario { background: #d1ffd1; padding: 8px 12px; border-radius: 8px; align-self: flex-end; max-width: 90%; }
-    #chatInput { display: flex; border-top: 1px solid #ccc; }
-    #chatInput input { flex: 1; padding: 10px; border: none; outline: none; }
-    #chatInput button { background: #25D366; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+    }
+    header {
+      background-color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+      gap: 10px;
+    }
+    header img {
+      height: 60px;
+      flex-shrink: 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #000;
+      flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
+    }
+    .filters select, .filters input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      flex: 1 1 200px;
+      font-size: 0.95em;
+    }
+    .grupo-empresa {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      padding: 15px 20px;
+      font-size: 0.95em;
+    }
+    .grupo-empresa h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    .item-cancelamento {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .item-cancelamento:last-child {
+      border-bottom: none;
+    }
+    .item-cancelamento p {
+      margin: 4px 0;
+    }
+    .btn-whatsapp {
+      background-color: #25D366;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      float: right;
+      margin-bottom: 10px;
+      font-size: 0.95em;
+    }
+    .total-cancelado {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    #graficoCancelamentos {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      width: 100% !important;
+      max-width: 100%;
+      height: 300px !important;
+      box-sizing: border-box;
+      display: none;
+    }
+    .dados-analisados {
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+      margin-top: 20px;
+    }
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin: 0 0 10px;
+      }
+      .btn-whatsapp {
+        float: none;
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
+
+    #btnAbrirAssistente {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      background: conic-gradient(from 0deg, #ff0080, #7928ca, #2afadf, #00ff6a, #ff0080);
+      background-size: 300% 300%;
+      animation: siriPulse 4s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      z-index: 9999;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    @keyframes siriPulse {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-    <h1 id="tituloPainel">Cancelamentos</h1>
-  </header>
 
-  <div class="container">
-    <div class="filters">
-      <input type="date" id="dataInicio" />
-      <input type="date" id="dataFim" />
-      <select id="filtroEmpresa"></select>
-      <input type="text" id="filtroBusca" placeholder="Buscar item..." />
-    </div>
-
-    <button class="btn-whatsapp" onclick="enviarWhatsapp()">📤 Enviar via WhatsApp</button>
-    <div class="total-cancelado">📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span></div>
-    <canvas id="graficoCancelamentos"></canvas>
-    <div id="listaCancelamentos"></div>
-    <div class="dados-analisados" id="resumoDados"></div>
+<!-- Botão Assistente com Efeito Siri -->
+<button id="btnAbrirAssistente" onclick="document.getElementById('chatAssistente').style.display='flex'">💬</button>
+<div id="chatAssistente" style="display:none; position: fixed; bottom: 90px; right: 20px; width: 300px; max-height: 400px; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; z-index: 9998; font-family: Arial, sans-serif;">
+  <div style="background: #343a40; color: white; padding: 10px; text-align: center;">Assistente</div>
+  <div id="chatMensagens" style="padding: 10px; height: 250px; overflow-y: auto;"></div>
+  <div style="display: flex; border-top: 1px solid #ccc;">
+    <input id="inputMensagem" type="text" placeholder="Pergunte algo..." style="flex:1; border:none; padding: 10px; outline: none;">
+    <button onclick="responderPergunta()" style="background:#25D366;color:white;border:none;padding: 0 15px;">➤</button>
   </div>
+</div>
 
-  <button id="btnAbrirAssistente" onclick="document.getElementById('chatAssistente').style.display='flex'">💬 Assistente</button>
+<script>
+  function responderPergunta() {
+    const input = document.getElementById("inputMensagem");
+    const texto = input.value.trim();
+    if (!texto) return;
+    const chat = document.getElementById("chatMensagens");
 
-  <div id="chatAssistente">
-    <header>🤖 Assistente Virtual</header>
-    <div id="chatMensagens"></div>
-    <div id="chatInput">
-      <input type="text" id="inputMensagem" placeholder="Digite sua pergunta..." />
-      <button onclick="responderPergunta()">Enviar</button>
-    </div>
-  </div>
+    const divUser = document.createElement("div");
+    divUser.textContent = texto;
+    divUser.style.background = "#dcf8c6";
+    divUser.style.margin = "5px 0";
+    divUser.style.padding = "8px";
+    divUser.style.borderRadius = "8px";
+    divUser.style.alignSelf = "flex-end";
+    chat.appendChild(divUser);
 
-  <script>
-    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
-    let cancelamentos = [];
+    const divResp = document.createElement("div");
+    divResp.style.background = "#f1f0f0";
+    divResp.style.margin = "5px 0";
+    divResp.style.padding = "8px";
+    divResp.style.borderRadius = "8px";
+    divResp.textContent = "🔍 Consultando...";
+    chat.appendChild(divResp);
 
-    function formatarMoeda(valor) {
-      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-    function formatarDataBR(dataISO) {
-      const [ano, mes, dia] = dataISO.split("-");
-      return `${dia}/${mes}/${ano}`;
-    }
-
-    async function carregarDados() {
-      const res = await fetch(URL_SCRIPT);
-      cancelamentos = await res.json();
-      aplicarFiltros();
-    }
-
-    function responderPergunta() {
-      const entrada = document.getElementById("inputMensagem");
-      const texto = entrada.value.trim().toLowerCase();
-      if (!texto) return;
-
-      const chat = document.getElementById("chatMensagens");
-      const msgUser = document.createElement("div");
-      msgUser.className = "usuario";
-      msgUser.innerText = entrada.value;
-      chat.appendChild(msgUser);
-
-      const resposta = document.createElement("div");
-      resposta.className = "assistente";
-
+    setTimeout(() => {
+      let resposta = "❓ Ainda estou aprendendo! Tente perguntar sobre cancelamentos do mês passado, hoje, rodízio, ou empresa com mais cancelamentos.";
       const hoje = new Date();
       const ontem = new Date(hoje);
       ontem.setDate(hoje.getDate() - 1);
-
       const mesPassado = new Date();
       mesPassado.setMonth(hoje.getMonth() - 1);
-      const mes = (mesPassado.getMonth() + 1).toString().padStart(2, '0');
+      const mes = String(mesPassado.getMonth() + 1).padStart(2, '0');
       const ano = mesPassado.getFullYear();
 
       if (texto.includes("mês passado")) {
         const total = cancelamentos.filter(c => c.data.startsWith(`${ano}-${mes}`)).reduce((s, c) => s + c.valor, 0);
-        resposta.innerText = `💰 Total cancelado em ${mes}/${ano}: ${formatarMoeda(total)}`;
-
-      } else if (texto.includes("empresa") && texto.includes("mais cancel")) {
-        const totais = {};
-        cancelamentos.forEach(c => {
-          if (!totais[c.empresa]) totais[c.empresa] = 0;
-          totais[c.empresa] += c.valor;
-        });
-        const mais = Object.entries(totais).sort((a,b)=>b[1]-a[1])[0];
-        resposta.innerText = `🏢 Empresa com mais cancelamentos: ${mais[0]} (${formatarMoeda(mais[1])})`;
-
+        resposta = `💰 Total cancelado em ${mes}/${ano}: ${formatarMoeda(total)}`;
       } else if (texto.includes("rodízio") || texto.includes("rodizio")) {
         const rodizios = cancelamentos.filter(c => c.item.toLowerCase().includes("rodízio") || c.item.toLowerCase().includes("rodizio"));
         const total = rodizios.reduce((s, c) => s + c.valor, 0);
-        resposta.innerText = `🍽️ Cancelamentos de rodízio: ${rodizios.length} itens, total ${formatarMoeda(total)}`;
-
+        resposta = `🍽️ Cancelamentos de rodízio: ${rodizios.length} itens, total ${formatarMoeda(total)}`;
+      } else if (texto.includes("empresa") && texto.includes("mais")) {
+        const totais = {};
+        cancelamentos.forEach(c => { totais[c.empresa] = (totais[c.empresa] || 0) + c.valor; });
+        const maior = Object.entries(totais).sort((a,b)=>b[1]-a[1])[0];
+        resposta = `🏢 Empresa com mais cancelamentos: ${maior[0]} (${formatarMoeda(maior[1])})`;
       } else if (texto.includes("hoje")) {
         const hojeStr = hoje.toISOString().split('T')[0];
         const total = cancelamentos.filter(c => c.data === hojeStr).reduce((s, c) => s + c.valor, 0);
-        resposta.innerText = `📅 Cancelamentos de hoje: ${formatarMoeda(total)}`;
-
+        resposta = `📅 Cancelamentos de hoje: ${formatarMoeda(total)}`;
       } else if (texto.includes("ontem")) {
         const ontemStr = ontem.toISOString().split('T')[0];
         const total = cancelamentos.filter(c => c.data === ontemStr).reduce((s, c) => s + c.valor, 0);
-        resposta.innerText = `📆 Cancelamentos de ontem: ${formatarMoeda(total)}`;
-
-      } else {
-        resposta.innerText = "❓ Pergunta não reconhecida. Tente: 'quanto foi cancelado mês passado?', 'cancelamentos de rodízio', 'empresa com mais cancelamentos', etc.";
+        resposta = `📆 Cancelamentos de ontem: ${formatarMoeda(total)}`;
       }
 
-      chat.appendChild(resposta);
-      entrada.value = "";
+      divResp.textContent = resposta;
+      input.value = "";
       chat.scrollTop = chat.scrollHeight;
+    }, 600);
+  }
+<script>
+  const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby6kNirWdyaFymip0MFrqTNoItMgqkXJrzwf41Qxe2P1j8BoBILtnyws8o4f5sUdg-T3w/exec';
+  let cancelamentos = [];
+  let chartCancelamentos = null;
+
+  function preencherDataPadrao() {
+    const hoje = new Date();
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const formato = d => d.toISOString().split('T')[0];
+    document.getElementById("dataInicio").value = formato(ontem);
+    document.getElementById("dataFim").value = formato(ontem);
+  }
+
+  async function carregarDados() {
+    const res = await fetch(URL_SCRIPT);
+    cancelamentos = await res.json();
+    preencherFiltros();
+    aplicarFiltros();
+  }
+
+  function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatarDataBR(dataISO) {
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  function preencherFiltros() {
+    const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
+    const selectEmpresa = document.getElementById('filtroEmpresa');
+    selectEmpresa.innerHTML = `<option value="">Todas as Empresas</option>` +
+      empresas.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+  }
+
+  function aplicarFiltros() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const tituloPainel = document.getElementById("tituloPainel");
+    if (dataInicio && dataFim) {
+      tituloPainel.innerText = `Cancelamentos (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})`;
+    } else {
+      tituloPainel.innerText = "Cancelamentos";
     }
 
+    const lista = document.getElementById("listaCancelamentos");
+    lista.innerHTML = "";
+    document.getElementById("rankingContainer")?.remove();
+
+    let totalGeral = 0;
+    let registrosContados = 0;
+    const grupos = {};
+
+    cancelamentos.forEach(c => {
+      if (
+        (empresaFiltro && c.empresa !== empresaFiltro) ||
+        (busca && !c.item.toLowerCase().includes(busca)) ||
+        (dataInicio && c.data < dataInicio) ||
+        (dataFim && c.data > dataFim)
+      ) return;
+
+      registrosContados++;
+      if (!grupos[c.empresa]) grupos[c.empresa] = [];
+      grupos[c.empresa].push(c);
+    });
+
+    Object.keys(grupos).forEach(empresa => {
+      const grupo = grupos[empresa];
+      let subtotal = 0;
+
+      const divGrupo = document.createElement("div");
+      divGrupo.className = "grupo-empresa";
+
+      const primeiraData = grupo[0]?.data || "";
+      grupo.forEach(c => subtotal += c.valor);
+      totalGeral += subtotal;
+
+      const titulo = document.createElement("h2");
+      titulo.innerHTML = `📅 ${formatarDataBR(primeiraData)} • 🏢 ${empresa} — <strong>Subtotal: ${formatarMoeda(subtotal)}</strong>`;
+      divGrupo.appendChild(titulo);
+
+      grupo.forEach(c => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "item-cancelamento";
+
+        const [nomeItem, valorInfo] = c.item.split(" – ");
+        itemDiv.innerHTML = `
+          <p>${nomeItem}</p>
+          <p>💸 ${valorInfo || formatarMoeda(c.valor)}</p>
+        `;
+        divGrupo.appendChild(itemDiv);
+      });
+
+      lista.appendChild(divGrupo);
+
+      if (empresaFiltro === empresa) {
+        exibirRanking(grupo);
+      }
+    });
+
+    document.getElementById("totalCancelado").innerHTML = `<strong>${formatarMoeda(totalGeral)}</strong>`;
+    document.getElementById("resumoDados").innerText = `Dados analisados: ${registrosContados} registros`;
+
+    const canvas = document.getElementById("graficoCancelamentos");
+
+    if (empresaFiltro && grupos[empresaFiltro] && grupos[empresaFiltro].length > 0) {
+      canvas.style.display = "block";
+      setTimeout(() => {
+        desenharGrafico(grupos[empresaFiltro]);
+      }, 50);
+    } else {
+      canvas.style.display = "none";
+      if (chartCancelamentos) {
+        chartCancelamentos.destroy();
+        chartCancelamentos = null;
+      }
+    }
+  }
+
+  function desenharGrafico(lista) {
+    const dadosPorData = {};
+    lista.forEach(c => {
+      if (!dadosPorData[c.data]) dadosPorData[c.data] = 0;
+      dadosPorData[c.data] += c.valor;
+    });
+
+    const labels = Object.keys(dadosPorData).sort();
+    const valores = labels.map(d => dadosPorData[d]);
+
+    const ctx = document.getElementById("graficoCancelamentos").getContext("2d");
+    if (chartCancelamentos) chartCancelamentos.destroy();
+
+    chartCancelamentos = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(formatarDataBR),
+        datasets: [{
+          label: 'Cancelamentos por Dia',
+          data: valores,
+          borderColor: '#e74c3c',
+          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: '📈 Evolução dos Cancelamentos' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function enviarWhatsapp() {
+    const empresaFiltro = document.getElementById('filtroEmpresa').value;
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    const cancelamentosFiltrados = cancelamentos.filter(c => {
+      return (!empresaFiltro || c.empresa === empresaFiltro) &&
+             (!busca || c.item.toLowerCase().includes(busca)) &&
+             (!dataInicio || c.data >= dataInicio) &&
+             (!dataFim || c.data <= dataFim);
+    });
+
+    if (cancelamentosFiltrados.length === 0) {
+      alert("Nenhum cancelamento encontrado com os filtros atuais.");
+      return;
+    }
+
+    let mensagem = `📢 *Resumo de Cancelamentos por Empresa*%0A`;
+    const agrupado = {};
+
+    cancelamentosFiltrados.forEach(c => {
+      if (!agrupado[c.empresa]) agrupado[c.empresa] = [];
+      agrupado[c.empresa].push(c);
+    });
+
+    Object.entries(agrupado).forEach(([empresa, itens]) => {
+      let subtotal = 0;
+      mensagem += `\n\n🏢 *${empresa}*`;
+      itens.forEach(c => {
+        subtotal += c.valor;
+        mensagem += `\n${c.item} - 💸 ${formatarMoeda(c.valor)} - ${formatarDataBR(c.data)}`;
+      });
+      mensagem += `\nSubtotal: *${formatarMoeda(subtotal)}*`;
+    });
+
+    const telefone = "5577999761436";
+    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, "_blank");
+  }
+
+  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+
+  window.onload = () => {
+    preencherDataPadrao();
     carregarDados();
-  </script>
+  };
+</script>
+
 </body>
 </html>
