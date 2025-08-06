@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel ABC de Vendas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -11,7 +11,6 @@
       background: #f7f7f7;
       margin: 0;
       padding: 0;
-      font-size: 14px;
     }
     header {
       background-color: white;
@@ -58,110 +57,74 @@
       border: 1px solid #ccc;
       font-size: 0.95em;
     }
-    .resumo-geral {
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      display: flex;
-      gap: 30px;
-      font-weight: bold;
-    }
-    canvas {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    #analises h2 {
-      margin-top: 30px;
-      font-size: 1.2em;
-      color: #2c3e50;
-    }
-    #analises div {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      line-height: 1.6;
-    }
-    #listaVendas div {
-      background: white;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      cursor: pointer;
-    }
-    #graficoProdutoSelecionado {
-      display: none;
-      background: white;
-      margin-top: 20px;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    #semVendasWrapper {
-      display: none;
-      margin-top: 10px;
-    }
-    .nao-vendido {
-      color: #c0392b;
-      padding: 4px 0;
-      cursor: pointer;
-    }
-    .nao-vendido:hover {
-      text-decoration: underline;
-    }
-    #btnMostrar {
-      background: #3498db;
-      color: white;
+    .toggle-btn {
+      display: inline-block;
+      margin: 10px 0;
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
+      background-color: #3498db;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #2980b9;
+    }
+    .section {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .section.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .produto-item {
+      padding: 5px 0;
       cursor: pointer;
     }
-    #btnMostrar:hover {
-      background: #2980b9;
+    .produto-item:hover {
+      text-decoration: underline;
+      color: #2c3e50;
     }
-    /* Modal */
     #modalHistorico {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.6);
       display: none;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       z-index: 9999;
     }
     .modal-content {
       background: white;
       padding: 20px;
-      border-radius: 12px;
-      max-width: 600px;
+      border-radius: 10px;
       width: 90%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      max-width: 500px;
       position: relative;
     }
     .modal-content h2 {
       margin-top: 0;
-      color: #2c3e50;
     }
     .modal-content pre {
       white-space: pre-wrap;
-      font-size: 14px;
-      line-height: 1.5;
     }
     .close-modal {
       position: absolute;
       top: 10px;
       right: 15px;
       font-size: 24px;
-      color: #888;
       cursor: pointer;
+      color: #999;
     }
     .close-modal:hover {
       color: #000;
@@ -169,249 +132,136 @@
   </style>
 </head>
 <body>
-<header>
-  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
-  <h1 id="tituloPainel">Painel ABC de Vendas</h1>
-</header>
-<div class="container">
-  <div class="filters">
-    <label>📅 Data Início:<input type="date" id="dataInicio" /></label>
-    <label>📅 Data Fim:<input type="date" id="dataFim" /></label>
-    <label>🏢 Empresa:<select id="filtroEmpresa"></select></label>
-    <label>🔍 Busca:<input type="text" id="filtroBusca" placeholder="Buscar produto..." /></label>
+  <header>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Painel ABC de Vendas</h1>
+  </header>
+  <div class="container">
+    <div class="filters">
+      <label>📅 Data Início:<input type="date" id="dataInicio"></label>
+      <label>📅 Data Fim:<input type="date" id="dataFim"></label>
+      <label>🏢 Empresa:<select id="filtroEmpresa"></select></label>
+      <label>🔍 Busca:<input type="text" id="filtroBusca" placeholder="Buscar produto..."></label>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleSection('vendidos')" id="btnVendidos">⬇️ Produtos Vendidos</button>
+    <div class="section" id="vendidos"></div>
+
+    <button class="toggle-btn" onclick="toggleSection('naoVendidos')" id="btnNaoVendidos">⬇️ Produtos Não Vendidos</button>
+    <div class="section" id="naoVendidos"></div>
   </div>
 
-  <div class="resumo-geral">
-    <div>📊 Faturamento: <span id="totalFaturamento">R$ 0,00</span></div>
-    <div>💰 Lucro: <span id="totalLucro">R$ 0,00</span></div>
-  </div>
-
-  <canvas id="graficoVendas" style="display:none;"></canvas>
-
-  <div id="analises">
-    <h2>⭐ Top Produtos</h2>
-    <div id="topVendidos"></div>
-
-    <h2>💸 Produtos Mais Lucrativos</h2>
-    <div id="maisLucro"></div>
-
-    <h2>📉 Produtos Menos Lucrativos</h2>
-    <div id="menosLucro"></div>
-
-    <h2>🚫 Produtos Sem Vendas</h2>
-    <button id="btnMostrar" onclick="document.getElementById('semVendasWrapper').style.display='block'; this.style.display='none'">Mostrar produtos não vendidos</button>
-    <div id="semVendasWrapper">
-      <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
+  <div id="modalHistorico">
+    <div class="modal-content">
+      <span class="close-modal" onclick="fecharModal()">&times;</span>
+      <h2 id="modalTitulo"></h2>
+      <pre id="modalTexto"></pre>
     </div>
   </div>
 
-  <div id="graficoProdutoSelecionado">
-    <h2>📈 Evolução do Produto Selecionado</h2>
-    <canvas id="graficoProdutoCanvas"></canvas>
-  </div>
+  <script>
+    const URL_SCRIPT = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+    let dados = [];
 
-  <div id="listaVendas"></div>
-</div>
+    window.onload = () => {
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const ontem = new Date();
+      ontem.setDate(hoje.getDate() - 1);
+      document.getElementById('dataInicio').value = primeiroDia.toISOString().split('T')[0];
+      document.getElementById('dataFim').value = ontem.toISOString().split('T')[0];
+      carregarDados();
+      document.querySelectorAll('.filters input, .filters select').forEach(el => el.addEventListener('change', aplicarFiltros));
+    };
 
-<!-- Modal -->
-<div id="modalHistorico">
-  <div class="modal-content">
-    <span class="close-modal" onclick="fecharModal()">&times;</span>
-    <h2 id="modalTitulo"></h2>
-    <pre id="modalTexto"></pre>
-  </div>
-</div>
-
-<script>
-const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLrV4JwinN1RVGDs7-a0Rc3lWidxJa4GRin4csMkceAs5XjVOpOg/exec';
-let dados = [];
-let chartVendas = null;
-let chartProduto = null;
-
-function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
-function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
-
-async function carregarDados(){
-  const res = await fetch(URL_SCRIPT);
-  dados = await res.json();
-  preencherFiltros();
-  aplicarFiltros();
-}
-
-function preencherFiltros(){
-  const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
-  const sel = document.getElementById('filtroEmpresa');
-  sel.innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
-}
-
-function aplicarFiltros(){
-  const eF = document.getElementById('filtroEmpresa').value;
-  const busca = document.getElementById('filtroBusca').value.toLowerCase();
-  const di = document.getElementById('dataInicio').value;
-  const df = document.getElementById('dataFim').value;
-
-  const filt = dados.filter(d=>{
-    if(eF && d.empresa!==eF) return false;
-    if(busca && !d.produto.toLowerCase().includes(busca)) return false;
-    if(di && d.data<di) return false;
-    if(df && d.data>df) return false;
-    return true;
-  });
-
-  mostrarResumo(filt);
-  desenharGrafico(filt, eF);
-  mostrarAnalises(filt);
-  listarVendas(filt);
-}
-
-function mostrarResumo(filt){
-  const fat = filt.reduce((a,c)=>a+c.faturamento,0);
-  const luc = filt.reduce((a,c)=>a+c.lucro,0);
-  document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
-  document.getElementById('totalLucro').textContent = formatMoeda(luc);
-}
-
-function desenharGrafico(filt, empresaSelecionada){
-  if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
-  const dadosPorData = {};
-  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
-  const labels = Object.keys(dadosPorData).sort();
-  const vals = labels.map(l=>dadosPorData[l]);
-  const ctx = document.getElementById('graficoVendas').getContext('2d');
-  if(chartVendas) chartVendas.destroy();
-  chartVendas = new Chart(ctx, {
-    type:'line', data:{ labels: labels.map(formatDataBr), datasets:[{ label:'Faturamento por dia', data: vals, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.2)', fill:true }] },
-    options:{responsive:true, plugins:{legend:{display: false}, title:{display:true,text:'Evolução de Vendas'}}, scales:{y:{beginAtZero:true}} }
-  });
-  document.getElementById('graficoVendas').style.display = 'block';
-}
-
-function mostrarAnalises(filt){
-  const countByProd = {};
-  filt.forEach(d=>{
-    const p = d.produto;
-    if(!countByProd[p]) countByProd[p] = { qtd:0, fat:0, luc:0 };
-    countByProd[p].qtd += d.quantidade;
-    countByProd[p].fat += d.faturamento;
-    countByProd[p].luc += d.lucro;
-  });
-
-  const arr = Object.entries(countByProd).map(([produto,data])=> ({ produto, ...data }) );
-  const topVend = [...arr].sort((a,b)=>b.qtd - a.qtd).slice(0,5);
-  const maisLuc = [...arr].sort((a,b)=>b.luc - a.luc).slice(0,5);
-  const menosLuc = [...arr].sort((a,b)=>a.luc - b.luc).slice(0,5);
-  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-
-  const produtosVendidos = new Set(arr.map(p => p.produto));
-  const todosProdutos = new Set(dados.map(d => d.produto));
-  const naoVendidos = [...todosProdutos].filter(p => !produtosVendidos.has(p));
-
-  const container = document.getElementById('semVendas');
-  container.innerHTML = '';
-  naoVendidos.forEach(produto => {
-    const div = document.createElement('div');
-    div.className = 'nao-vendido';
-    div.textContent = produto;
-    div.onclick = () => mostrarHistoricoVendasProduto(produto);
-    container.appendChild(div);
-  });
-
-  // Esconde a lista por padrão ao trocar filtros
-  document.getElementById('semVendasWrapper').style.display = 'none';
-  document.getElementById('btnMostrar').style.display = 'inline-block';
-}
-
-function mostrarHistoricoVendasProduto(produto) {
-  const vendasAnteriores = dados
-    .filter(d => d.produto === produto && d.quantidade > 0)
-    .map(d => `${formatDataBr(d.data)} — ${d.empresa} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}`);
-
-  const modal = document.getElementById('modalHistorico');
-  const titulo = document.getElementById('modalTitulo');
-  const texto = document.getElementById('modalTexto');
-
-  if (vendasAnteriores.length === 0) {
-    titulo.textContent = `Nenhuma venda registrada de "${produto}"`;
-    texto.textContent = 'Este produto nunca foi vendido.';
-  } else {
-    titulo.textContent = `📅 Vendas anteriores de "${produto}"`;
-    texto.textContent = vendasAnteriores.join('\n');
-  }
-
-  modal.style.display = 'flex';
-}
-function fecharModal() {
-  document.getElementById('modalHistorico').style.display = 'none';
-}
-
-function listarVendas(filt){
-  const cont = document.getElementById('listaVendas');
-  cont.innerHTML = '';
-  filt.forEach(d=>{
-    const div = document.createElement('div');
-    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
-    div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
-    cont.appendChild(div);
-  });
-}
-
-function exibirGraficoProdutoSelecionado(produto, empresa){
-  const di = document.getElementById('dataInicio').value;
-  const df = document.getElementById('dataFim').value;
-  const filtro = dados.filter(d => d.produto === produto && d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df));
-  const dadosPorData = {};
-  filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data] || 0) + d.faturamento);
-  const labels = Object.keys(dadosPorData).sort();
-  const valores = labels.map(l => dadosPorData[l]);
-
-  const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
-  if(chartProduto) chartProduto.destroy();
-
-  chartProduto = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels.map(formatDataBr),
-      datasets: [{
-        label: produto,
-        data: valores,
-        backgroundColor: 'rgba(46, 204, 113, 0.7)'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: `Vendas de ${produto} por dia`
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true
-        }
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      const btn = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (section.classList.contains('active')) {
+        section.classList.remove('active');
+        btn.innerHTML = `⬇️ ${btn.textContent.slice(2)}`;
+      } else {
+        section.classList.add('active');
+        btn.innerHTML = `⬆️ ${btn.textContent.slice(2)}`;
       }
     }
-  });
 
-  document.getElementById('graficoProdutoSelecionado').style.display = 'block';
-}
+    async function carregarDados() {
+      const res = await fetch(URL_SCRIPT);
+      dados = await res.json();
+      preencherFiltros();
+      aplicarFiltros();
+    }
 
-window.onload = () => {
-  const hoje = new Date();
-  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const ontem = new Date();
-  ontem.setDate(hoje.getDate() - 1);
-  document.getElementById('dataInicio').value = primeiroDia.toISOString().split('T')[0];
-  document.getElementById('dataFim').value = ontem.toISOString().split('T')[0];
+    function preencherFiltros() {
+      const empresas = [...new Set(dados.map(d => d.empresa))].sort();
+      const sel = document.getElementById('filtroEmpresa');
+      sel.innerHTML = '<option value="">Todas</option>' + empresas.map(e => `<option value="${e}">${e}</option>`).join('');
+    }
 
-  carregarDados();
-  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
-};
-</script>
+    function aplicarFiltros() {
+      const empresa = document.getElementById('filtroEmpresa').value;
+      const busca = document.getElementById('filtroBusca').value.toLowerCase();
+      const di = document.getElementById('dataInicio').value;
+      const df = document.getElementById('dataFim').value;
+
+      const filtro = dados.filter(d => {
+        if (empresa && d.empresa !== empresa) return false;
+        if (busca && !d.produto.toLowerCase().includes(busca)) return false;
+        if (di && d.data < di) return false;
+        if (df && d.data > df) return false;
+        return true;
+      });
+
+      const vendidosDiv = document.getElementById('vendidos');
+      const naoVendidosDiv = document.getElementById('naoVendidos');
+      vendidosDiv.innerHTML = '';
+      naoVendidosDiv.innerHTML = '';
+
+      const produtosPeriodo = filtro.reduce((acc, d) => {
+        if (!acc[d.produto]) acc[d.produto] = 0;
+        acc[d.produto] += d.quantidade;
+        return acc;
+      }, {});
+
+      const todosProdutos = [...new Set(dados.map(d => d.produto))];
+
+      todosProdutos.forEach(produto => {
+        if (produtosPeriodo[produto] > 0) {
+          const div = document.createElement('div');
+          div.textContent = produto;
+          div.className = 'produto-item';
+          div.onclick = () => alert(`Gráfico do produto: ${produto}`);
+          vendidosDiv.appendChild(div);
+        } else {
+          const div = document.createElement('div');
+          div.textContent = produto;
+          div.className = 'produto-item';
+          div.onclick = () => mostrarHistorico(produto, dados, di, df);
+          naoVendidosDiv.appendChild(div);
+        }
+      });
+    }
+
+    function fecharModal() {
+      document.getElementById('modalHistorico').style.display = 'none';
+    }
+
+    function mostrarHistorico(produto, dados, dataInicio, dataFim) {
+      const historico = dados.filter(d => d.produto === produto && d.data < dataInicio);
+      const modal = document.getElementById('modalHistorico');
+      const titulo = document.getElementById('modalTitulo');
+      const texto = document.getElementById('modalTexto');
+
+      if (historico.length === 0) {
+        titulo.textContent = `Nenhum histórico de vendas para: ${produto}`;
+        texto.textContent = 'Esse produto nunca foi vendido antes do período selecionado.';
+      } else {
+        titulo.textContent = `Histórico anterior de: ${produto}`;
+        texto.textContent = historico.map(d => `${d.data} - ${d.empresa} - ${d.quantidade} un - R$ ${d.faturamento.toFixed(2)}`).join('\n');
+      }
+      modal.style.display = 'flex';
+    }
+  </script>
 </body>
 </html>
