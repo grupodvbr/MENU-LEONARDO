@@ -167,7 +167,7 @@
   </div>
 </div>
 <script>
-const URL = 'https://script.google.com/macros/s/AKfycbwKMTQbdYTc4R8uMyyK5LgIWAU9wjV60-VXwtWihCFuho90V0OPr_QMEFKHUHCJ5J_t_w/exec';
+const URL = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLrV4JwinN1RVGDs7-a0Rc3lWidxJa4GRin4csMkceAs5XjVOpOg/exec';
 let dados = [];
 
 function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
@@ -177,7 +177,7 @@ async function carregarDados(){
   const res = await fetch(URL);
   dados = await res.json();
   const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
-  const secoes = [...new Set(dados.map(d=>d.sessao))].sort();
+  const secoes = [...new Set(dados.map(d=>d.sessao).filter(s=>s))].sort();
   document.getElementById('filtroEmpresa').innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option>${e}</option>`).join('');
   document.getElementById('filtroSessao').innerHTML = '<option value="">Todas Sessões</option>' + secoes.map(s=>`<option>${s}</option>`).join('');
   aplicarFiltros();
