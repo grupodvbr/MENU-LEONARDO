@@ -276,9 +276,15 @@ function mostrarAnalises(filt) {
   document.getElementById('maisLucro').innerHTML = maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
   document.getElementById('menosLucro').innerHTML = menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
 
-  const produtosVendidos = new Set(filt.map(d => d.produto));
-  const todosProdutos = new Set(dados.map(d => d.produto));
-  const naoVendidos = [...todosProdutos].filter(p => !produtosVendidos.has(p));
+  // Produtos que aparecem nos dados filtrados
+  const produtosFiltrados = new Set(filt.map(d => d.produto));
+
+  // Produtos com vendas > 0 nos dados filtrados
+  const produtosComVenda = new Set(filt.filter(d => d.quantidade > 0).map(d => d.produto));
+
+  // Produtos sem nenhuma venda no período e que passaram pelo filtro
+  const naoVendidos = [...produtosFiltrados].filter(p => !produtosComVenda.has(p));
+
 
   const container = document.getElementById('semVendas');
   container.innerHTML = `<h3>❌ Produtos Sem Vendas no Período (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
