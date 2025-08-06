@@ -224,22 +224,55 @@ function desenharGrafico(filt, empresaSelecionada){
   document.getElementById('graficoVendas').style.display = 'block';
 }
 
-function mostrarAnalises(filt){
+function mostrarAnalises(filt) {
   const countByProd = {};
-  filt.forEach(d=>{
+  filt.forEach(d => {
     const p = d.produto;
-    if(!countByProd[p]) countByProd[p] = { qtd:0, fat:0, luc:0 };
+    if (!countByProd[p]) countByProd[p] = { qtd: 0, fat: 0, luc: 0 };
     countByProd[p].qtd += d.quantidade;
     countByProd[p].fat += d.faturamento;
     countByProd[p].luc += d.lucro;
   });
-  const arr = Object.entries(countByProd).map(([produto,data])=> ({ produto, ...data }) );
-  const topVend = [...arr].sort((a,b)=>b.qtd - a.qtd).slice(0,5);
-  const maisLuc = [...arr].sort((a,b)=>b.luc - a.luc).slice(0,5);
-  const menosLuc = [...arr].sort((a,b)=>a.luc - b.luc).slice(0,5);
-  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+
+  const arr = Object.entries(countByProd).map(([produto, data]) => ({ produto, ...data }));
+  const topVend = [...arr].sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+  const maisLuc = [...arr].sort((a, b) => b.luc - a.luc).slice(0, 5);
+  const menosLuc = [...arr].sort((a, b) => a.luc - b.luc).slice(0, 5);
+
+  document.getElementById('topVendidos').innerHTML = topVend.map(p => `<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+  document.getElementById('maisLucro').innerHTML = maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+  document.getElementById('menosLucro').innerHTML = menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+
+  const produtosVendidos = new Set(filt.map(d => d.produto));
+  const todosProdutos = new Set(dados.map(d => d.produto));
+  const naoVendidos = [...todosProdutos].filter(p => !produtosVendidos.has(p));
+
+  const container = document.getElementById('semVendas');
+  container.innerHTML = `<h3>❌ Produtos Sem Vendas no Período (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
+
+  naoVendidos.forEach(produto => {
+    const div = document.createElement('div');
+    div.textContent = produto;
+    div.style.cursor = 'pointer';
+    div.style.color = '#c0392b';
+    div.style.padding = '4px 0';
+    div.onclick = () => mostrarHistoricoVendasProduto(produto);
+    container.appendChild(div);
+  });
+}
+
+function mostrarHistoricoVendasProduto(produto) {
+  const vendasAnteriores = dados
+    .filter(d => d.produto === produto && d.quantidade > 0)
+    .map(d => `${formatDataBr(d.data)} — ${d.empresa} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}`);
+
+  if (vendasAnteriores.length === 0) {
+    alert(`O produto "${produto}" nunca teve vendas registradas.`);
+    return;
+  }
+
+  const msg = `📅 Vendas anteriores de "${produto}":\n\n` + vendasAnteriores.join('\n');
+  alert(msg);
 }
 
 function listarVendas(filt){
@@ -295,7 +328,6 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
 }
 
 window.onload = () => {
-  // Define datas padrão: primeiro do mês até ontem
   const hoje = new Date();
   const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   const ontem = new Date();
