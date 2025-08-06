@@ -280,8 +280,7 @@ function mostrarAnalises(filt) {
   const todosProdutos = new Set(dados.map(d => d.produto));
   const naoVendidos = [...todosProdutos].filter(p => !produtosVendidos.has(p));
 
-  const container = document.getElementById('semVendas');
-  container.innerHTML = `<h3>❌ Produtos Sem Vendas no Período (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
+  container.innerHTML = `<h3>Produtos com Vendas no Período (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
 
   naoVendidos.forEach(produto => {
     const div = document.createElement('div');
