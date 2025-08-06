@@ -336,13 +336,16 @@ function mostrarResumo(filt){
     type: 'line',
     data: {
       labels: labels.map(formatDataBr),
-      datasets: [{
-        label: 'Faturamento por dia',
-        data: vals,
-        borderColor: '#3498db',
-        backgroundColor: 'rgba(52,152,219,0.2)',
-        fill: true
-      }]
+     datasets: [{
+  label: 'Faturamento por dia',
+  data: vals,
+  borderColor: '#3498db',
+  backgroundColor: 'rgba(52,152,219,0.2)',
+  fill: true,
+  pointRadius: 6,       // <<< TAMANHO DOS PONTOS
+  pointHoverRadius: 8   // <<< TAMANHO NO HOVER (opcional)
+}]
+
     },
     options: {
       responsive: true,
