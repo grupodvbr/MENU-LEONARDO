@@ -329,27 +329,57 @@ function desenharGrafico(filt, empresaSelecionada){
   const vals = labels.map(l=>dadosPorData[l]);
   const ctx = document.getElementById('graficoVendas').getContext('2d');
   if(chartVendas) chartVendas.destroy();
+  
+ function desenharGrafico(filt, empresaSelecionada){
+  if(!empresaSelecionada){ 
+    document.getElementById('graficoVendas').style.display='none'; 
+    return; 
+  }
+
+  const dadosPorData = {};
+  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
+
+  const labels = Object.keys(dadosPorData).sort();
+  const vals = labels.map(l=>dadosPorData[l]);
+
+  const ctx = document.getElementById('graficoVendas').getContext('2d');
+  if(chartVendas) chartVendas.destroy();
+
   chartVendas = new Chart(ctx, {
-    type:'line', data:{ labels: labels.map(formatDataBr), datasets:[{ label:'Faturamento por dia', data: vals, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.2)', fill:true }] },
+    type: 'line',
+    data: {
+      labels: labels.map(formatDataBr),
+      datasets: [{
+        label: 'Faturamento por dia',
+        data: vals,
+        borderColor: '#3498db',
+        backgroundColor: 'rgba(52,152,219,0.2)',
+        fill: true
+      }]
+    },
     options: {
-  responsive: true,
-  plugins: {
-    legend: { display: false },
-    title: { display: true, text: 'Evolução de Vendas' },
-    tooltip: {
-      callbacks: {
-        label: function(context) {
-          const valor = context.parsed.y || 0;
-          return '💰 ' + valor.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          });
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Evolução de Vendas' },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const valor = context.parsed.y || 0;
+              return '💰 ' + valor.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              });
+            }
+          }
         }
       }
-
+    }
   });
+
   document.getElementById('graficoVendas').style.display = 'block';
 }
+
 
   function fecharPopup() {
   document.getElementById('popupOverlay').style.display = 'none';
