@@ -97,49 +97,6 @@
       padding: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    #modalDetalhes {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    #modalConteudo {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      max-height: 90vh;
-      overflow-y: auto;
-      width: 95%;
-      max-width: 1000px;
-    }
-    #modalConteudo table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    #modalConteudo th, #modalConteudo td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      text-align: left;
-    }
-    #modalConteudo th {
-      background: #eee;
-    }
-    #fecharModal {
-      float: right;
-      background: #e74c3c;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
   </style>
 </head>
 <body>
@@ -153,8 +110,6 @@
     <input type="date" id="dataFim" />
     <select id="filtroEmpresa"></select>
     <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
-    <select id="filtroSessao"></select>
-    <button onclick="emitirRelatorio()">📄 Emitir Relatório</button>
   </div>
 
   <div class="resumo-geral">
@@ -175,7 +130,7 @@
     <div id="menosLucro"></div>
 
     <h2>🚫 Produtos Sem Vendas</h2>
-    <div id="semVendas"></div>
+    <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
   </div>
 
   <div id="graficoProdutoSelecionado">
@@ -186,30 +141,147 @@
   <div id="listaVendas"></div>
 </div>
 
-<!-- Modal Detalhes -->
-<div id="modalDetalhes">
-  <div id="modalConteudo">
-    <button id="fecharModal" onclick="document.getElementById('modalDetalhes').style.display='none'">Fechar</button>
-    <div id="modalDados"></div>
-  </div>
-</div>
-
 <script>
-function abrirDetalhes(produto) {
+const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLrV4JwinN1RVGDs7-a0Rc3lWidxJa4GRin4csMkceAs5XjVOpOg/exec';
+let dados = [];
+let chartVendas = null;
+let chartProduto = null;
+
+function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
+function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+async function carregarDados(){
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  preencherFiltros();
+  aplicarFiltros();
+}
+
+function preencherFiltros(){
+  const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
+  const sel = document.getElementById('filtroEmpresa');
+  sel.innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
+}
+
+function aplicarFiltros(){
+  const eF = document.getElementById('filtroEmpresa').value;
+  const busca = document.getElementById('filtroBusca').value.toLowerCase();
   const di = document.getElementById('dataInicio').value;
   const df = document.getElementById('dataFim').value;
-  const empresa = document.getElementById('filtroEmpresa').value;
-  const sessao = document.getElementById('filtroSessao').value;
-  const registros = dados.filter(d => d.produto === produto && (!di || d.data >= di) && (!df || d.data <= df) && (!empresa || d.empresa === empresa) && (!sessao || d.sessao === sessao));
-  if (registros.length === 0) return alert("Nenhum dado disponível para este produto.");
-  let html = `<h3>${produto}</h3><table><tr><th>Data</th><th>Empresa</th><th>Sessão</th><th>Qtde</th><th>Faturamento</th><th>Lucro</th><th>Custo</th><th>Praticado</th><th>Preço Médio</th><th>Estadual</th><th>Federal</th></tr>`;
-  registros.forEach(r => {
-    html += `<tr><td>${formatDataBr(r.data)}</td><td>${r.empresa}</td><td>${r.sessao}</td><td>${r.quantidade}</td><td>${formatMoeda(r.faturamento)}</td><td>${formatMoeda(r.lucro)}</td><td>${formatMoeda(r.custo_total)}</td><td>${r.praticado}</td><td>${formatMoeda(r.preco_medio || 0)}</td><td>${formatMoeda(r.estadual || 0)}</td><td>${formatMoeda(r.federal || 0)}</td></tr>`;
+
+  const filt = dados.filter(d=>{
+    if(eF && d.empresa!==eF) return false;
+    if(busca && !d.produto.toLowerCase().includes(busca)) return false;
+    if(di && d.data<di) return false;
+    if(df && d.data>df) return false;
+    return true;
   });
-  html += '</table>';
-  document.getElementById('modalDados').innerHTML = html;
-  document.getElementById('modalDetalhes').style.display = 'flex';
+
+  mostrarResumo(filt);
+  desenharGrafico(filt, eF);
+  mostrarAnalises(filt);
+  listarVendas(filt);
 }
+
+function mostrarResumo(filt){
+  const fat = filt.reduce((a,c)=>a+c.faturamento,0);
+  const luc = filt.reduce((a,c)=>a+c.lucro,0);
+  document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
+  document.getElementById('totalLucro').textContent = formatMoeda(luc);
+}
+
+function desenharGrafico(filt, empresaSelecionada){
+  if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
+  const dadosPorData = {};
+  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
+  const labels = Object.keys(dadosPorData).sort();
+  const vals = labels.map(l=>dadosPorData[l]);
+  const ctx = document.getElementById('graficoVendas').getContext('2d');
+  if(chartVendas) chartVendas.destroy();
+  chartVendas = new Chart(ctx, {
+    type:'line', data:{ labels: labels.map(formatDataBr), datasets:[{ label:'Faturamento por dia', data: vals, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.2)', fill:true }] },
+    options:{responsive:true, plugins:{legend:{display: false}, title:{display:true,text:'Evolução de Vendas'}}, scales:{y:{beginAtZero:true}} }
+  });
+  document.getElementById('graficoVendas').style.display = 'block';
+}
+
+function mostrarAnalises(filt){
+  const countByProd = {};
+  filt.forEach(d=>{
+    const p = d.produto;
+    if(!countByProd[p]) countByProd[p] = { qtd:0, fat:0, luc:0 };
+    countByProd[p].qtd += d.quantidade;
+    countByProd[p].fat += d.faturamento;
+    countByProd[p].luc += d.lucro;
+  });
+  const arr = Object.entries(countByProd).map(([produto,data])=> ({ produto, ...data }) );
+  const topVend = [...arr].sort((a,b)=>b.qtd - a.qtd).slice(0,5);
+  const maisLuc = [...arr].sort((a,b)=>b.luc - a.luc).slice(0,5);
+  const menosLuc = [...arr].sort((a,b)=>a.luc - b.luc).slice(0,5);
+  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+}
+
+function listarVendas(filt){
+  const cont = document.getElementById('listaVendas');
+  cont.innerHTML = '';
+  filt.forEach(d=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+    div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
+    cont.appendChild(div);
+  });
+}
+
+function exibirGraficoProdutoSelecionado(produto, empresa){
+  const di = document.getElementById('dataInicio').value;
+  const df = document.getElementById('dataFim').value;
+  const filtro = dados.filter(d => d.produto === produto && d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df));
+  const dadosPorData = {};
+  filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data] || 0) + d.faturamento);
+  const labels = Object.keys(dadosPorData).sort();
+  const valores = labels.map(l => dadosPorData[l]);
+
+  const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
+  if(chartProduto) chartProduto.destroy();
+
+  chartProduto = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.map(formatDataBr),
+      datasets: [{
+        label: produto,
+        data: valores,
+        backgroundColor: 'rgba(46, 204, 113, 0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: `Vendas de ${produto} por dia`
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  document.getElementById('graficoProdutoSelecionado').style.display = 'block';
+}
+
+window.onload = () => {
+  carregarDados();
+  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+};
 </script>
 </body>
 </html>
