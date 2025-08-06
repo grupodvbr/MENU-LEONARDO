@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Vendas ABC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Mesmos estilos do seu painel de cancelamentos */
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="tituloPainel">Painel ABC de Vendas</h1>
+  </header>
+  <div class="container">
+    <div class="filters">
+      <input type="date" id="dataInicio" />
+      <input type="date" id="dataFim" />
+      <select id="filtroEmpresa"></select>
+      <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
+    </div>
+    <div class="resumo-geral">
+      <div>Total Faturamento: <span id="totalFaturamento"><strong>R$ 0,00</strong></span></div>
+      <div>Total Lucro: <span id="totalLucro"><strong>R$ 0,00</strong></span></div>
+    </div>
+    <canvas id="graficoVendas" style="width:100%; height:300px; display:none;"></canvas>
+    <div id="analises">
+      <h2>📋 Top Produtos</h2>
+      <div id="topVendidos"></div>
+      <h2>💸 Produtos Mais Lucrativos</h2>
+      <div id="maisLucro"></div>
+      <h2>📉 Produtos Menos Lucrativos</h2>
+      <div id="menosLucro"></div>
+      <h2>🚫 Produtos Sem Vendas</h2>
+      <div id="semVendas"></div>
+    </div>
+    <div id="listaVendas"></div>
+  </div>
+
+<script>
+const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwyok64-BKZQiM5sSeSxbzo66IPcbVRCGppK-2aTjy7v4q1T_oWukG3ePufLAckcNZVeQ/exec';
+let dados = [];
+let chartVendas = null;
+
+function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
+function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+
+async function carregarDados(){
+  const res = await fetch(URL_SCRIPT);
+  dados = await res.json();
+  preencherFiltros();
+  aplicarFiltros();
+}
+
+function preencherFiltros(){
+  const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
+  const sel = document.getElementById('filtroEmpresa');
+  sel.innerHTML = '<option value="">Todas Empresas</option>'
+    + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
+}
+
+function aplicarFiltros(){
+  const eF = document.getElementById('filtroEmpresa').value;
+  const busca = document.getElementById('filtroBusca').value.toLowerCase();
+  const di = document.getElementById('dataInicio').value;
+  const df = document.getElementById('dataFim').value;
+
+  const filt = dados.filter(d=>{
+    if(eF && d.empresa!==eF) return false;
+    if(busca && !d.produto.toLowerCase().includes(busca)) return false;
+    if(di && d.data<di) return false;
+    if(df && d.data>df) return false;
+    return true;
+  });
+
+  mostrarResumo(filt);
+  desenharGrafico(filt, eF);
+  mostrarAnalises(filt);
+  listarVendas(filt);
+}
+
+function mostrarResumo(filt){
+  const fat = filt.reduce((a,c)=>a+c.faturamento,0);
+  const luc = filt.reduce((a,c)=>a+c.lucro,0);
+  document.getElementById('totalFaturamento').innerHTML = `<strong>${formatMoeda(fat)}</strong>`;
+  document.getElementById('totalLucro').innerHTML = `<strong>${formatMoeda(luc)}</strong>`;
+}
+
+function desenharGrafico(filt, empresaSelecionada){
+  if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
+  const dadosPorData = {};
+  filt.forEach(d=> dadosPorData[d.data] = (dadosPorDate[d.data]||0) + d.faturamento );
+  const labels = Object.keys(dadosPorData).sort();
+  const vals = labels.map(l=>dadosPorData[l]);
+  const ctx = document.getElementById('graficoVendas').getContext('2d');
+  if(chartVendas) chartVendas.destroy();
+  chartVendas = new Chart(ctx, {
+    type:'line', data:{ labels: labels.map(formatDataBr), datasets:[{ label:'Faturamento por dia', data: vals, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.2)', fill:true }] },
+    options:{responsive:true, plugins:{legend:{display: false}, title:{display:true,text:'Evolução de Vendas'}}, scales:{y:{beginAtZero:true}} }
+  });
+  document.getElementById('graficoVendas').style.display = 'block';
+}
+
+function mostrarAnalises(filt){
+  const countByProd = {};
+  filt.forEach(d=>{
+    const p = d.produto;
+    if(!countByProd[p]) countByProd[p] = { qtd:0, fat:0, luc:0 };
+    countByProd[p].qtd += d.quantidade;
+    countByProd[p].fat += d.faturamento;
+    countByProd[p].luc += d.lucro;
+  });
+  const arr = Object.entries(countByProd).map(([prod,data])=> ({ produto:prod, ...data }) );
+
+  const topVend = arr.sort((a,b)=>b.qtd - a.qtd).slice(0,5);
+  const maisLuc = arr.sort((a,b)=>b.luc - a.luc).slice(0,5);
+  const menosLuc = arr.sort((a,b)=>a.luc - b.luc).slice(0,5);
+
+  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}`).join('<br>');
+  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`${p.produto} — ${formatMoeda(p.luc)}`).join('<br>');
+  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`${p.produto} — ${formatMoeda(p.luc)}`).join('<br>');
+
+  // Produtos sem vendas: se você tiver lista fixa de produtos cadas...
+  document.getElementById('semVendas').innerHTML = 'Preciso da lista completa de produtos para esta análise.';
+}
+
+function listarVendas(filt){
+  const cont = document.getElementById('listaVendas');
+  cont.innerHTML = '';
+  filt.forEach(d=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | ${d.produto} — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+    cont.appendChild(div);
+  });
+}
+
+window.onload = () => {
+  carregarDados();
+  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+};
+</script>
+</body>
+</html>
