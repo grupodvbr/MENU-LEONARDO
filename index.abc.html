@@ -160,16 +160,7 @@
 #popupContent h2 {
   margin-top: 0;
 }
-#popupClose {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 22px;
-  font-weight: bold;
-  color: #333;
-  cursor: pointer;
-  z-index: 10;
-}
+
     #graficoVendas {
   display: none;
   max-width: 700px;
@@ -265,12 +256,11 @@
 
     <h2>🚫 Produtos Sem Vendas</h2>
     <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
-  </div>
+
 
 
 
   <div id="listaVendas"></div>
-</div>
 
 <script>
 const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLrV4JwinN1RVGDs7-a0Rc3lWidxJa4GRin4csMkceAs5XjVOpOg/exec';
@@ -279,7 +269,12 @@ let chartVendas = null;
 let chartProduto = null;
 
 function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
-function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+function formatDataBr(iso){ 
+  if (!iso || !iso.includes('-')) return iso;
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 
 async function carregarDados(){
   const res = await fetch(URL_SCRIPT);
@@ -331,7 +326,7 @@ function mostrarResumo(filt){
   const dadosPorData = {};
   filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
 
-  const labels = Object.keys(dadosPorData).sort();
+  const labels = Object.keys(dadosPorData).sort((a,b) => new Date(a) - new Date(b));
   const vals = labels.map(l=>dadosPorData[l]);
 
   const ctx = document.getElementById('graficoVendas').getContext('2d');
@@ -481,7 +476,7 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
 
   const dadosPorData = {};
   filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data] || 0) + d.faturamento);
-  const labels = Object.keys(dadosPorData).sort();
+  const labels = Object.keys(dadosPorData).sort((a,b) => new Date(a) - new Date(b));
   const valores = labels.map(l => dadosPorData[l]);
 
   const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
