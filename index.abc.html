@@ -89,23 +89,34 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       cursor: pointer;
     }
+    #graficoProdutoSelecionado {
+      display: none;
+      background: white;
+      margin-top: 20px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
     #modalDetalhes {
       position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 999;
+      z-index: 1000;
     }
     #modalConteudo {
       background: white;
       padding: 20px;
       border-radius: 10px;
-      width: 95%;
-      max-width: 1000px;
       max-height: 90vh;
       overflow-y: auto;
+      width: 95%;
+      max-width: 1000px;
     }
     #modalConteudo table {
       width: 100%;
@@ -141,111 +152,64 @@
     <input type="date" id="dataInicio" />
     <input type="date" id="dataFim" />
     <select id="filtroEmpresa"></select>
-    <select id="filtroSessao"></select>
     <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
+    <select id="filtroSessao"></select>
+    <button onclick="emitirRelatorio()">📄 Emitir Relatório</button>
   </div>
+
   <div class="resumo-geral">
     <div>📊 Faturamento: <span id="totalFaturamento">R$ 0,00</span></div>
     <div>💰 Lucro: <span id="totalLucro">R$ 0,00</span></div>
   </div>
+
+  <canvas id="graficoVendas" style="display:none;"></canvas>
+
   <div id="analises">
     <h2>⭐ Top Produtos</h2>
     <div id="topVendidos"></div>
+
     <h2>💸 Produtos Mais Lucrativos</h2>
     <div id="maisLucro"></div>
+
     <h2>📉 Produtos Menos Lucrativos</h2>
     <div id="menosLucro"></div>
+
     <h2>🚫 Produtos Sem Vendas</h2>
     <div id="semVendas"></div>
   </div>
+
+  <div id="graficoProdutoSelecionado">
+    <h2>📈 Evolução do Produto Selecionado</h2>
+    <canvas id="graficoProdutoCanvas"></canvas>
+  </div>
+
   <div id="listaVendas"></div>
 </div>
+
+<!-- Modal Detalhes -->
 <div id="modalDetalhes">
   <div id="modalConteudo">
     <button id="fecharModal" onclick="document.getElementById('modalDetalhes').style.display='none'">Fechar</button>
     <div id="modalDados"></div>
   </div>
 </div>
+
 <script>
-const URL = 'https://script.google.com/macros/s/AKfycbwKMTQbdYTc4R8uMyyK5LgIWAU9wjV60-VXwtWihCFuho90V0OPr_QMEFKHUHCJ5J_t_w/exec';
-let dados = [];
-
-function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
-function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
-
-async function carregarDados(){
-  const res = await fetch(URL);
-  dados = await res.json();
-  const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
-  const secoes = [...new Set(dados.map(d=>d.sessao).filter(s=>s))].sort();
-  document.getElementById('filtroEmpresa').innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option>${e}</option>`).join('');
-  document.getElementById('filtroSessao').innerHTML = '<option value="">Todas Sessões</option>' + secoes.map(s=>`<option>${s}</option>`).join('');
-  aplicarFiltros();
-}
-
-function aplicarFiltros(){
-  const emp = document.getElementById('filtroEmpresa').value;
-  const ses = document.getElementById('filtroSessao').value;
-  const busca = document.getElementById('filtroBusca').value.toLowerCase();
+function abrirDetalhes(produto) {
   const di = document.getElementById('dataInicio').value;
   const df = document.getElementById('dataFim').value;
-
-  const filt = dados.filter(d =>
-    (!emp || d.empresa === emp) &&
-    (!ses || d.sessao === ses) &&
-    (!busca || d.produto.toLowerCase().includes(busca)) &&
-    (!di || d.data >= di) &&
-    (!df || d.data <= df)
-  );
-
-  mostrarResumo(filt);
-  mostrarAnalises(filt);
-  listarVendas(filt);
-}
-
-function mostrarResumo(filt){
-  const fat = filt.reduce((a,c)=>a+c.faturamento,0);
-  const luc = filt.reduce((a,c)=>a+c.lucro,0);
-  document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
-  document.getElementById('totalLucro').textContent = formatMoeda(luc);
-}
-
-function mostrarAnalises(filt){
-  const porProduto = {};
-  filt.forEach(d => {
-    if (!porProduto[d.produto]) porProduto[d.produto] = { qtd:0, fat:0, luc:0 };
-    porProduto[d.produto].qtd += d.quantidade;
-    porProduto[d.produto].fat += d.faturamento;
-    porProduto[d.produto].luc += d.lucro;
-  });
-  const arr = Object.entries(porProduto).map(([produto, stats]) => ({produto, ...stats}));
-  document.getElementById('topVendidos').innerHTML = arr.sort((a,b)=>b.qtd-a.qtd).slice(0,5).map(p=>`<p onclick="abrirDetalhes('${p.produto}')">⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-  document.getElementById('maisLucro').innerHTML = arr.sort((a,b)=>b.luc-a.luc).slice(0,5).map(p=>`<p onclick="abrirDetalhes('${p.produto}')">💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('menosLucro').innerHTML = arr.sort((a,b)=>a.luc-b.luc).slice(0,5).map(p=>`<p onclick="abrirDetalhes('${p.produto}')">📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('semVendas').innerHTML = dados.filter(d => d.quantidade == 0).map(p=>`<p onclick="abrirDetalhes('${p.produto}')">🚫 ${p.produto}</p>`).join('');
-}
-
-function listarVendas(filt){
-  const cont = document.getElementById('listaVendas');
-  cont.innerHTML = filt.map(d=>`<div onclick="abrirDetalhes('${d.produto}')">${formatDataBr(d.data)} | ${d.empresa} | ${d.produto} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}</div>`).join('');
-}
-
-function abrirDetalhes(produto) {
-  const registros = dados.filter(d => d.produto === produto);
-  if (!registros.length) return;
-  let html = `<h3>${produto}</h3><table><tr><th>Data</th><th>Empresa</th><th>Sessão</th><th>Qtde</th><th>Faturamento</th><th>Lucro</th><th>Preço Médio</th><th>Custo</th><th>Estadual</th><th>Federal</th></tr>`;
+  const empresa = document.getElementById('filtroEmpresa').value;
+  const sessao = document.getElementById('filtroSessao').value;
+  const registros = dados.filter(d => d.produto === produto && (!di || d.data >= di) && (!df || d.data <= df) && (!empresa || d.empresa === empresa) && (!sessao || d.sessao === sessao));
+  if (registros.length === 0) return alert("Nenhum dado disponível para este produto.");
+  let html = `<h3>${produto}</h3><table><tr><th>Data</th><th>Empresa</th><th>Sessão</th><th>Qtde</th><th>Faturamento</th><th>Lucro</th><th>Custo</th><th>Praticado</th><th>Preço Médio</th><th>Estadual</th><th>Federal</th></tr>`;
   registros.forEach(r => {
-    html += `<tr><td>${formatDataBr(r.data)}</td><td>${r.empresa}</td><td>${r.sessao}</td><td>${r.quantidade}</td><td>${formatMoeda(r.faturamento)}</td><td>${formatMoeda(r.lucro)}</td><td>${formatMoeda(r.preco_medio)}</td><td>${formatMoeda(r.custo_total)}</td><td>${formatMoeda(r.estadual)}</td><td>${formatMoeda(r.federal)}</td></tr>`;
+    html += `<tr><td>${formatDataBr(r.data)}</td><td>${r.empresa}</td><td>${r.sessao}</td><td>${r.quantidade}</td><td>${formatMoeda(r.faturamento)}</td><td>${formatMoeda(r.lucro)}</td><td>${formatMoeda(r.custo_total)}</td><td>${r.praticado}</td><td>${formatMoeda(r.preco_medio || 0)}</td><td>${formatMoeda(r.estadual || 0)}</td><td>${formatMoeda(r.federal || 0)}</td></tr>`;
   });
   html += '</table>';
   document.getElementById('modalDados').innerHTML = html;
   document.getElementById('modalDetalhes').style.display = 'flex';
 }
-
-window.onload = () => {
-  carregarDados();
-  document.querySelectorAll('#filtroEmpresa, #filtroSessao, #filtroBusca, #dataInicio, #dataFim').forEach(el => el.addEventListener('change', aplicarFiltros));
-};
 </script>
 </body>
 </html>
