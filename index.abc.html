@@ -2,41 +2,126 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel de Vendas ABC</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel ABC de Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Mesmos estilos do seu painel de cancelamentos */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+    }
+    header {
+      background-color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+      gap: 10px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #000;
+      flex-grow: 1;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .filters select,
+    .filters input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      flex: 1 1 200px;
+      font-size: 0.95em;
+    }
+    .resumo-geral {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 30px;
+      font-weight: bold;
+    }
+    canvas {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    #analises h2 {
+      margin-top: 30px;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    #analises div {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      line-height: 1.6;
+    }
+    #listaVendas div {
+      background: white;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1 id="tituloPainel">Painel ABC de Vendas</h1>
-  </header>
-  <div class="container">
-    <div class="filters">
-      <input type="date" id="dataInicio" />
-      <input type="date" id="dataFim" />
-      <select id="filtroEmpresa"></select>
-      <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
-    </div>
-    <div class="resumo-geral">
-      <div>Total Faturamento: <span id="totalFaturamento"><strong>R$ 0,00</strong></span></div>
-      <div>Total Lucro: <span id="totalLucro"><strong>R$ 0,00</strong></span></div>
-    </div>
-    <canvas id="graficoVendas" style="width:100%; height:300px; display:none;"></canvas>
-    <div id="analises">
-      <h2>📋 Top Produtos</h2>
-      <div id="topVendidos"></div>
-      <h2>💸 Produtos Mais Lucrativos</h2>
-      <div id="maisLucro"></div>
-      <h2>📉 Produtos Menos Lucrativos</h2>
-      <div id="menosLucro"></div>
-      <h2>🚫 Produtos Sem Vendas</h2>
-      <div id="semVendas"></div>
-    </div>
-    <div id="listaVendas"></div>
+<header>
+  <h1 id="tituloPainel">Painel ABC de Vendas</h1>
+</header>
+<div class="container">
+  <div class="filters">
+    <input type="date" id="dataInicio" />
+    <input type="date" id="dataFim" />
+    <select id="filtroEmpresa"></select>
+    <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
   </div>
+
+  <div class="resumo-geral">
+    <div>📊 Faturamento: <span id="totalFaturamento">R$ 0,00</span></div>
+    <div>💰 Lucro: <span id="totalLucro">R$ 0,00</span></div>
+  </div>
+
+  <canvas id="graficoVendas" style="display:none;"></canvas>
+
+  <div id="analises">
+    <h2>⭐ Top Produtos</h2>
+    <div id="topVendidos"></div>
+
+    <h2>💸 Produtos Mais Lucrativos</h2>
+    <div id="maisLucro"></div>
+
+    <h2>📉 Produtos Menos Lucrativos</h2>
+    <div id="menosLucro"></div>
+
+    <h2>🚫 Produtos Sem Vendas</h2>
+    <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
+  </div>
+
+  <div id="listaVendas"></div>
+</div>
 
 <script>
 const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwyok64-BKZQiM5sSeSxbzo66IPcbVRCGppK-2aTjy7v4q1T_oWukG3ePufLAckcNZVeQ/exec';
@@ -56,8 +141,7 @@ async function carregarDados(){
 function preencherFiltros(){
   const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
   const sel = document.getElementById('filtroEmpresa');
-  sel.innerHTML = '<option value="">Todas Empresas</option>'
-    + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
+  sel.innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
 }
 
 function aplicarFiltros(){
@@ -83,14 +167,14 @@ function aplicarFiltros(){
 function mostrarResumo(filt){
   const fat = filt.reduce((a,c)=>a+c.faturamento,0);
   const luc = filt.reduce((a,c)=>a+c.lucro,0);
-  document.getElementById('totalFaturamento').innerHTML = `<strong>${formatMoeda(fat)}</strong>`;
-  document.getElementById('totalLucro').innerHTML = `<strong>${formatMoeda(luc)}</strong>`;
+  document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
+  document.getElementById('totalLucro').textContent = formatMoeda(luc);
 }
 
 function desenharGrafico(filt, empresaSelecionada){
   if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
   const dadosPorData = {};
-  filt.forEach(d=> dadosPorData[d.data] = (dadosPorDate[d.data]||0) + d.faturamento );
+  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
   const labels = Object.keys(dadosPorData).sort();
   const vals = labels.map(l=>dadosPorData[l]);
   const ctx = document.getElementById('graficoVendas').getContext('2d');
@@ -111,18 +195,13 @@ function mostrarAnalises(filt){
     countByProd[p].fat += d.faturamento;
     countByProd[p].luc += d.lucro;
   });
-  const arr = Object.entries(countByProd).map(([prod,data])=> ({ produto:prod, ...data }) );
-
-  const topVend = arr.sort((a,b)=>b.qtd - a.qtd).slice(0,5);
-  const maisLuc = arr.sort((a,b)=>b.luc - a.luc).slice(0,5);
-  const menosLuc = arr.sort((a,b)=>a.luc - b.luc).slice(0,5);
-
-  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}`).join('<br>');
-  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`${p.produto} — ${formatMoeda(p.luc)}`).join('<br>');
-  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`${p.produto} — ${formatMoeda(p.luc)}`).join('<br>');
-
-  // Produtos sem vendas: se você tiver lista fixa de produtos cadas...
-  document.getElementById('semVendas').innerHTML = 'Preciso da lista completa de produtos para esta análise.';
+  const arr = Object.entries(countByProd).map(([produto,data])=> ({ produto, ...data }) );
+  const topVend = [...arr].sort((a,b)=>b.qtd - a.qtd).slice(0,5);
+  const maisLuc = [...arr].sort((a,b)=>b.luc - a.luc).slice(0,5);
+  const menosLuc = [...arr].sort((a,b)=>a.luc - b.luc).slice(0,5);
+  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
 }
 
 function listarVendas(filt){
@@ -130,7 +209,7 @@ function listarVendas(filt){
   cont.innerHTML = '';
   filt.forEach(d=>{
     const div = document.createElement('div');
-    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | ${d.produto} — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
     cont.appendChild(div);
   });
 }
