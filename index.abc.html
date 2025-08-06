@@ -33,10 +33,10 @@
       text-align: center;
     }
     .container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: auto;
-    }
+  padding: 20px;
+  max-width: 100%;
+  margin: auto;
+}
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -57,6 +57,28 @@
   padding: 15px;
   border-radius: 12px;
   margin-bottom: 20px;
+}
+  .analise-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.card-analise {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  flex: 1 1 30%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  min-width: 280px;
+}
+
+.card-analise h3 {
+  margin-top: 0;
+  font-size: 1.1em;
+  color: #2c3e50;
+  margin-bottom: 10px;
 }
 
 .bloco-sem-vendas {
@@ -171,15 +193,11 @@
 
   <canvas id="graficoVendas" style="display:none;"></canvas>
 
-  <div id="analises">
-    <h2>⭐ Top Produtos</h2>
-    <div id="topVendidos"></div>
-
-    <h2>💸 Produtos Mais Lucrativos</h2>
-    <div id="maisLucro"></div>
-
-    <h2>📉 Produtos Menos Lucrativos</h2>
-    <div id="menosLucro"></div>
+ <div class="analise-flex">
+  <div id="topVendidos" class="card-analise"></div>
+  <div id="maisLucro" class="card-analise"></div>
+  <div id="menosLucro" class="card-analise"></div>
+</div>
 
     <h2>🚫 Produtos Sem Vendas</h2>
     <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
@@ -272,9 +290,9 @@ function mostrarAnalises(filt) {
   const maisLuc = [...arr].sort((a, b) => b.luc - a.luc).slice(0, 5);
   const menosLuc = [...arr].sort((a, b) => a.luc - b.luc).slice(0, 5);
 
-  document.getElementById('topVendidos').innerHTML = topVend.map(p => `<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-  document.getElementById('maisLucro').innerHTML = maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('menosLucro').innerHTML = menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+  document.getElementById('topVendidos').innerHTML = `<h3>⭐ Top Produtos</h3>` + topVend.map(p => `<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+document.getElementById('maisLucro').innerHTML = `<h3>💰 Produtos Mais Lucrativos</h3>` + maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+document.getElementById('menosLucro').innerHTML = `<h3>📉 Produtos Menos Lucrativos</h3>` + menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
 
   // Produtos que aparecem nos dados filtrados
   const produtosFiltrados = new Set(filt.map(d => d.produto));
