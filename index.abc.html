@@ -21,6 +21,9 @@
       border-bottom: 1px solid #ccc;
       gap: 10px;
     }
+    header img {
+      height: 60px;
+    }
     header h1 {
       margin: 0;
       font-size: 1.6em;
@@ -84,11 +87,21 @@
       padding: 10px;
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      cursor: pointer;
+    }
+    #graficoProdutoSelecionado {
+      display: none;
+      background: white;
+      margin-top: 20px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
 <header>
+  <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
   <h1 id="tituloPainel">Painel ABC de Vendas</h1>
 </header>
 <div class="container">
@@ -120,6 +133,11 @@
     <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
   </div>
 
+  <div id="graficoProdutoSelecionado">
+    <h2>📈 Evolução do Produto Selecionado</h2>
+    <canvas id="graficoProdutoCanvas"></canvas>
+  </div>
+
   <div id="listaVendas"></div>
 </div>
 
@@ -127,6 +145,7 @@
 const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwyok64-BKZQiM5sSeSxbzo66IPcbVRCGppK-2aTjy7v4q1T_oWukG3ePufLAckcNZVeQ/exec';
 let dados = [];
 let chartVendas = null;
+let chartProduto = null;
 
 function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
 function formatDataBr(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
@@ -210,8 +229,50 @@ function listarVendas(filt){
   filt.forEach(d=>{
     const div = document.createElement('div');
     div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+    div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
     cont.appendChild(div);
   });
+}
+
+function exibirGraficoProdutoSelecionado(produto, empresa){
+  const di = document.getElementById('dataInicio').value;
+  const df = document.getElementById('dataFim').value;
+  const filtro = dados.filter(d => d.produto === produto && d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df));
+  const dadosPorData = {};
+  filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data] || 0) + d.faturamento);
+  const labels = Object.keys(dadosPorData).sort();
+  const valores = labels.map(l => dadosPorData[l]);
+
+  const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
+  if(chartProduto) chartProduto.destroy();
+
+  chartProduto = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.map(formatDataBr),
+      datasets: [{
+        label: produto,
+        data: valores,
+        backgroundColor: 'rgba(46, 204, 113, 0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: `Vendas de ${produto} por dia`
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  document.getElementById('graficoProdutoSelecionado').style.display = 'block';
 }
 
 window.onload = () => {
