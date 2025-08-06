@@ -321,14 +321,6 @@ function mostrarResumo(filt){
   document.getElementById('totalLucro').textContent = formatMoeda(luc);
 }
 
-function desenharGrafico(filt, empresaSelecionada){
-  if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
-  const dadosPorData = {};
-  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
-  const labels = Object.keys(dadosPorData).sort();
-  const vals = labels.map(l=>dadosPorData[l]);
-  const ctx = document.getElementById('graficoVendas').getContext('2d');
-  if(chartVendas) chartVendas.destroy();
   
  function desenharGrafico(filt, empresaSelecionada){
   if(!empresaSelecionada){ 
