@@ -285,13 +285,38 @@ function mostrarHistoricoVendasProduto(produto) {
 function listarVendas(filt){
   const cont = document.getElementById('listaVendas');
   cont.innerHTML = '';
-  filt.forEach(d=>{
-    const div = document.createElement('div');
-    div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
-    div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
-    cont.appendChild(div);
-  });
+
+  // Produtos com vendas (> 0)
+  const comVendas = filt.filter(d => d.quantidade > 0);
+  const semVendas = filt.filter(d => d.quantidade === 0);
+
+  // Bloco: PRODUTOS COM VENDAS
+  if (comVendas.length > 0) {
+    const blocoCom = document.createElement('div');
+    blocoCom.innerHTML = `<h3>✅ Produtos com Vendas</h3>`;
+    comVendas.forEach(d => {
+      const div = document.createElement('div');
+      div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+      div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
+      blocoCom.appendChild(div);
+    });
+    cont.appendChild(blocoCom);
+  }
+
+  // Bloco: PRODUTOS COM QUANTIDADE 0 (com registro mas sem venda)
+  if (semVendas.length > 0) {
+    const blocoSem = document.createElement('div');
+    blocoSem.innerHTML = `<h3>⚠️ Produtos Registrados mas com Quantidade 0</h3>`;
+    semVendas.forEach(d => {
+      const div = document.createElement('div');
+      div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+      div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
+      blocoSem.appendChild(div);
+    });
+    cont.appendChild(blocoSem);
+  }
 }
+
 
 function exibirGraficoProdutoSelecionado(produto, empresa){
   const di = document.getElementById('dataInicio').value;
