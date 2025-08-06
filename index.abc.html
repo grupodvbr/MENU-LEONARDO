@@ -104,6 +104,68 @@
       padding: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    #semVendasWrapper {
+      display: none;
+      margin-top: 10px;
+    }
+    .nao-vendido {
+      color: #c0392b;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+    .nao-vendido:hover {
+      text-decoration: underline;
+    }
+    #btnMostrar {
+      background: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #btnMostrar:hover {
+      background: #2980b9;
+    }
+    /* Modal */
+    #modalHistorico {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    .modal-content pre {
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      color: #888;
+      cursor: pointer;
+    }
+    .close-modal:hover {
+      color: #000;
+    }
   </style>
 </head>
 <body>
@@ -113,22 +175,10 @@
 </header>
 <div class="container">
   <div class="filters">
-    <label>
-      📅 Data Início:
-      <input type="date" id="dataInicio" />
-    </label>
-    <label>
-      📅 Data Fim:
-      <input type="date" id="dataFim" />
-    </label>
-    <label>
-      🏢 Empresa:
-      <select id="filtroEmpresa"></select>
-    </label>
-    <label>
-      🔍 Busca:
-      <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
-    </label>
+    <label>📅 Data Início:<input type="date" id="dataInicio" /></label>
+    <label>📅 Data Fim:<input type="date" id="dataFim" /></label>
+    <label>🏢 Empresa:<select id="filtroEmpresa"></select></label>
+    <label>🔍 Busca:<input type="text" id="filtroBusca" placeholder="Buscar produto..." /></label>
   </div>
 
   <div class="resumo-geral">
@@ -149,7 +199,10 @@
     <div id="menosLucro"></div>
 
     <h2>🚫 Produtos Sem Vendas</h2>
-    <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
+    <button id="btnMostrar" onclick="document.getElementById('semVendasWrapper').style.display='block'; this.style.display='none'">Mostrar produtos não vendidos</button>
+    <div id="semVendasWrapper">
+      <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
+    </div>
   </div>
 
   <div id="graficoProdutoSelecionado">
@@ -158,6 +211,15 @@
   </div>
 
   <div id="listaVendas"></div>
+</div>
+
+<!-- Modal -->
+<div id="modalHistorico">
+  <div class="modal-content">
+    <span class="close-modal" onclick="fecharModal()">&times;</span>
+    <h2 id="modalTitulo"></h2>
+    <pre id="modalTexto"></pre>
+  </div>
 </div>
 
 <script>
@@ -224,41 +286,41 @@ function desenharGrafico(filt, empresaSelecionada){
   document.getElementById('graficoVendas').style.display = 'block';
 }
 
-function mostrarAnalises(filt) {
+function mostrarAnalises(filt){
   const countByProd = {};
-  filt.forEach(d => {
+  filt.forEach(d=>{
     const p = d.produto;
-    if (!countByProd[p]) countByProd[p] = { qtd: 0, fat: 0, luc: 0 };
+    if(!countByProd[p]) countByProd[p] = { qtd:0, fat:0, luc:0 };
     countByProd[p].qtd += d.quantidade;
     countByProd[p].fat += d.faturamento;
     countByProd[p].luc += d.lucro;
   });
 
-  const arr = Object.entries(countByProd).map(([produto, data]) => ({ produto, ...data }));
-  const topVend = [...arr].sort((a, b) => b.qtd - a.qtd).slice(0, 5);
-  const maisLuc = [...arr].sort((a, b) => b.luc - a.luc).slice(0, 5);
-  const menosLuc = [...arr].sort((a, b) => a.luc - b.luc).slice(0, 5);
+  const arr = Object.entries(countByProd).map(([produto,data])=> ({ produto, ...data }) );
+  const topVend = [...arr].sort((a,b)=>b.qtd - a.qtd).slice(0,5);
+  const maisLuc = [...arr].sort((a,b)=>b.luc - a.luc).slice(0,5);
+  const menosLuc = [...arr].sort((a,b)=>a.luc - b.luc).slice(0,5);
+  document.getElementById('topVendidos').innerHTML = topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+  document.getElementById('maisLucro').innerHTML = maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+  document.getElementById('menosLucro').innerHTML = menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
 
-  document.getElementById('topVendidos').innerHTML = topVend.map(p => `<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-  document.getElementById('maisLucro').innerHTML = maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-  document.getElementById('menosLucro').innerHTML = menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-
-  const produtosVendidos = new Set(filt.map(d => d.produto));
+  const produtosVendidos = new Set(arr.map(p => p.produto));
   const todosProdutos = new Set(dados.map(d => d.produto));
   const naoVendidos = [...todosProdutos].filter(p => !produtosVendidos.has(p));
 
   const container = document.getElementById('semVendas');
-  container.innerHTML = `<h3>❌ Produtos Sem Vendas no Período (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
-
+  container.innerHTML = '';
   naoVendidos.forEach(produto => {
     const div = document.createElement('div');
+    div.className = 'nao-vendido';
     div.textContent = produto;
-    div.style.cursor = 'pointer';
-    div.style.color = '#c0392b';
-    div.style.padding = '4px 0';
     div.onclick = () => mostrarHistoricoVendasProduto(produto);
     container.appendChild(div);
   });
+
+  // Esconde a lista por padrão ao trocar filtros
+  document.getElementById('semVendasWrapper').style.display = 'none';
+  document.getElementById('btnMostrar').style.display = 'inline-block';
 }
 
 function mostrarHistoricoVendasProduto(produto) {
@@ -266,13 +328,22 @@ function mostrarHistoricoVendasProduto(produto) {
     .filter(d => d.produto === produto && d.quantidade > 0)
     .map(d => `${formatDataBr(d.data)} — ${d.empresa} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}`);
 
+  const modal = document.getElementById('modalHistorico');
+  const titulo = document.getElementById('modalTitulo');
+  const texto = document.getElementById('modalTexto');
+
   if (vendasAnteriores.length === 0) {
-    alert(`O produto "${produto}" nunca teve vendas registradas.`);
-    return;
+    titulo.textContent = `Nenhuma venda registrada de "${produto}"`;
+    texto.textContent = 'Este produto nunca foi vendido.';
+  } else {
+    titulo.textContent = `📅 Vendas anteriores de "${produto}"`;
+    texto.textContent = vendasAnteriores.join('\n');
   }
 
-  const msg = `📅 Vendas anteriores de "${produto}":\n\n` + vendasAnteriores.join('\n');
-  alert(msg);
+  modal.style.display = 'flex';
+}
+function fecharModal() {
+  document.getElementById('modalHistorico').style.display = 'none';
 }
 
 function listarVendas(filt){
