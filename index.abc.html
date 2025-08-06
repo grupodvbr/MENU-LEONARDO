@@ -149,12 +149,13 @@
 }
 #popupClose {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 24px;
-  color: white;
+  top: 10px;
+  right: 15px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 10;
 }
     #graficoVendas {
   display: none;
@@ -234,11 +235,11 @@
 
   <div id="popupOverlay">
   <div id="popupContent">
+    <div id="popupClose" onclick="fecharPopup()">&times;</div>
     <h2 id="popupTitle"></h2>
     <canvas id="graficoProdutoCanvas"></canvas>
     <div id="dadosProdutoTabela"></div>
   </div>
-  <div id="popupClose" onclick="fecharPopup()">&times;</div>
 </div>
 
   <canvas id="graficoVendas"></canvas>
@@ -317,7 +318,22 @@ function desenharGrafico(filt, empresaSelecionada){
   if(chartVendas) chartVendas.destroy();
   chartVendas = new Chart(ctx, {
     type:'line', data:{ labels: labels.map(formatDataBr), datasets:[{ label:'Faturamento por dia', data: vals, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.2)', fill:true }] },
-    options:{responsive:true, plugins:{legend:{display: false}, title:{display:true,text:'Evolução de Vendas'}}, scales:{y:{beginAtZero:true}} }
+    options: {
+  responsive: true,
+  plugins: {
+    legend: { display: false },
+    title: { display: true, text: 'Evolução de Vendas' },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          const valor = context.parsed.y || 0;
+          return '💰 ' + valor.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
+        }
+      }
+
   });
   document.getElementById('graficoVendas').style.display = 'block';
 }
@@ -446,19 +462,30 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
       }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: `Vendas de ${produto} por dia`
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true
+  responsive: true,
+  plugins: {
+    title: {
+      display: true,
+      text: `Vendas de ${produto} por dia`
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          const valor = context.parsed.y || 0;
+          return '💰 ' + valor.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
         }
       }
     }
+  },
+  scales: {
+    y: {
+      beginAtZero: true
+    }
+  }
+}
   });
 
   document.getElementById('popupTitle').textContent = `📊 Análise do Produto: ${produto}`;
