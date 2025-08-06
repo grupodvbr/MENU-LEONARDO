@@ -43,12 +43,19 @@
       gap: 10px;
       margin-bottom: 20px;
     }
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
+      color: #333;
+      font-size: 0.9em;
+      flex: 1 1 200px;
+    }
     .filters select,
     .filters input {
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      flex: 1 1 200px;
       font-size: 0.95em;
     }
     .resumo-geral {
@@ -106,10 +113,22 @@
 </header>
 <div class="container">
   <div class="filters">
-    <input type="date" id="dataInicio" />
-    <input type="date" id="dataFim" />
-    <select id="filtroEmpresa"></select>
-    <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
+    <label>
+      📅 Data Início:
+      <input type="date" id="dataInicio" />
+    </label>
+    <label>
+      📅 Data Fim:
+      <input type="date" id="dataFim" />
+    </label>
+    <label>
+      🏢 Empresa:
+      <select id="filtroEmpresa"></select>
+    </label>
+    <label>
+      🔍 Busca:
+      <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
+    </label>
   </div>
 
   <div class="resumo-geral">
@@ -276,6 +295,14 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
 }
 
 window.onload = () => {
+  // Define datas padrão: primeiro do mês até ontem
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const ontem = new Date();
+  ontem.setDate(hoje.getDate() - 1);
+  document.getElementById('dataInicio').value = primeiroDia.toISOString().split('T')[0];
+  document.getElementById('dataFim').value = ontem.toISOString().split('T')[0];
+
   carregarDados();
   document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
   document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
