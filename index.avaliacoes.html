@@ -120,7 +120,7 @@
 <body>
 
   <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+    <img src="data:image/png;base64,iVBOR..." alt="Logo CB Systems">
     <h1>Painel de Avaliações - Grupo DV</h1>
   </header>
 
@@ -194,7 +194,8 @@
       const fim = document.getElementById("dataFim").value;
 
       const filtradas = avaliacoes.filter(a => {
-        const dataOk = (!inicio || a.data >= inicio) && (!fim || a.data <= fim);
+        const data = new Date(a.data).toISOString().split('T')[0];
+        const dataOk = (!inicio || data >= inicio) && (!fim || data <= fim);
         const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
         return dataOk && empresaOk;
       });
