@@ -236,23 +236,8 @@ async function carregarMetas() {
       const previsto = parseFloat(linha["Previsto"]);
       const realizado = parseFloat(linha["Realizado"].toString().replace(",", "."));
       const atingido = previsto > 0 ? (realizado / previsto) * 100 : 0;
-// Obtemos a última data com base nos dados recebidos
-// Corrige a previsão com base em dias com valores > 0
-const dadosEmpresa = metas.filter(m => m.Empresa === linha.Empresa);
-
-const diasComValores = [...new Set(
-  dadosEmpresa
-    .filter(m => {
-      const valor = parseFloat(m.Realizado?.toString().replace(",", "."));
-      return !isNaN(valor) && valor > 0;
-    })
-    .map(m => m.Data)
-)].length || 1; // garante pelo menos 1 dia para não dividir por zero
-
-const mediaDiaria = realizado / diasComValores;
-const previsaoFinal = mediaDiaria * diasCorridosNoMes;
-
-
+      const mediaDiaria = realizado / diasCorridosAteData;
+      const previsaoFinal = mediaDiaria * diasCorridosNoMes;
       const previsaoPercentual = previsto > 0 ? (previsaoFinal / previsto) * 100 : 0;
 
       const div = document.createElement("div");
