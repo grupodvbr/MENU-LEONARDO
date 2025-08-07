@@ -13,6 +13,9 @@
       align-items: center;
       padding: 10px;
       border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     header img {
       height: 60px;
@@ -123,11 +126,10 @@
       corpo.innerHTML = "";
       lista.forEach(a => {
         const dataHora = new Date(a.data);
-        const dataFormatada = dataHora.toLocaleDateString('pt-BR');
-        const horaFormatada = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dataCompleta = `${dataHora.toLocaleDateString('pt-BR')} às ${dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
         corpo.innerHTML += `
           <tr>
-            <td>${dataFormatada} ${horaFormatada}</td>
+            <td>${dataCompleta}</td>
             <td>${a.empresa}</td>
             <td>${a.nome}</td>
             <td>${a.ambiente}</td>
