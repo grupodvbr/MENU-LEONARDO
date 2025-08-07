@@ -177,13 +177,13 @@
       avaliacoes = dados;
 
       if (avaliacoes.length) {
-        const datas = avaliacoes.map(a => new Date(a.data));
-        const min = new Date(Math.min(...datas));
-        const max = new Date(Math.max(...datas));
+  const hoje = new Date();
+  const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-        document.getElementById("dataInicio").value = min.toISOString().split('T')[0];
-        document.getElementById("dataFim").value = max.toISOString().split('T')[0];
-      }
+  document.getElementById("dataInicio").value = primeiroDiaMes.toISOString().split('T')[0];
+  document.getElementById("dataFim").value = hoje.toISOString().split('T')[0];
+}
+
 
       filtrarDados();
     }
