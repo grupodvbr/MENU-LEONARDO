@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Avaliações - Grupo DV</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -52,15 +52,14 @@
     .date-group {
       display: flex;
       gap: 10px;
-      width: 100%;
-      max-width: 600px;
       justify-content: center;
+      flex-wrap: wrap;
     }
     .date-group label {
       display: flex;
       flex-direction: column;
       font-size: 0.9em;
-      flex: 1;
+      align-items: flex-start;
     }
     select, input, button {
       padding: 10px;
@@ -102,6 +101,9 @@
         justify-content: center;
         flex-wrap: wrap;
       }
+      .date-group label {
+        max-width: 250px;
+      }
       header h1 {
         font-size: 1.5em;
       }
@@ -111,16 +113,13 @@
       table {
         font-size: 1em;
       }
-      .date-group label {
-        max-width: 250px;
-      }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <img src="data:image/png;base64,iVBOR..." alt="Logo CB Systems">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
     <h1>Painel de Avaliações - Grupo DV</h1>
   </header>
 
@@ -183,9 +182,9 @@
 
         document.getElementById("dataInicio").value = min.toISOString().split('T')[0];
         document.getElementById("dataFim").value = max.toISOString().split('T')[0];
-      }
 
-      filtrarDados();
+        filtrarDados();
+      }
     }
 
     function filtrarDados() {
