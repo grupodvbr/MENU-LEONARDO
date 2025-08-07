@@ -171,38 +171,41 @@
     let avaliacoes = [];
     const mapaNotas = { 'Ruim': 1, 'Bom': 2, 'Boa': 2, 'Boas': 2, 'Ótimo': 3, 'Ótimas': 3 };
 
-    async function carregarAvaliacoes() {
-      const url = 'https://script.google.com/macros/s/AKfycbyK3A5CDn_EgA3pbRVToh87_qKWvbIry886OkR1AdkJi7RyvSgcwY0BmRqhbKQnEKwgrA/exec';
-      const res = await fetch(url);
-      const dados = await res.json();
-      avaliacoes = dados;
+   async function carregarAvaliacoes() {
+  try {
+    const url = 'https://script.google.com/macros/s/AKfycbyK3A5CDn_EgA3pbRVToh87_qKWvbIry886OkR1AdkJi7RyvSgcwY0BmRqhbKQnEKwgrA/exec';
+    const res = await fetch(url);
+    const dados = await res.json();
+    avaliacoes = dados;
 
-      if (avaliacoes.length) {
-  const hoje = new Date();
-  const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    if (avaliacoes.length) {
+      const hoje = new Date();
+      const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      document.getElementById("dataInicio").value = primeiroDiaMes.toISOString().split('T')[0];
+      document.getElementById("dataFim").value = hoje.toISOString().split('T')[0];
+    }
 
-  document.getElementById("dataInicio").value = primeiroDiaMes.toISOString().split('T')[0];
-  document.getElementById("dataFim").value = hoje.toISOString().split('T')[0];
+    filtrarDados();
+  } catch (erro) {
+    alert("⚠️ Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.");
+    console.error("Erro no carregamento das avaliações:", erro);
+  }
 }
 
 
-      filtrarDados();
-    }
-
-    function filtrarDados() {
+   function filtrarDados() {
   const empresaFiltro = document.getElementById("empresaSelect").value;
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
 
+  const dataInicio = inicio ? new Date(inicio + 'T00:00:00') : null;
+  const dataFim = fim ? new Date(fim + 'T23:59:59') : null;
+
   const filtradas = avaliacoes.filter(a => {
     const dataAvaliacao = new Date(a.data);
-    const dataInicio = inicio ? new Date(inicio) : null;
-    const dataFim = fim ? new Date(fim + 'T23:59:59') : null;
-
     const dataOk = (!dataInicio || dataAvaliacao >= dataInicio) &&
                    (!dataFim || dataAvaliacao <= dataFim);
     const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
-
     return dataOk && empresaOk;
   });
 
@@ -210,6 +213,7 @@
   atualizarResumo(filtradas);
   atualizarGrafico(filtradas);
 }
+
 
     function atualizarTabela(lista) {
       const corpo = document.getElementById("tabelaAvaliacoes");
