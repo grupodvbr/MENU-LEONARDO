@@ -186,21 +186,24 @@ async function carregarMetas() {
   const dataFim = document.getElementById("dataFim").value;
   const empresa = document.getElementById("empresaFiltro").value;
 
- let diasCorridosAteData = 1;
-let diasCorridosNoMes = 1;
+  let diasCorridosNoMes = 30;
+  let diasCorridosAteData = 30;
 
-if (dataInicio && dataFim) {
-  const inicio = new Date(dataInicio);
-  const fim = new Date(dataFim);
-  
-  // Diferença entre datas (inclusive)
-  const diffMs = fim - inicio;
-  const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+  if (dataFim) {
+    const dataRef = new Date(dataFim);
+    const mesRef = dataRef.getMonth();
+    const anoRef = dataRef.getFullYear();
+    const hoje = new Date();
 
-  diasCorridosAteData = diffDias;
-  diasCorridosNoMes = diffDias; // Para prever com base no período filtrado, não no mês cheio
-}
+    const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
+    diasCorridosNoMes = ultimoDiaMesRef.getDate();
 
+    if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
+      diasCorridosAteData = hoje.getDate();
+    } else {
+      diasCorridosAteData = dataRef.getDate();
+    }
+  }
 
   const params = new URLSearchParams();
   if (dataInicio) params.append("dataInicio", dataInicio);
