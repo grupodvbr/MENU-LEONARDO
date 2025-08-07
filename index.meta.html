@@ -217,15 +217,20 @@ let diasCorridosAteData = 1;
       });
     }
     // Define o último dia com dado registrado
+const dataIniObj = new Date(dataInicio);
+const dataFimObj = new Date(dataFim);
+
+// Considera só os dados dentro do intervalo selecionado
 const datasValidas = metas
   .map(m => new Date(m["Data"]))
-  .filter(d => !isNaN(d));
-  
+  .filter(d => !isNaN(d) && d >= dataIniObj && d <= dataFimObj);
+
 const ultimoDiaComDados = datasValidas.length
   ? Math.max(...datasValidas.map(d => d.getDate()))
   : 1;
 
 diasCorridosAteData = ultimoDiaComDados;
+
 
 
     painel.innerHTML = "";
