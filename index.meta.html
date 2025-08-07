@@ -186,24 +186,16 @@ async function carregarMetas() {
   const dataFim = document.getElementById("dataFim").value;
   const empresa = document.getElementById("empresaFiltro").value;
 
-  let diasCorridosNoMes = 30;
-  let diasCorridosAteData = 30;
+// Determina quantos dias tem no mês do filtro (ou mês atual, se não houver filtro)
+let dataReferencia = dataFim ? new Date(dataFim) : new Date();
+const mesRef = dataReferencia.getMonth();
+const anoRef = dataReferencia.getFullYear();
+const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
+let diasCorridosNoMes = ultimoDiaMesRef.getDate();
 
-  if (dataFim) {
-    const dataRef = new Date(dataFim);
-    const mesRef = dataRef.getMonth();
-    const anoRef = dataRef.getFullYear();
-    const hoje = new Date();
+// Variável a ser definida depois, com base nos dados
+let diasCorridosAteData = 1;
 
-    const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
-    diasCorridosNoMes = ultimoDiaMesRef.getDate();
-
-    if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
-      diasCorridosAteData = hoje.getDate();
-    } else {
-      diasCorridosAteData = dataRef.getDate();
-    }
-  }
 
   const params = new URLSearchParams();
   if (dataInicio) params.append("dataInicio", dataInicio);
@@ -224,6 +216,17 @@ async function carregarMetas() {
         select.appendChild(opt);
       });
     }
+    // Define o último dia com dado registrado
+const datasValidas = metas
+  .map(m => new Date(m["Data"]))
+  .filter(d => !isNaN(d));
+  
+const ultimoDiaComDados = datasValidas.length
+  ? Math.max(...datasValidas.map(d => d.getDate()))
+  : 1;
+
+diasCorridosAteData = ultimoDiaComDados;
+
 
     painel.innerHTML = "";
     if (metas.length === 0) {
