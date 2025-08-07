@@ -2,165 +2,209 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Avaliações - Grupo DV</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; margin: 0; }
-    h1 { text-align: center; margin-bottom: 30px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    header {
+      background: white;
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    header img {
+      height: 60px;
+      margin-right: 20px;
+    }
+    header h1 {
+      font-size: 1.4em;
+      text-align: center;
+      flex: 1;
+    }
+    .container { padding: 20px; }
     .filtros { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
-    select, input, button { padding: 6px 12px; font-size: 16px; }
-    table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-    th { background-color: #eee; }
-    canvas { max-width: 800px; margin: 30px auto; display: block; }
+    select, input, button {
+      padding: 12px;
+      font-size: 1.1em;
+      width: 100%;
+      max-width: 300px;
+    }
+    #resumo p {
+      font-size: 1.2em;
+      margin: 8px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 1em;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th { background: #eee; }
+    canvas { max-width: 100%; margin: 30px auto; display: block; }
   </style>
 </head>
 <body>
 
-<h1>📊 Painel de Avaliações - Grupo DV</h1>
+  <header>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAqCAMAAACuUJHDAAAAeFBMVEX///8AAADz8/Pn5+fZ2dn5+fnV1dW2traioqKXl5dJSUmRkZHExMROTk5aWlpdXV3IyMgyMjIkJCRQUFDGxsba2tqkpKTFxcXKysq+vr52dnZ8fHzGxsbT09OXl5c/Pz/8/PydnZ0kJCTk5OTu7u5hYWFoUspUAAAAAXRSTlMAQObYZgAAAVVJREFUeF7t1NsSgyAMAFGbEglKgf7/f9aUMNlFR5nZlDPbsbyHwsuF1vwW5qA0FAGroYBJQZrL9PR4+Fo5K2RQOHp5yqQmvNyrn9LMNdKukEBEAV1+QwD14CpFQx6wMAKoNWfhBMmGqPGhE8g+nsNjxLalUJTIbH6F9fdAaUmRkIs5M33z0ArURr/DrNU7Xg8UTYAhYaCyZtSCPtAxtZBxfZJtVp47MoOkEXt6HZdMEL2mEMXNEvEDLPERbNeExGMSNH7n4dU9coA8yE3+DD4C9HyMDjwBOP+khoyZf7tdE6FceFBE59eZxgR5qJBNZh7mOGHshRocZDmGOjEy99No5vYBiCE+p3S7SAIoAAAAASUVORK5CYII=" alt="Logo CB Systems">
+    <h1>Painel de Avaliações - Grupo DV</h1>
+  </header>
 
-<div class="filtros">
-  <select id="empresaSelect">
-    <option value="Todas">Todas as Empresas</option>
-    <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
-    <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
-  </select>
-  <input type="date" id="dataInicio">
-  <input type="date" id="dataFim">
-  <button onclick="filtrarDados()">Filtrar</button>
-</div>
+  <div class="container">
+    <div class="filtros">
+      <select id="empresaSelect">
+        <option value="Todas">Todas as Empresas</option>
+        <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
+        <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
+      </select>
+      <input type="date" id="dataInicio">
+      <input type="date" id="dataFim">
+      <button onclick="filtrarDados()">Filtrar</button>
+    </div>
 
-<div id="resumo"></div>
-<canvas id="grafico"></canvas>
+    <div id="resumo"></div>
+    <canvas id="grafico"></canvas>
 
-<table>
-  <thead>
-    <tr>
-      <th>Data</th>
-      <th>Empresa</th>
-      <th>Nome</th>
-      <th>Ambiente</th>
-      <th>Iluminação</th>
-      <th>Comida</th>
-      <th>Música</th>
-      <th>Atendimento</th>
-      <th>Sugestão</th>
-    </tr>
-  </thead>
-  <tbody id="tabelaAvaliacoes"></tbody>
-</table>
-
-<script>
-  let avaliacoes = [];
-
-  const mapaNotas = { 'Ruim': 1, 'Bom': 2, 'Boa': 2, 'Boas': 2, 'Ótimo': 3, 'Ótimas': 3 };
-
-  async function carregarAvaliacoes() {
-    const url = 'https://script.google.com/macros/s/AKfycbyK3A5CDn_EgA3pbRVToh87_qKWvbIry886OkR1AdkJi7RyvSgcwY0BmRqhbKQnEKwgrA/exec'; // 🔁 Substitua aqui!
-    const res = await fetch(url);
-    const dados = await res.json();
-    avaliacoes = dados;
-    filtrarDados();
-  }
-
-  function filtrarDados() {
-    const empresaFiltro = document.getElementById("empresaSelect").value;
-    const inicio = document.getElementById("dataInicio").value;
-    const fim = document.getElementById("dataFim").value;
-
-    const filtradas = avaliacoes.filter(a => {
-      const dataOk = (!inicio || a.data >= inicio) && (!fim || a.data <= fim);
-      const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
-      return dataOk && empresaOk;
-    });
-
-    atualizarTabela(filtradas);
-    atualizarResumo(filtradas);
-    atualizarGrafico(filtradas);
-  }
-
-  function atualizarTabela(lista) {
-    const corpo = document.getElementById("tabelaAvaliacoes");
-    corpo.innerHTML = "";
-    lista.forEach(a => {
-      corpo.innerHTML += `
+    <table>
+      <thead>
         <tr>
-          <td>${a.data}</td>
-          <td>${a.empresa}</td>
-          <td>${a.nome}</td>
-          <td>${a.ambiente}</td>
-          <td>${a.iluminacao}</td>
-          <td>${a.comida}</td>
-          <td>${a.musica}</td>
-          <td>${a.atendimento}</td>
-          <td>${a.sugestao}</td>
+          <th>Data e Horário</th>
+          <th>Empresa</th>
+          <th>Nome</th>
+          <th>Ambiente</th>
+          <th>Iluminação</th>
+          <th>Comida</th>
+          <th>Música</th>
+          <th>Atendimento</th>
+          <th>Sugestão</th>
         </tr>
+      </thead>
+      <tbody id="tabelaAvaliacoes"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let avaliacoes = [];
+    const mapaNotas = { 'Ruim': 1, 'Bom': 2, 'Boa': 2, 'Boas': 2, 'Ótimo': 3, 'Ótimas': 3 };
+
+    async function carregarAvaliacoes() {
+      const url = 'https://script.google.com/macros/s/SEU_SCRIPT_URL/exec';
+      const res = await fetch(url);
+      const dados = await res.json();
+      avaliacoes = dados;
+      filtrarDados();
+    }
+
+    function filtrarDados() {
+      const empresaFiltro = document.getElementById("empresaSelect").value;
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+
+      const filtradas = avaliacoes.filter(a => {
+        const dataOk = (!inicio || a.data >= inicio) && (!fim || a.data <= fim);
+        const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
+        return dataOk && empresaOk;
+      });
+
+      atualizarTabela(filtradas);
+      atualizarResumo(filtradas);
+      atualizarGrafico(filtradas);
+    }
+
+    function atualizarTabela(lista) {
+      const corpo = document.getElementById("tabelaAvaliacoes");
+      corpo.innerHTML = "";
+      lista.forEach(a => {
+        const dataHora = new Date(a.data);
+        const dataCompleta = `${dataHora.toLocaleDateString('pt-BR')} às ${dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+        corpo.innerHTML += `
+          <tr>
+            <td>${dataCompleta}</td>
+            <td>${a.empresa}</td>
+            <td>${a.nome}</td>
+            <td>${a.ambiente}</td>
+            <td>${a.iluminacao}</td>
+            <td>${a.comida}</td>
+            <td>${a.musica}</td>
+            <td>${a.atendimento}</td>
+            <td>${a.sugestao}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function calcularMedia(lista, campo) {
+      const notas = lista.map(a => mapaNotas[a[campo]]).filter(n => n);
+      const media = notas.reduce((soma, n) => soma + n, 0) / notas.length || 0;
+      return media.toFixed(2);
+    }
+
+    function atualizarResumo(lista) {
+      const div = document.getElementById("resumo");
+      div.innerHTML = `
+        <p><strong>Total de Avaliações:</strong> ${lista.length}</p>
+        <p><strong>Média Ambiente:</strong> ${calcularMedia(lista, "ambiente")}</p>
+        <p><strong>Média Iluminação:</strong> ${calcularMedia(lista, "iluminacao")}</p>
+        <p><strong>Média Comida:</strong> ${calcularMedia(lista, "comida")}</p>
+        <p><strong>Média Música:</strong> ${calcularMedia(lista, "musica")}</p>
+        <p><strong>Média Atendimento:</strong> ${calcularMedia(lista, "atendimento")}</p>
       `;
-    });
-  }
+    }
 
-  function calcularMedia(lista, campo) {
-    const notas = lista.map(a => mapaNotas[a[campo]]).filter(n => n);
-    const media = notas.reduce((soma, n) => soma + n, 0) / notas.length || 0;
-    return media.toFixed(2);
-  }
+    let grafico;
+    function atualizarGrafico(lista) {
+      const ctx = document.getElementById("grafico").getContext("2d");
+      const medias = [
+        calcularMedia(lista, "ambiente"),
+        calcularMedia(lista, "iluminacao"),
+        calcularMedia(lista, "comida"),
+        calcularMedia(lista, "musica"),
+        calcularMedia(lista, "atendimento")
+      ];
 
-  function atualizarResumo(lista) {
-    const div = document.getElementById("resumo");
-    div.innerHTML = `
-      <p><strong>Total de Avaliações:</strong> ${lista.length}</p>
-      <p><strong>Média Ambiente:</strong> ${calcularMedia(lista, "ambiente")}</p>
-      <p><strong>Média Iluminação:</strong> ${calcularMedia(lista, "iluminacao")}</p>
-      <p><strong>Média Comida:</strong> ${calcularMedia(lista, "comida")}</p>
-      <p><strong>Média Música:</strong> ${calcularMedia(lista, "musica")}</p>
-      <p><strong>Média Atendimento:</strong> ${calcularMedia(lista, "atendimento")}</p>
-    `;
-  }
-
-  let grafico;
-  function atualizarGrafico(lista) {
-    const ctx = document.getElementById("grafico").getContext("2d");
-    const medias = [
-      calcularMedia(lista, "ambiente"),
-      calcularMedia(lista, "iluminacao"),
-      calcularMedia(lista, "comida"),
-      calcularMedia(lista, "musica"),
-      calcularMedia(lista, "atendimento")
-    ];
-
-    if (grafico) grafico.destroy();
-    grafico = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["Ambiente", "Iluminação", "Comida", "Música", "Atendimento"],
-        datasets: [{
-          label: "Média",
-          data: medias,
-          backgroundColor: ['#f44336', '#ff9800', '#4caf50', '#2196f3', '#9c27b0']
-        }]
-      },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 3,
-            ticks: {
-              stepSize: 1,
-              callback: value => {
-                if (value === 1) return "Ruim";
-                if (value === 2) return "Bom";
-                if (value === 3) return "Ótimo";
-                return value;
+      if (grafico) grafico.destroy();
+      grafico = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["Ambiente", "Iluminação", "Comida", "Música", "Atendimento"],
+          datasets: [{
+            label: "Média",
+            data: medias,
+            backgroundColor: ['#f44336', '#ff9800', '#4caf50', '#2196f3', '#9c27b0']
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 3,
+              ticks: {
+                stepSize: 1,
+                callback: value => {
+                  if (value === 1) return "Ruim";
+                  if (value === 2) return "Bom";
+                  if (value === 3) return "Ótimo";
+                  return value;
+                }
               }
             }
           }
         }
-      }
-    });
-  }
+      });
+    }
 
-  carregarAvaliacoes();
-</script>
+    carregarAvaliacoes();
+  </script>
 
 </body>
 </html>
