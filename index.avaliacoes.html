@@ -59,7 +59,11 @@
       font-size: 1em;
       margin: 6px 0;
     }
+    .tabela-container {
+      overflow-x: auto;
+    }
     table {
+      min-width: 800px;
       width: 100%;
       border-collapse: collapse;
       background: white;
@@ -99,7 +103,7 @@
 <body>
 
   <header>
-    <img src="data:image/png;base64,iVBOR..." alt="Logo CB Systems">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
     <h1>Painel de Avaliações - Grupo DV</h1>
   </header>
 
@@ -119,22 +123,24 @@
   <div class="container">
     <div id="resumo"></div>
     <canvas id="grafico"></canvas>
-    <table>
-      <thead>
-        <tr>
-          <th>Data e Horário</th>
-          <th>Empresa</th>
-          <th>Nome</th>
-          <th>Ambiente</th>
-          <th>Iluminação</th>
-          <th>Comida</th>
-          <th>Música</th>
-          <th>Atendimento</th>
-          <th>Sugestão</th>
-        </tr>
-      </thead>
-      <tbody id="tabelaAvaliacoes"></tbody>
-    </table>
+    <div class="tabela-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Data e Horário</th>
+            <th>Empresa</th>
+            <th>Nome</th>
+            <th>Ambiente</th>
+            <th>Iluminação</th>
+            <th>Comida</th>
+            <th>Música</th>
+            <th>Atendimento</th>
+            <th>Sugestão</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaAvaliacoes"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
