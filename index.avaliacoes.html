@@ -100,9 +100,10 @@
         flex-direction: row;
         justify-content: center;
         flex-wrap: wrap;
+        gap: 20px;
       }
       .date-group label {
-        max-width: 250px;
+        max-width: 180px;
       }
       header h1 {
         font-size: 1.5em;
@@ -180,11 +181,14 @@
         const min = new Date(Math.min(...datas));
         const max = new Date(Math.max(...datas));
 
-        document.getElementById("dataInicio").value = min.toISOString().split('T')[0];
-        document.getElementById("dataFim").value = max.toISOString().split('T')[0];
+        const dataInicio = document.getElementById("dataInicio");
+        const dataFim = document.getElementById("dataFim");
 
-        filtrarDados();
+        dataInicio.value = min.toISOString().split('T')[0];
+        dataFim.value = max.toISOString().split('T')[0];
       }
+
+      filtrarDados();
     }
 
     function filtrarDados() {
