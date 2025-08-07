@@ -49,6 +49,19 @@
       align-items: center;
       gap: 10px;
     }
+    .date-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      justify-content: center;
+    }
+    .date-group label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9em;
+      flex: 1;
+    }
     select, input, button {
       padding: 10px;
       font-size: 1em;
@@ -87,6 +100,7 @@
       .filtros {
         flex-direction: row;
         justify-content: center;
+        flex-wrap: wrap;
       }
       header h1 {
         font-size: 1.5em;
@@ -96,6 +110,9 @@
       }
       table {
         font-size: 1em;
+      }
+      .date-group label {
+        max-width: 250px;
       }
     }
   </style>
@@ -114,8 +131,14 @@
         <option value="MERCATTO DELÍCIA">MERCATTO DELÍCIA</option>
         <option value="DELÍCIA GOURMET">DELÍCIA GOURMET</option>
       </select>
-      <input type="date" id="dataInicio">
-      <input type="date" id="dataFim">
+      <div class="date-group">
+        <label>Início:
+          <input type="date" id="dataInicio">
+        </label>
+        <label>Fim:
+          <input type="date" id="dataFim">
+        </label>
+      </div>
       <button onclick="filtrarDados()">Filtrar</button>
     </div>
   </div>
@@ -152,6 +175,16 @@
       const res = await fetch(url);
       const dados = await res.json();
       avaliacoes = dados;
+
+      if (avaliacoes.length) {
+        const datas = avaliacoes.map(a => new Date(a.data));
+        const min = new Date(Math.min(...datas));
+        const max = new Date(Math.max(...datas));
+
+        document.getElementById("dataInicio").value = min.toISOString().split('T')[0];
+        document.getElementById("dataFim").value = max.toISOString().split('T')[0];
+      }
+
       filtrarDados();
     }
 
