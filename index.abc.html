@@ -438,8 +438,12 @@ function listarVendas(filt){
   const cont = document.getElementById('listaVendas');
   cont.innerHTML = '';
 
-  // Produtos com vendas (> 0)
-  const comVendas = filt.filter(d => d.quantidade > 0);
+
+  // Produtos com vendas (> 0), ordenados por quantidade decrescente
+const comVendas = filt
+  .filter(d => d.quantidade > 0)
+  .sort((a, b) => b.quantidade - a.quantidade);
+
   const semVendas = filt.filter(d => d.quantidade === 0);
 
   // Bloco: PRODUTOS COM VENDAS
