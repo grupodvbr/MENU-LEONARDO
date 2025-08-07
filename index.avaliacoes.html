@@ -6,7 +6,12 @@
   <title>Painel de Avaliações - Grupo DV</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+    }
     header {
       background: white;
       display: flex;
@@ -18,45 +23,76 @@
       z-index: 1000;
     }
     header img {
-      height: 60px;
-      margin-right: 20px;
+      height: 50px;
+      margin-right: 10px;
     }
     header h1 {
-      font-size: 1.4em;
+      font-size: 1.2em;
       text-align: center;
       flex: 1;
+      margin: 0;
     }
-    .container { padding: 20px; }
-    .filtros { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+    .container {
+      padding: 10px;
+    }
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
     select, input, button {
-      padding: 12px;
-      font-size: 1.1em;
+      padding: 10px;
+      font-size: 1em;
       width: 100%;
-      max-width: 300px;
+      max-width: 280px;
     }
     #resumo p {
-      font-size: 1.2em;
-      margin: 8px 0;
+      font-size: 1em;
+      margin: 6px 0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
-      font-size: 1em;
+      font-size: 0.9em;
     }
     th, td {
-      padding: 10px;
+      padding: 6px;
       border: 1px solid #ccc;
       text-align: left;
+      word-wrap: break-word;
     }
-    th { background: #eee; }
-    canvas { max-width: 100%; margin: 30px auto; display: block; }
+    th {
+      background: #eee;
+    }
+    canvas {
+      max-width: 100%;
+      margin: 20px auto;
+      display: block;
+    }
+    @media (min-width: 768px) {
+      .filtros {
+        flex-direction: row;
+        justify-content: center;
+      }
+      header h1 {
+        font-size: 1.5em;
+      }
+      #resumo p {
+        font-size: 1.2em;
+      }
+      table {
+        font-size: 1em;
+      }
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo CB Systems">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAqCAMAAACuUJHDAAAAeFBMVEX///8AAADz8/Pn5+fZ2dn5+fnV1dW2traioqKXl5dJSUmRkZHExMROTk5aWlpdXV3IyMgyMjIkJCRQUFDGxsba2tqkpKTFxcXKysq+vr52dnZ8fHzGxsbT09OXl5c/Pz/8/PydnZ0kJCTk5OTu7u5hYWFoUspUAAAAAXRSTlMAQObYZgAAAVVJREFUeF7t1NsSgyAMAFGbEglKgf7/f9aUMNlFR5nZlDPbsbyHwsuF1vwW5qA0FAGroYBJQZrL9PR4+Fo5K2RQOHp5yqQmvNyrn9LMNdKukEBEAV1+QwD14CpFQx6wMAKoNWfhBMmGqPGhE8g+nsNjxLalUJTIbH6F9fdAaUmRkIs5M33z0ArURr/DrNU7Xg8UTYAhYaCyZtSCPtAxtZBxfZJtVp47MoOkEXt6HZdMEL2mEMXNEvEDLPERbNeExGMSNH7n4dU9coA8yE3+DD4C9HyMDjwBOP+khoyZf7tdE6FceFBE59eZxgR5qJBNZh7mOGHshRocZDmGOjEy99No5vYBiCE+p3S7SAIoAAAAASUVORK5CYII=" alt="Logo CB Systems">
     <h1>Painel de Avaliações - Grupo DV</h1>
   </header>
 
@@ -98,7 +134,7 @@
     const mapaNotas = { 'Ruim': 1, 'Bom': 2, 'Boa': 2, 'Boas': 2, 'Ótimo': 3, 'Ótimas': 3 };
 
     async function carregarAvaliacoes() {
-      const url = 'https://script.google.com/macros/s/AKfycbyK3A5CDn_EgA3pbRVToh87_qKWvbIry886OkR1AdkJi7RyvSgcwY0BmRqhbKQnEKwgrA/exec';
+      const url = 'https://script.google.com/macros/s/SEU_SCRIPT_URL/exec';
       const res = await fetch(url);
       const dados = await res.json();
       avaliacoes = dados;
