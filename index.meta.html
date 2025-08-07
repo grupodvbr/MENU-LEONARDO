@@ -243,12 +243,13 @@ async function carregarMetas() {
       const div = document.createElement("div");
       div.className = "metas-box";
       div.innerHTML = `
-        <h2>${linha["Empresa"]}</h2>
-        <p>💰 Previsto: R$ ${formatarNumero(previsto)}</p>
-        <p>✅ Realizado: R$ ${formatarNumero(realizado)}</p>
-        <p>📊 Atingido: ${formatarNumero(atingido)}%</p>
-        <p>📈 Previsão: R$ ${formatarNumero(previsaoFinal)} (${formatarNumero(previsaoPercentual)}%)</p>
-      `;
+  <h2>${linha["Empresa"]}</h2>
+  <p>💰 Previsto: R$ ${formatarNumero(previsto)}</p>
+  <p>✅ Realizado: R$ ${formatarNumero(realizado)}</p>
+  <p>📊 Atingido: ${formatarNumero(atingido)}%</p>
+  <p>📅 Média por dia: R$ ${formatarNumero(mediaDiaria)}</p>
+  <p>📈 Previsão: R$ ${formatarNumero(previsaoFinal)} (${formatarNumero(previsaoPercentual)}%)</p>
+`;
       painel.appendChild(div);
     });
 
