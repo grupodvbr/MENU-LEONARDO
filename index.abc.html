@@ -438,33 +438,51 @@ function listarVendas(filt){
   const cont = document.getElementById('listaVendas');
   cont.innerHTML = '';
 
+  const agrupado = {};
 
-// Produtos com vendas (> 0), ordenados por faturamento decrescente
-const comVendas = filt
-  .filter(d => d.quantidade > 0)
-  .sort((a, b) => b.faturamento - a.faturamento);
+  filt.forEach(d => {
+    if (d.quantidade > 0) {
+      const chave = d.produto + '___' + d.empresa;
+      if (!agrupado[chave]) {
+        agrupado[chave] = {
+          produto: d.produto,
+          empresa: d.empresa,
+          quantidade: 0,
+          faturamento: 0,
+          lucro: 0,
+          detalhes: []
+        };
+      }
+      agrupado[chave].quantidade += d.quantidade;
+      agrupado[chave].faturamento += d.faturamento;
+      agrupado[chave].lucro += d.lucro;
+      agrupado[chave].detalhes.push(d);
+    }
+  });
 
-  const semVendas = filt.filter(d => d.quantidade === 0);
+  const lista = Object.values(agrupado).sort((a, b) => b.faturamento - a.faturamento);
 
-  // Bloco: PRODUTOS COM VENDAS
- if (comVendas.length > 0) {
-  const blocoCom = document.createElement('div');
-  blocoCom.className = 'bloco-com-vendas';
-  blocoCom.innerHTML = `<h3>✅ Produtos com Vendas</h3>`;
-    comVendas.forEach(d => {
+  if (lista.length > 0) {
+    const blocoCom = document.createElement('div');
+    blocoCom.className = 'bloco-com-vendas';
+    blocoCom.innerHTML = `<h3>✅ Produtos com Vendas (Agrupados)</h3>`;
+    
+    lista.forEach(p => {
       const div = document.createElement('div');
-      div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
-      div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
+      div.innerHTML = `<p><strong>${p.produto}</strong> — ${p.quantidade} un — ${formatMoeda(p.faturamento)} — Lucro: ${formatMoeda(p.lucro)}</p>`;
+      div.onclick = () => exibirGraficoProdutoSelecionado(p.produto, p.empresa);
       blocoCom.appendChild(div);
     });
+
     cont.appendChild(blocoCom);
   }
 
-  // Bloco: PRODUTOS COM QUANTIDADE 0 (com registro mas sem venda)
+  // Produtos com quantidade 0
+  const semVendas = filt.filter(d => d.quantidade === 0);
   if (semVendas.length > 0) {
-  const blocoSem = document.createElement('div');
-  blocoSem.className = 'bloco-sem-vendas';
-  blocoSem.innerHTML = `<h3>⚠️ Produtos Registrados mas com Quantidade 0</h3>`;
+    const blocoSem = document.createElement('div');
+    blocoSem.className = 'bloco-sem-vendas';
+    blocoSem.innerHTML = `<h3>⚠️ Produtos Registrados mas com Quantidade 0</h3>`;
     semVendas.forEach(d => {
       const div = document.createElement('div');
       div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
