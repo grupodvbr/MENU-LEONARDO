@@ -388,7 +388,7 @@ function mostrarAnalises(filt) {
 
 
   const arr = Object.entries(countByProd).map(([produto, data]) => ({ produto, ...data }));
-  const topVend = [...arr].sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+  const topVend = [...arr].sort((a, b) => b.fat - a.fat).slice(0, 5);
   const maisLuc = [...arr].sort((a, b) => b.luc - a.luc).slice(0, 5);
   const menosLuc = [...arr].sort((a, b) => a.luc - b.luc).slice(0, 5);
 
@@ -439,10 +439,10 @@ function listarVendas(filt){
   cont.innerHTML = '';
 
 
-  // Produtos com vendas (> 0), ordenados por quantidade decrescente
+// Produtos com vendas (> 0), ordenados por faturamento decrescente
 const comVendas = filt
   .filter(d => d.quantidade > 0)
-  .sort((a, b) => b.quantidade - a.quantidade);
+  .sort((a, b) => b.faturamento - a.faturamento);
 
   const semVendas = filt.filter(d => d.quantidade === 0);
 
