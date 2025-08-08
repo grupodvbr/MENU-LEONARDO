@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Análise Financeira</title>
-  <title>Análise Financeira</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     body {
@@ -55,6 +54,24 @@
     .logo-left img {
       height: 60px;
     }
+.user-profile {
+  display: inline-block;
+  margin-left: 15px;
+}
+
+.user-profile img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ccc;
+  transition: transform 0.2s ease;
+}
+
+.user-profile img:hover {
+  transform: scale(1.1);
+  border-color: #2980b9;
+}
 
     .title-center {
       flex: 2;
@@ -163,8 +180,12 @@
       <h2>Análise Financeira</h2>
     </div>
     <div class="spacer">
-      <a href="index.relatorios.html" class="relatorio-link" title="Relatório Consolidado">📄</a>
-    </div>
+  <a href="index.relatorios.html" class="relatorio-link" title="Relatório Consolidado">📄</a>
+  <a href="perfil.html" title="Perfil do Usuário" class="user-profile">
+    <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Usuário" />
+  </a>
+</div>
+
   </header>
 
   <!-- Cards -->
