@@ -347,24 +347,30 @@ function mostrarResumo(filt){
 }]
 
     },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: 'Evolução de Vendas' },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const valor = context.parsed.y || 0;
-              return '💰 ' + valor.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              });
-            }
-          }
+   options: {
+  responsive: true,
+  interaction: {
+    mode: 'nearest',
+    axis: 'x',
+    intersect: false
+  },
+  plugins: {
+    legend: { display: false },
+    title: { display: true, text: 'Evolução de Vendas' },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          const valor = context.parsed.y || 0;
+          return '💰 ' + valor.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
         }
       }
     }
+  }
+}
+
   });
 
   document.getElementById('graficoVendas').style.display = 'block';
@@ -516,29 +522,35 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
       backgroundColor: 'rgba(46, 204, 113, 0.7)'
     }]
   },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: 'Evolução de Vendas' },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const valor = context.parsed.y || 0;
-            return '💰 ' + valor.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            });
-          }
+ options: {
+  responsive: true,
+  interaction: {
+    mode: 'nearest',
+    axis: 'x',
+    intersect: false
+  },
+  plugins: {
+    legend: { display: false },
+    title: { display: true, text: 'Evolução de Vendas' },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          const valor = context.parsed.y || 0;
+          return '💰 ' + valor.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
         }
       }
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true
     }
   }
+}
+
 });
 
 
