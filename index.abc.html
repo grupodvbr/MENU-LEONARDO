@@ -69,10 +69,11 @@
   background: white;
   padding: 15px;
   border-radius: 12px;
-  flex: 1 1 30%;
+  flex: 1 1 100%;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  min-width: 280px;
+  min-width: unset;
 }
+
 
 .card-analise h3 {
   margin-top: 0;
@@ -205,12 +206,54 @@
       padding: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    /* Impede qualquer estouro de largura */
+* {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ajusta layout principal */
+.container {
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsividade nos filtros */
+.filters {
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filters label {
+  flex: 1 1 100%;
+}
+
+/* Gráficos sempre ajustados à tela */
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Cartões em coluna no mobile */
+.card-analise {
+  flex: 1 1 100%;
+  min-width: unset; /* Remove largura mínima que causa quebra */
+}
+
   </style>
 </head>
 <body>
 <header>
   <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo CB Systems">
-  <h1 id="tituloPainel">Painel ABC de Vendas</h1>
+ <h1 id="tituloPainel">ABC DE VENDAS VILLA GOURMET</h1>
 </header>
 <div class="container">
   <div class="filters">
@@ -224,7 +267,9 @@
     </label>
     <label>
       🏢 Empresa:
-      <select id="filtroEmpresa"></select>
+     <select id="filtroEmpresa">
+  <option value="">Todas Empresas</option>
+</select>
     </label>
     <label>
       🔍 Busca:
@@ -238,12 +283,16 @@
   </div>
 
   <div id="popupOverlay">
-  <div id="popupContent">
-    <div id="popupClose" onclick="fecharPopup()">&times;</div>
-    <h2 id="popupTitle"></h2>
-    <canvas id="graficoProdutoCanvas"></canvas>
-    <div id="dadosProdutoTabela"></div>
-  </div>
+ <div id="popupContent">
+  <div id="popupClose" onclick="fecharPopup()">&times;</div>
+  <h2 id="popupTitle"></h2>
+  <canvas id="graficoProdutoCanvas"></canvas>
+
+  <!-- ✅ Adicione aqui dentro -->
+  <canvas id="graficoPizza" style="max-width: 400px; margin-top: 20px; display: none;"></canvas>
+
+  <div id="dadosProdutoTabela"></div>
+</div>
 </div>
 
   <canvas id="graficoVendas"></canvas>
@@ -267,6 +316,9 @@ const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLr
 let dados = [];
 let chartVendas = null;
 let chartProduto = null;
+  let chartPizza = null;
+let toqueLongoTimeout = null;
+
 
 function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
 function formatDataBr(iso){ 
@@ -283,10 +335,11 @@ async function carregarDados(){
   aplicarFiltros();
 }
 
-function preencherFiltros(){
-  const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
+function preencherFiltros() {
+  const empresas = [...new Set(dados.map(d => d.empresa))].sort();
   const sel = document.getElementById('filtroEmpresa');
-  sel.innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
+  sel.innerHTML = '<option value="">Todas Empresas</option>' + 
+    empresas.map(e => `<option value="${e}">${e}</option>`).join('');
 }
 
 function aplicarFiltros(){
@@ -296,7 +349,7 @@ function aplicarFiltros(){
   const df = document.getElementById('dataFim').value;
 
   const filt = dados.filter(d=>{
-    if(eF && d.empresa!==eF) return false;
+    if (d.empresa !== "ABC DE VENDAS VILLA GOURMET") return false;
     if(busca && !d.produto.toLowerCase().includes(busca)) return false;
     if(di && d.data<di) return false;
     if(df && d.data>df) return false;
@@ -347,7 +400,7 @@ function mostrarResumo(filt){
 }]
 
     },
-   options: {
+    options: {
   responsive: true,
   interaction: {
     mode: 'nearest',
@@ -380,7 +433,10 @@ function mostrarResumo(filt){
   function fecharPopup() {
   document.getElementById('popupOverlay').style.display = 'none';
   if(chartProduto) chartProduto.destroy();
+  if(chartPizza) chartPizza.destroy();
+  document.getElementById('graficoPizza').style.display = 'none';
 }
+
 function mostrarAnalises(filt) {
   const countByProd = {};
   filt.forEach(d => {
@@ -559,6 +615,51 @@ function exibirGraficoProdutoSelecionado(produto, empresa){
   document.getElementById('dadosProdutoTabela').innerHTML = tabela;
 
   document.getElementById('popupOverlay').style.display = 'flex';
+    const canvas = document.getElementById('graficoProdutoCanvas');
+
+  function abrirGraficoPizza() {
+    const di = document.getElementById('dataInicio').value;
+    const df = document.getElementById('dataFim').value;
+
+    const totalPeriodo = dados
+      .filter(d => d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df))
+      .reduce((sum, d) => sum + d.faturamento, 0);
+
+    const totalProduto = filtro.reduce((sum, d) => sum + d.faturamento, 0);
+    const porcentagem = (totalProduto / totalPeriodo) * 100;
+
+    const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+    if (chartPizza) chartPizza.destroy();
+
+    chartPizza = new Chart(ctxPizza, {
+      type: 'pie',
+      data: {
+        labels: ['💡 Esse Produto', 'Outros Produtos'],
+        datasets: [{
+          data: [totalProduto, totalPeriodo - totalProduto],
+          backgroundColor: ['#27ae60', '#bdc3c7']
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: `Participação no Faturamento: ${porcentagem.toFixed(1)}%`
+          }
+        }
+      }
+    });
+
+    document.getElementById('graficoPizza').style.display = 'block';
+  }
+
+  canvas.addEventListener('dblclick', abrirGraficoPizza);
+  canvas.addEventListener('touchstart', () => {
+    toqueLongoTimeout = setTimeout(abrirGraficoPizza, 600);
+  });
+  canvas.addEventListener('touchend', () => clearTimeout(toqueLongoTimeout));
+  canvas.addEventListener('touchmove', () => clearTimeout(toqueLongoTimeout));
+
 }
 
 window.onload = () => {
