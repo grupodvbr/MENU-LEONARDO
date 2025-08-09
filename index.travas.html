@@ -18,7 +18,7 @@
   .section{margin-top:14px}
   .company>.title{font-weight:800;margin:10px 2px 12px}
 
-  /* 1 card por linha no mobile; 2 em telas >=680px */
+  /* 1 card/linha no mobile; 2 em telas >=680px */
   .kpis{display:grid;grid-template-columns:1fr;gap:10px}
   @media(min-width:680px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .kpi{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--shadow);position:relative}
@@ -50,14 +50,14 @@
   /* Modal */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
   #modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-  #modal .panel{position:relative;z-index:1;width:min(94vw,680px);max-height:80vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px;will-change:transform}
+  #modal .panel{position:relative;z-index:1;width:min(94vw,680px);max-height:80vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px}
   #modal header{position:sticky;top:0;background:#fff;margin:-12px -12px 8px;padding:10px 12px;border-radius:12px 12px 0 0;box-shadow:0 1px 0 rgba(0,0,0,.06)}
   #modal h3{margin:0;font-size:16px}
   #modal .close{appearance:none;border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#334155}
   #modal .list{list-style:none;margin:0;padding:0}
-  #modal .item{display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px dashed #e5e7eb}
-  #modal .item b{flex:1 1 auto;min-width:0}
-  #modal .item .val{flex:0 0 140px;text-align:right;white-space:nowrap}
+  #modal .item{display:flex;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px dashed #e5e7eb}
+  #modal .item b{font-weight:600}
+  #modal .item .val{white-space:nowrap}
   .empty{color:#6b7280;font-size:13px;padding:8px}
 </style>
 </head>
@@ -99,16 +99,8 @@
 
 <script>
 /* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbyNQ5He2ay_zslxlWZisuwWWjNCR1ftWyxJSFaFrMSPeCyLwrgVCySuy8o-_HsoGUvPAg/exec';
+const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
-
-/* Planos de contas que entram no “já comprado” + listas */
-const PLANOS_WHITELIST = [
-  'Fornecedores em geral (insumos)','Bebidas (adegas)','Cerveja/Long','Refrigerantes/água/suco',
-  'Frios/congelados','Doces e chocolates','Laticínios','Gelatto','Hortaliças (Padaria)','Hortifruti',
-  'Processados/assados (Panificação)','Salmão','Pescados (peixaria)','Chopp Brahma','Açougues',
-  'Aves','Mercados Locais LEM','Mercado (Materiais Não Consumo)'
-];
 
 /* ======= HELPERS ======= */
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
@@ -135,7 +127,7 @@ function progressCalc(limit, spent, perStr){
   return {pct,available,forecast,forecastPct,status};
 }
 
-/* Lê total geral de “fonte 9” (fallback geral) */
+/* Total “fonte 9” (planos de contas) */
 function fonte9Total(rec){
   const keys=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
   for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!==''&&!isNaN(Number(v))) return Number(v);}
@@ -146,7 +138,7 @@ function fonte9Total(rec){
   return 0;
 }
 
-/* Extrai lista de planos (nome/valor) */
+/* Planos (usa planosFonte9; fallbacks se faltar) */
 function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
     return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(Number(p.valor??0))}));
@@ -181,12 +173,6 @@ function extractPlanos(rec){
   return [];
 }
 
-/* Filtra pelos planos da sua lista */
-const WL = PLANOS_WHITELIST.map(norm);
-function filtrarPlanos(planos){
-  return (planos||[]).filter(p=>WL.includes(norm(p.nome)));
-}
-
 /* API */
 async function getEmpresaPeriodo(emp, periodo){
   const c=getC(emp,periodo); if(c) return c;
@@ -200,7 +186,7 @@ async function getEmpresaPeriodo(emp, periodo){
   setC(emp,periodo,rec); return rec;
 }
 
-/* UI + corrida para evitar “flicker” */
+/* UI + corrida de execução para evitar “flicker” */
 const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
 const container=document.getElementById('content');
@@ -216,7 +202,7 @@ function openModal(title, items){
   const empty=document.getElementById('modal-empty');
   ul.innerHTML='';
 
-  const arr=(items||[]).slice().sort((a,b)=>Math.abs(b.valor)-Math.abs(a.valor));
+  const arr=(items||[]).slice();
   if(arr.length){
     empty.style.display='none';
     arr.forEach(d=>{
@@ -261,16 +247,9 @@ async function run(){
 
       const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
       const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
-
-      // ► Planos filtrados (apenas whitelist)
-      const planosAll  = periodOk ? extractPlanos(rec) : [];
-      const planosFilt = filtrarPlanos(planosAll);
-
-      // ► Já comprado de Fornecedores = SOMA dos planos da lista
-      const fornComp = planosFilt.reduce((a,p)=>a+Math.abs(Number(p.valor||0)),0);
-
-      // Gasto geral p/ Trava Total (mantemos total fonte 9 como antes)
       const fonte9    = periodOk ? fonte9Total(rec) : 0;
+      const fornComp  = periodOk ? aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0) : 0;
+      const planos    = periodOk ? extractPlanos(rec) : [];
 
       const gTotal=progressCalc(travaTotal, fonte9, periodo);
       const gForn =progressCalc(fornecLim,  fornComp, periodo);
@@ -280,7 +259,7 @@ async function run(){
         <div class="title">${emp}</div>
         <div class="kpis">
           <div class="kpi">
-            <div class="label">🔒 Trava Total (E2)</div>
+            <div class="label">Trava Total (E2)</div>
             <div class="value">${moeda(travaTotal)}</div>
             <div class="hint">
               Gasto: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
@@ -292,7 +271,7 @@ async function run(){
 
           <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
             <button class="btn-link" data-ver-planos>Ver planos</button>
-            <div class="label">🚧 Fornecedores Total (D2)</div>
+            <div class="label">Fornecedores Total (D2)</div>
             <div class="value">${moeda(fornecLim)}</div>
             <div class="hint">
               Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
@@ -305,10 +284,7 @@ async function run(){
         </div>
       `;
       container.appendChild(sec);
-      // Ver planos -> lista apenas whitelist
-      sec.querySelector('[data-ver-planos]').addEventListener('click',()=>{
-        openModal(`Planos de Contas — ${emp}`, planosFilt);
-      });
+      sec.querySelector('[data-ver-planos]').addEventListener('click',()=>openModal(`Detalhamento Fornecedores — ${emp}`, planos));
 
       // gráfico apenas quando 1 empresa selecionada
       if(empSel!=='TODAS AS EMPRESAS'){
@@ -353,7 +329,7 @@ function renderChartBlock(emp){
 /* Range de meses */
 function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b)return[];if(a>b){const t=a;a=b;b=t;}const out=[],c=new Date(a);while(c<=b){out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`);c.setMonth(c.getMonth()+1);}return out}
 
-/* Séries (valor do ÚLTIMO dia do mês; usa apenas whitelist) */
+/* Séries (valor do ÚLTIMO dia do mês; se não houver dados, 0) */
 async function buildSeries(emp, from, to){
   const months=monthRange(from,to), labels=[...months];
   const planMap={};                 // {plano:[v1,v2,...]}
@@ -364,7 +340,7 @@ async function buildSeries(emp, from, to){
     const per=months[i];
     const rec=await getEmpresaPeriodo(emp, per);
     const periodOk = rec?.matchesPeriod !== false;
-    const planos= periodOk ? filtrarPlanos(extractPlanos(rec)) : [];
+    const planos= periodOk ? extractPlanos(rec) : [];
     planos.forEach(p=>{
       const nome=String(p.nome);
       const val=Math.abs(Number(p.valor||0));
@@ -417,7 +393,11 @@ async function mountChart(emp, holder, runIdAtMount){
     const sumPlan=vals.reduce((a,b)=>a+Math.abs(b||0),0);
     const sumTot=cachedSeries.totalsByMonth.reduce((a,b)=>a+Math.abs(b||0),0);
     const pct=sumTot>0?(sumPlan/sumTot*100):0;
-    openModal(`Participação — ${plan}`,[{nome:'Valor no período',valor:sumPlan},{nome:'Total do período',valor:sumTot},{nome:'Participação',fmt:'pct',valor:pct}]);
+    openModal(`Participação — ${plan}`,[
+      {nome:'Valor no período',valor:sumPlan},
+      {nome:'Total do período',valor:sumTot},
+      {nome:'Participação',fmt:'pct',valor:pct}
+    ]);
   }
 
   async function draw(){
