@@ -105,7 +105,7 @@ const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','
 /* ======= HELPERS ======= */
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def;};
+const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def};
 
 /* Cache (5 min) */
 const TTL=5*60*1000, CK=(e,p)=>`travas:${e}|${p}`;
@@ -179,10 +179,10 @@ async function getEmpresaPeriodo(emp, periodo){
   const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
   const r=await fetch(url,{cache:'no-store'}); const t=await r.text(); if(!r.ok) throw new Error(t);
   let j; try{j=JSON.parse(t);}catch{throw new Error('JSON inválido');}
-  let rec=j;
+  let rec=null;
   if(j?.empresa) rec=j;
-  else if(Array.isArray(j?.data)) rec=j.data.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||j.data[0];
-  else if(Array.isArray(j)) rec=j.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||j[0];
+  else if(Array.isArray(j?.data)) rec=j.data.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||null;
+  else if(Array.isArray(j)) rec=j.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||null;
   setC(emp,periodo,rec); return rec;
 }
 
