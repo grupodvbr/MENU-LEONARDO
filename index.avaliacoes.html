@@ -3,52 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Config global -->
-  <script src="config.js"></script>
-
-  <!-- Guard de autenticação via CONFIG.WEBAPP -->
-  <script>
-    (async ()=>{
-      function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
-      const WEBAPP = window.CONFIG && window.CONFIG.WEBAPP;
-      if(!WEBAPP){ console.error('CONFIG.WEBAPP não definido em config.js'); goLogin(); return; }
-      const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
-      try{
-        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-        const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
-        const j = await r.json();
-        if(!j.ok){ localStorage.clear(); goLogin(); return; }
-        window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,[exp]}
-      }catch{ goLogin(); }
-    })();
-  </script>
-
   <title>Painel de Avaliações - Grupo DV</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f9f9f9}
-    header{background:#fff;display:flex;align-items:center;padding:10px;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:1000}
-    header img{height:50px;margin-right:10px}
-    header h1{font-size:1.2em;text-align:center;flex:1;margin:0}
-    .container{padding:10px}
-    .filtros-wrapper{background:#fff;position:sticky;top:70px;z-index:999;padding:10px;border-bottom:1px solid #ddd}
-    .filtros{display:flex;flex-direction:column;align-items:center;gap:10px}
-    .date-group{display:flex;gap:10px;width:100%;max-width:600px;justify-content:center}
-    .date-group label{display:flex;flex-direction:column;font-size:.9em;flex:1}
-    select,input,button{padding:10px;font-size:1em;width:100%;max-width:280px}
-    #resumo p{font-size:1em;margin:6px 0}
-    .tabela-container{overflow-x:auto}
-    table{min-width:800px;width:100%;border-collapse:collapse;background:#fff;font-size:.9em}
-    th,td{padding:6px;border:1px solid #ccc;text-align:left;word-wrap:break-word}
-    th{background:#eee}
-    canvas{max-width:100%;margin:20px auto;display:block}
-    @media (min-width:768px){
-      .filtros{flex-direction:row;justify-content:center;flex-wrap:wrap}
-      header h1{font-size:1.5em}
-      #resumo p{font-size:1.2em}
-      table{font-size:1em}
-      .date-group label{max-width:250px}
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+    }
+    header {
+      background: white;
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    header img {
+      height: 50px;
+      margin-right: 10px;
+    }
+    header h1 {
+      font-size: 1.2em;
+      text-align: center;
+      flex: 1;
+      margin: 0;
+    }
+    .container {
+      padding: 10px;
+    }
+    .filtros-wrapper {
+      background: #fff;
+      position: sticky;
+      top: 70px;
+      z-index: 999;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .date-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      justify-content: center;
+    }
+    .date-group label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9em;
+      flex: 1;
+    }
+    select, input, button {
+      padding: 10px;
+      font-size: 1em;
+      width: 100%;
+      max-width: 280px;
+    }
+    #resumo p {
+      font-size: 1em;
+      margin: 6px 0;
+    }
+    .tabela-container {
+      overflow-x: auto;
+    }
+    table {
+      min-width: 800px;
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 0.9em;
+    }
+    th, td {
+      padding: 6px;
+      border: 1px solid #ccc;
+      text-align: left;
+      word-wrap: break-word;
+    }
+    th {
+      background: #eee;
+    }
+    canvas {
+      max-width: 100%;
+      margin: 20px auto;
+      display: block;
+    }
+    @media (min-width: 768px) {
+      .filtros {
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      header h1 {
+        font-size: 1.5em;
+      }
+      #resumo p {
+        font-size: 1.2em;
+      }
+      table {
+        font-size: 1em;
+      }
+      .date-group label {
+        max-width: 250px;
+      }
     }
   </style>
 </head>
@@ -103,53 +168,52 @@
   </div>
 
   <script>
-    // URL dos dados vem do config.js:
-    // defina no config.js -> window.CONFIG.URLS.AVALIACOES = 'https://script.google.com/macros/s/xxxxx/exec';
-    const URL_SCRIPT = (window.CONFIG && window.CONFIG.URLS && window.CONFIG.URLS.AVALIACOES);
-    if(!URL_SCRIPT){ console.error('CONFIG.URLS.AVALIACOES não definido em config.js'); }
-
     let avaliacoes = [];
     const mapaNotas = { 'Ruim': 1, 'Bom': 2, 'Boa': 2, 'Boas': 2, 'Ótimo': 3, 'Ótimas': 3 };
 
-    async function carregarAvaliacoes() {
-      try {
-        const res = await fetch(URL_SCRIPT);
-        const dados = await res.json();
-        avaliacoes = dados;
+   async function carregarAvaliacoes() {
+  try {
+    const url = 'https://script.google.com/macros/s/AKfycbyK3A5CDn_EgA3pbRVToh87_qKWvbIry886OkR1AdkJi7RyvSgcwY0BmRqhbKQnEKwgrA/exec';
+    const res = await fetch(url);
+    const dados = await res.json();
+    avaliacoes = dados;
 
-        if (avaliacoes.length) {
-          const hoje = new Date();
-          const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-          document.getElementById("dataInicio").value = primeiroDiaMes.toISOString().split('T')[0];
-          document.getElementById("dataFim").value = hoje.toISOString().split('T')[0];
-        }
-        filtrarDados();
-      } catch (erro) {
-        alert("⚠️ Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.");
-        console.error("Erro no carregamento das avaliações:", erro);
-      }
+    if (avaliacoes.length) {
+      const hoje = new Date();
+      const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      document.getElementById("dataInicio").value = primeiroDiaMes.toISOString().split('T')[0];
+      document.getElementById("dataFim").value = hoje.toISOString().split('T')[0];
     }
 
-    function filtrarDados() {
-      const empresaFiltro = document.getElementById("empresaSelect").value;
-      const inicio = document.getElementById("dataInicio").value;
-      const fim = document.getElementById("dataFim").value;
+    filtrarDados();
+  } catch (erro) {
+    alert("⚠️ Erro ao carregar os dados. Verifique sua conexão ou tente novamente mais tarde.");
+    console.error("Erro no carregamento das avaliações:", erro);
+  }
+}
 
-      const dataInicio = inicio ? new Date(inicio + 'T00:00:00') : null;
-      const dataFim = fim ? new Date(fim + 'T23:59:59') : null;
 
-      const filtradas = avaliacoes.filter(a => {
-        const dataAvaliacao = new Date(a.data);
-        const dataOk = (!dataInicio || dataAvaliacao >= dataInicio) &&
-                       (!dataFim || dataAvaliacao <= dataFim);
-        const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
-        return dataOk && empresaOk;
-      });
+   function filtrarDados() {
+  const empresaFiltro = document.getElementById("empresaSelect").value;
+  const inicio = document.getElementById("dataInicio").value;
+  const fim = document.getElementById("dataFim").value;
 
-      atualizarTabela(filtradas);
-      atualizarResumo(filtradas);
-      atualizarGrafico(filtradas);
-    }
+  const dataInicio = inicio ? new Date(inicio + 'T00:00:00') : null;
+  const dataFim = fim ? new Date(fim + 'T23:59:59') : null;
+
+  const filtradas = avaliacoes.filter(a => {
+    const dataAvaliacao = new Date(a.data);
+    const dataOk = (!dataInicio || dataAvaliacao >= dataInicio) &&
+                   (!dataFim || dataAvaliacao <= dataFim);
+    const empresaOk = empresaFiltro === "Todas" || a.empresa === empresaFiltro;
+    return dataOk && empresaOk;
+  });
+
+  atualizarTabela(filtradas);
+  atualizarResumo(filtradas);
+  atualizarGrafico(filtradas);
+}
+
 
     function atualizarTabela(lista) {
       const corpo = document.getElementById("tabelaAvaliacoes");
