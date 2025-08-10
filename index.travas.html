@@ -30,7 +30,6 @@
   .kpi.warn{background:var(--amberbg);color:var(--amber)}
   .progress{height:6px;background:#e5e7eb;border-radius:999px;margin-top:8px;overflow:hidden}
   .progress>span{display:block;height:100%;background:var(--primary);width:0;border-radius:999px;transition:width .2s}
-
   .note{color:#6b7280;font-size:12px;margin-top:6px}
 
   .btn-link{position:absolute;top:6px;right:8px;font-size:11px;border:1px solid #bae6fd;background:#e0f2fe;color:#0369a1;padding:4px 8px;border-radius:999px;cursor:pointer}
@@ -46,6 +45,7 @@
   .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff}
   .chip select,.chip input{border:none;background:transparent;outline:none;font-size:13px}
   .chip button{border:none;background:#0ea5e9;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
+  .chart-note{margin:6px 0 0 4px;color:#6b7280;font-size:13px}
 
   /* Modal */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
@@ -99,7 +99,7 @@
 
 <script>
 /* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbxrgK5j60i_WIzPRzF0PS458hNzcudrqJOr0xSq0UKxe-FN0yzJOlJQSYJIM5Ah_5egEA/exec'; // <<< troque pelo seu URL do Apps Script
+const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec'; // <<< coloque sua URL do Apps Script
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 
 /* ======= HELPERS ======= */
@@ -107,7 +107,7 @@ const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').repla
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def;};
 
-/* Cache simples (5 min) */
+/* Cache (5 min) */
 const TTL=5*60*1000, CK=(e,p)=>`travas:${e}|${p}`;
 const getC=(e,p)=>{try{const r=sessionStorage.getItem(CK(e,p));if(!r)return null;const o=JSON.parse(r);return (Date.now()-o.t<TTL)?o.v:null}catch{return null}};
 const setC=(e,p,v)=>{try{sessionStorage.setItem(CK(e,p),JSON.stringify({t:Date.now(),v}))}catch{}};
@@ -127,7 +127,7 @@ function progressCalc(limit, spent, perStr){
   return {pct,available,forecast,forecastPct,status};
 }
 
-/* Fonte 9 — total */
+/* Fonte 9 total */
 function fonte9Total(rec){
   const keys=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
   for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!==''&&!isNaN(Number(v))) return Number(v);}
@@ -138,13 +138,12 @@ function fonte9Total(rec){
   return 0;
 }
 
-/* Planos (PRIORIDADE: planosFonte9 da API) */
+/* Planos (usa planosFonte9 da API; fallbacks se faltar) */
 function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
     return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(Number(p.valor??0))}));
   }
-  // Fallbacks se necessário:
-  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (zero-based no grid)
+  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (zero-based dentro de grid/tabela, se vier)
   const planosFromGrid = (grid=>{
     if(!Array.isArray(grid)||!Array.isArray(grid[0])) return [];
     const map=new Map();
@@ -187,13 +186,14 @@ async function getEmpresaPeriodo(emp, periodo){
   setC(emp,periodo,rec); return rec;
 }
 
-/* UI */
+/* UI + corrida de execução para evitar flicker */
 const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
 const container=document.getElementById('content');
 let ChartLib=null;
+let currentRun = 0;
 
-/* Modal: open/close com delegação */
+/* Modal */
 function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.setAttribute('aria-hidden','true');}
 function openModal(title, items){
   const modal=document.getElementById('modal'); document.getElementById('modal-title').textContent=title||'Detalhes';
@@ -213,24 +213,28 @@ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); })
 
 selEmpresa.addEventListener('change', run);
 inpPeriodo.addEventListener('change', run);
+
 window.addEventListener('DOMContentLoaded', ()=>{
   const hoje=new Date();
-  inpPeriodo.value=hoje.toISOString().slice(0,7); // mês atual
+  inpPeriodo.value=hoje.toISOString().slice(0,7); // mês atual por padrão
   run();
 });
 
-/* Render principal */
+/* Render principal (com token para evitar respostas antigas) */
 async function run(){
+  const runId = ++currentRun;
   const empSel=selEmpresa.value, periodo=inpPeriodo.value;
   container.innerHTML='';
+
   const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
 
   for(const emp of empresas){
     try{
       const rec=await getEmpresaPeriodo(emp, periodo);
-      const periodOk = rec?.matchesPeriod !== false; // respeita data vinda da planilha
+      if (runId !== currentRun) return; // abandonamos se já existe outra execução
 
-      // KPIs
+      const periodOk = rec?.matchesPeriod !== false;
+
       const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
       const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
       const fonte9    = periodOk ? fonte9Total(rec) : 0;
@@ -252,7 +256,7 @@ async function run(){
               Disponível: <b>${moeda(gTotal.available)}</b>
             </div>
             <div class="progress"><span style="width:${Math.min(gTotal.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data na planilha: ${rec?.dataRef||'—'}.</div>`:''}
+            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
           </div>
 
           <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
@@ -265,7 +269,7 @@ async function run(){
               Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
             </div>
             <div class="progress"><span style="width:${Math.min(gForn.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data na planilha: ${rec?.dataRef||'—'}.</div>`:''}
+            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
           </div>
         </div>
       `;
@@ -277,15 +281,16 @@ async function run(){
         const chartWrap=document.createElement('div'); chartWrap.className='grid';
         chartWrap.innerHTML=renderChartBlock(emp);
         container.appendChild(chartWrap);
-        await mountChart(emp, chartWrap);
+        await mountChart(emp, chartWrap, runId);
       }
     }catch(err){
+      if (runId !== currentRun) return;
       container.insertAdjacentHTML('beforeend', `<section class="company"><div class="title">${emp}</div><div class="kpi bad"><div class="label">Erro</div><div class="value" style="font-size:16px">${String(err.message||err)}</div></div></section>`);
     }
   }
 }
 
-/* Bloco do gráfico — default: janeiro do ano atual até mês atual */
+/* Bloco do gráfico — padrão: janeiro → mês atual. Gráfico vazio até escolher um plano */
 function renderChartBlock(emp){
   const now=new Date(); const year=now.getFullYear();
   const from=`${year}-01`;
@@ -293,11 +298,11 @@ function renderChartBlock(emp){
   const planId=`plan-${Math.random().toString(36).slice(2,7)}`, fromId=`from-${Math.random().toString(36).slice(2,7)}`, toId=`to-${Math.random().toString(36).slice(2,7)}`, cvs=`cv-${Math.random().toString(36).slice(2,7)}`;
   return `
     <div class="card">
-      <div class="title">Evolução de compras (Fonte 9)</div>
+      <div class="title">Evolução de compras (por Plano de Contas)</div>
       <div class="chart-toolbar">
         <span class="chip">Plano de contas:
           <select id="${planId}">
-            <option value="">Total Fonte 9</option>
+            <option value="" selected disabled>Selecione…</option>
           </select>
         </span>
         <span class="chip">De: <input id="${fromId}" type="month" value="${from}"></span>
@@ -305,7 +310,8 @@ function renderChartBlock(emp){
         <span class="chip"><button id="${cvs}-apply">Aplicar</button></span>
       </div>
       <canvas id="${cvs}" height="180"></canvas>
-      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10)</div>
+      <div class="chart-note" id="${cvs}-note">Escolha um plano acima para ver o gráfico.</div>
+      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10 do mês mais recente)</div>
       <ul class="list" id="${cvs}-top"></ul>
     </div>`;
 }
@@ -313,19 +319,15 @@ function renderChartBlock(emp){
 /* Range de meses */
 function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b)return[];if(a>b){const t=a;a=b;b=t;}const out=[],c=new Date(a);while(c<=b){out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`);c.setMonth(c.getMonth()+1);}return out}
 
-/* Séries (considera somente o valor do ÚLTIMO dia do mês: se matchesPeriod=false, usa 0) */
+/* Séries (valor do ÚLTIMO dia do mês; se não houver dados, usa 0) */
 async function buildSeries(emp, from, to){
   const months=monthRange(from,to), labels=[...months];
-  const total=new Array(months.length).fill(0);
   const planMap={}; const plansSet=new Set();
 
   for(let i=0;i<months.length;i++){
     const per=months[i];
     const rec=await getEmpresaPeriodo(emp, per);
     const periodOk = rec?.matchesPeriod !== false;
-
-    total[i]= periodOk ? fonte9Total(rec) : 0;
-
     const planos= periodOk ? extractPlanos(rec) : [];
     planos.forEach(p=>{
       plansSet.add(p.nome);
@@ -333,11 +335,11 @@ async function buildSeries(emp, from, to){
       planMap[p.nome][i]=Math.abs(Number(p.valor||0)); // valor do mês (sem acumular)
     });
   }
-  return {labels,total,planMap,plans:[...plansSet].sort()};
+  return {labels,planMap,plans:[...plansSet].sort()};
 }
 
 /* Chart */
-async function mountChart(emp, holder){
+async function mountChart(emp, holder, runIdAtMount){
   if(!ChartLib){
     await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});
     ChartLib=window.Chart;
@@ -348,37 +350,42 @@ async function mountChart(emp, holder){
   const cvs=holder.querySelector('canvas');
   const btn=holder.querySelector('button[id$="-apply"]');
   const topList=holder.querySelector('ul');
+  const note=holder.querySelector('.chart-note');
 
-  async function loadAndDraw(){
+  let cachedSeries=null;
+
+  async function populatePlans(){
     topList.innerHTML='<li>Carregando…</li>';
-    const data=await buildSeries(emp, fromInp.value, toInp.value);
-    const current=planSel.value;
-    planSel.innerHTML='<option value="">Total Fonte 9</option>'+data.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    if(data.plans.includes(current)) planSel.value=current;
+    cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
+    if (runIdAtMount !== currentRun) return;
+    planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
+    // Top 10 (mês mais recente), independente de seleção
+    const last=cachedSeries.labels.length-1;
+    const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
+    topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
+  }
 
-    const ds=[{label:'Total Fonte 9',data:data.total,tension:.25}];
-    const chosen=planSel.value||'';
-    if(chosen) ds.push({label:chosen,data:data.planMap[chosen]||new Array(data.labels.length).fill(0),tension:.25});
-
+  async function draw(){
     if(holder.__chart) holder.__chart.destroy();
+    if(!cachedSeries){ await populatePlans(); }
+    const chosen=planSel.value||'';
+    if(!chosen){
+      note.textContent='Escolha um plano acima para ver o gráfico.';
+      return;
+    }
+    note.textContent='';
+    const ds=[{label:chosen,data:cachedSeries.planMap[chosen]||new Array(cachedSeries.labels.length).fill(0),tension:.25}];
     holder.__chart=new ChartLib(cvs.getContext('2d'),{
       type:'line',
-      data:{labels:data.labels,datasets:ds},
+      data:{labels:cachedSeries.labels,datasets:ds},
       options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}
     });
-
-    // Top 10 do mês mais recente
-    const last=data.labels.length-1;
-    if(chosen){
-      topList.innerHTML=`<li><b>${chosen}</b> — ${moeda((data.planMap[chosen]||[])[last]||0)}</li>`;
-    }else{
-      const arr=Object.entries(data.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
-      topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
-    }
   }
-  btn.addEventListener('click', loadAndDraw);
-  planSel.addEventListener('change', loadAndDraw);
-  await loadAndDraw();
+
+  btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
+  planSel.addEventListener('change', draw);
+
+  await populatePlans(); // só popula opções e top 10; gráfico continua em branco
 }
 </script>
 </body>
