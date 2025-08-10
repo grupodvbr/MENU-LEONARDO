@@ -4,45 +4,26 @@
   <meta charset="UTF-8">
   <title>Conciliações</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
 
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
+  <!-- Configs globais -->
+  <script src="config.js"></script>
 
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
-    try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
-        goLogin();
-        return;
-      }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
-    }
-  })();
-</script>
-
+  <!-- Guard de autenticação usando WEBAPP do config.js -->
+  <script>
+    (async ()=>{
+      function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
+      const WEBAPP = (window.CONFIG && window.CONFIG.WEBAPP);
+      if(!WEBAPP){ console.error('CONFIG.WEBAPP não definido em config.js'); goLogin(); return; }
+      const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
+      try{
+        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+        const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
+        const j = await r.json();
+        if(!j.ok){ localStorage.clear(); goLogin(); return; }
+        window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,[exp]}
+      }catch{ goLogin(); }
+    })();
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -61,9 +42,7 @@
       align-items: center;
       justify-content: space-between;
     }
-    header img {
-      height: 60px;
-    }
+    header img { height: 60px; }
     header h1 {
       flex: 1;
       text-align: center;
@@ -71,9 +50,7 @@
       font-size: 1.6em;
       font-weight: bold;
     }
-    .container {
-      padding: 20px;
-    }
+    .container { padding: 20px; }
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -81,45 +58,20 @@
       margin-bottom: 20px;
       align-items: end;
     }
-    .filters label {
-      font-weight: bold;
-      font-size: 0.95em;
-    }
+    .filters label { font-weight: bold; font-size: 0.95em; }
     .filters select, .filters input[type="date"] {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      width: 100%;
-      font-size: 0.95em;
+      padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; font-size: 0.95em;
     }
-    .filters > div {
-      flex: 1 1 200px;
-    }
+    .filters > div { flex: 1 1 200px; }
     .btn-whatsapp {
-      background-color: #25D366;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95em;
-      margin-top: 10px;
+      background-color: #25D366; color: white; padding: 12px 20px; border-radius: 8px; border: none;
+      font-weight: bold; cursor: pointer; font-size: 0.95em; margin-top: 10px;
     }
     canvas {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      flex: 1;
-      min-width: 320px;
+      background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      flex: 1; min-width: 320px;
     }
-    .charts {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: space-between;
-    }
+    .charts { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; }
   </style>
 </head>
 <body>
@@ -153,116 +105,112 @@
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbypZ0ibLQGEbGLQNr-UdmmSn-fbde-nz4KUt6RFUjp0lZbHmGTxcHvKVZmmFxL5b5roLA/exec";
-let dados = [];
+  // URL dos dados vem do config.js:
+  // defina em config.js -> window.CONFIG.URLS.CONCILIACOES = 'https://script.google.com/macros/s/xxxxx/exec';
+  const URL_SCRIPT = (window.CONFIG && window.CONFIG.URLS && window.CONFIG.URLS.CONCILIACOES);
+  if(!URL_SCRIPT){ console.error('CONFIG.URLS.CONCILIACOES não definido em config.js'); }
 
-async function carregarDados() {
-  const res = await fetch(URL_SCRIPT);
-  dados = await res.json();
-  popularEmpresas();
-  definirDataPadrao();
-}
+  let dados = [];
 
-function definirDataPadrao() {
-  const inputData = document.getElementById("data");
-  const ontem = new Date();
-  ontem.setDate(ontem.getDate() - 1);
-  const ontemISO = ontem.toISOString().split('T')[0];
-  inputData.value = ontemISO;
-  filtrar();
-}
+  async function carregarDados() {
+    const res = await fetch(URL_SCRIPT);
+    dados = await res.json();
+    popularEmpresas();
+    definirDataPadrao();
+  }
 
-function popularEmpresas() {
-  const select = document.getElementById("empresa");
-  const empresas = [...new Set(dados.map(d => d.empresa))];
-  empresas.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp;
-    opt.textContent = emp;
-    select.appendChild(opt);
-  });
-}
+  function definirDataPadrao() {
+    const inputData = document.getElementById("data");
+    const ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    const ontemISO = ontem.toISOString().split('T')[0];
+    inputData.value = ontemISO;
+    filtrar();
+  }
 
-function filtrar() {
-  const data = document.getElementById("data").value;
-  const empresa = document.getElementById("empresa").value;
+  function popularEmpresas() {
+    const select = document.getElementById("empresa");
+    const empresas = [...new Set(dados.map(d => d.empresa))];
+    empresas.forEach(emp => {
+      const opt = document.createElement("option");
+      opt.value = emp;
+      opt.textContent = emp;
+      select.appendChild(opt);
+    });
+  }
 
-  const filtrados = dados.filter(d =>
-    (!data || d.data === data) &&
-    (empresa === "todas" || d.empresa === empresa)
-  );
+  function filtrar() {
+    const data = document.getElementById("data").value;
+    const empresa = document.getElementById("empresa").value;
 
-  const labels = [];
-  const percentualData = [];
-  const valorData = [];
+    const filtrados = dados.filter(d =>
+      (!data || d.data === data) &&
+      (empresa === "todas" || d.empresa === empresa)
+    );
 
-  filtrados.forEach(d => {
-    labels.push(d.empresa);
-    percentualData.push(d.percentual);
-    valorData.push(d.valor);
-  });
+    const labels = [];
+    const percentualData = [];
+    const valorData = [];
 
-  renderChart("graficoPercentual", "📈 % Conciliado", labels, percentualData, "%");
-  renderChart("graficoValor", "💰 Valor Pendente (R$)", labels, valorData, "R$");
-}
+    filtrados.forEach(d => {
+      labels.push(d.empresa);
+      percentualData.push(d.percentual);
+      valorData.push(d.valor);
+    });
 
-function renderChart(id, title, labels, data, tipo) {
-  const ctx = document.getElementById(id).getContext("2d");
-  if (window[id]) window[id].destroy();
-  window[id] = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: title,
-        data,
-        backgroundColor: "#3e95cd"
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: { size: 18 }
-        },
-        legend: { display: false }
+    renderChart("graficoPercentual", "📈 % Conciliado", labels, percentualData, "%");
+    renderChart("graficoValor", "💰 Valor Pendente (R$)", labels, valorData, "R$");
+  }
+
+  function renderChart(id, title, labels, data, tipo) {
+    const ctx = document.getElementById(id).getContext("2d");
+    if (window[id]) window[id].destroy();
+    window[id] = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ label: title, data, backgroundColor: "#3e95cd" }]
       },
-      scales: {
-        y: {
-          ticks: {
-            callback: val => tipo === "%" ? val + "%" : "R$ " + val.toLocaleString("pt-BR")
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: title, font: { size: 18 } },
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: val => tipo === "%" ? val + "%" : "R$ " + Number(val).toLocaleString("pt-BR")
+            }
           }
         }
       }
-    }
-  });
-}
+    });
+  }
 
-function enviarWhatsapp() {
-  const data = document.getElementById("data").value;
-  const empresa = document.getElementById("empresa").value;
-  const dataBR = data.split("-").reverse().join("/");
+  function enviarWhatsapp() {
+    const data = document.getElementById("data").value;
+    const empresa = document.getElementById("empresa").value;
+    const dataBR = data.split("-").reverse().join("/");
 
-  const filtrados = dados.filter(d =>
-    (!data || d.data === data) &&
-    (empresa === "todas" || d.empresa === empresa)
-  );
+    const filtrados = dados.filter(d =>
+      (!data || d.data === data) &&
+      (empresa === "todas" || d.empresa === empresa)
+    );
 
-  if (!filtrados.length) return alert("Nenhum dado para enviar.");
+    if (!filtrados.length) return alert("Nenhum dado para enviar.");
 
-  let mensagem = `📊 *Conciliações ${dataBR}*\n\n`;
-  filtrados.forEach(d => {
-    mensagem += `*${d.empresa}*\n• % Conciliado: ${d.percentual.toFixed(1)}%\n• Valor pendente: R$ ${d.valor.toFixed(2)}\n\n`;
-  });
+    let mensagem = `📊 *Conciliações ${dataBR}*\n\n`;
+    filtrados.forEach(d => {
+      mensagem += `*${d.empresa}*\n• % Conciliado: ${Number(d.percentual).toFixed(1)}%\n• Valor pendente: R$ ${Number(d.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}\n\n`;
+    });
 
-  const numero = "5577999761436";
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-  window.open(link, "_blank");
-}
+    const numero = "5577999761436";
+    const link = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+    window.open(link, "_blank");
+  }
 
-carregarDados();
+  carregarDados();
 </script>
 
 </body>
