@@ -4,13 +4,6 @@
   <meta charset="UTF-8" />
   <title>Relatório Consolidado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- config + guarda de sessão -->
-  <script src="config.js"></script>
-  <script>
-    (async ()=>{ try{ await AUTH.ensure(); }catch(e){} })();
-  </script>
-
   <style>
     body {
       margin: 0;
@@ -155,6 +148,7 @@
 
   <header>
     <a href="index.html" title="Voltar para tela principal" aria-label="Voltar para tela principal">
+      <!-- Ícone de casa simples SVG -->
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>
@@ -162,26 +156,25 @@
   </header>
 
   <div class="grid">
-    <!-- agora usamos data-key; as URLs vêm do APP_PAGES no config.js -->
-    <div class="card" data-key="resumoFinanceiro">
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src=""></iframe>
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
     </div>
-    <div class="card" data-key="delivery">
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src=""></iframe>
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
     </div>
-    <div class="card" data-key="cancelamentos">
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src=""></iframe>
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
     </div>
-    <div class="card" data-key="conciliacao">
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src=""></iframe>
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
     </div>
-    <div class="card" data-key="meta">
+    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src=""></iframe>
+      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
     </div>
   </div>
 
@@ -194,36 +187,22 @@
   </div>
 
   <script>
-    // Fallback local caso APP_PAGES não esteja no config.js (dev)
-    const PAGES = (typeof APP_PAGES !== 'undefined') ? APP_PAGES : {
-      resumoFinanceiro: 'https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html',
-      delivery:         'https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html',
-      cancelamentos:    'https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html',
-      conciliacao:      'https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html',
-      meta:             'https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html'
-    };
-
-    // injeta URLs nos cards/iframes
-    document.querySelectorAll('.card').forEach(card=>{
-      const key = card.dataset.key;
-      const url = PAGES[key] || '';
-      card.dataset.url = url;
-      const iframe = card.querySelector('iframe');
-      if (iframe && url) iframe.src = url;
-    });
-
     const modalOverlay = document.getElementById('modalOverlay');
     const modalIframe = modalOverlay.querySelector('iframe');
     const modalClose = document.getElementById('modalClose');
 
+    // Abrir modal com url
     function abrirModal(url) {
       modalIframe.src = url;
       modalOverlay.style.display = 'flex';
     }
+
+    // Fechar modal
     function fecharModal() {
       modalIframe.src = '';
       modalOverlay.style.display = 'none';
     }
+
     modalClose.addEventListener('click', fecharModal);
     modalOverlay.addEventListener('click', e => {
       if(e.target === modalOverlay) fecharModal();
@@ -232,7 +211,7 @@
     // Botões abrir nos cards
     document.querySelectorAll('.btn-open').forEach(btn => {
       btn.addEventListener('click', e => {
-        e.stopPropagation();
+        e.stopPropagation(); // para não disparar o triple click do card
         const card = btn.closest('.card');
         const url = card.getAttribute('data-url');
         abrirModal(url);
@@ -255,7 +234,9 @@
         }
 
         if (clickTimer) clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => { resetClicks(); }, 600);
+        clickTimer = setTimeout(() => {
+          resetClicks();
+        }, 600);
 
         function resetClicks() {
           clickCount = 0;
