@@ -338,11 +338,11 @@ async function run(){
       <div class="title">${emp}</div>
       <div class="kpis">
         <div class="kpi">
-          <div class="label">Trava Total (E2)</div>
+          <div class="label">Trava Total de Pagamentos</div>
           <div class="value">${moeda(travaTotal)}</div>
           <div class="hint">
-            Gasto: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
-            Disponível: <b style="color:${gTotal.available<0?'#b91c1c':'inherit'}">${moeda(gTotal.available)}</b>
+            Gasto geral: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
+            Valor geral disponível: <b style="color:${gTotal.available<0?'#b91c1c':'inherit'}">${moeda(gTotal.available)}</b>
           </div>
           <div class="progress"><span style="width:${Math.min(Math.max(gTotal.pct,0),100)}%"></span></div>
           <div class="note">Atualizado em: ${rec?.dataRef || '—'}</div>
@@ -354,7 +354,7 @@ async function run(){
           <div class="label">Fornecedores Total (D2)</div>
           <div class="value">${moeda(fornecLim)}</div>
           <div class="hint">
-            Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
+            Já comprado em FORNECEDORES: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
             Disponível: <b style="color:${gForn.available<0?'#b91c1c':'inherit'}">${moeda(gForn.available)}</b><br/>
             Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
           </div>
