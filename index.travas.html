@@ -365,7 +365,7 @@ function renderChartBlock(emp){
       </div>
       <canvas id="${cvs}" height="180"></canvas>
       <div class="chart-note" id="${cvs}-note">Escolha um plano acima para ver o gráfico.</div>
-      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10 do mês mais recente)</div>
+      <div class="title" id="${cvs}-top-title" style="margin-top:12px">Despesas mais caras (Top 10 no período)</div>
       <ul class="list" id="${cvs}-top"></ul>
     </div>`;
 }
@@ -407,16 +407,39 @@ async function mountChart(emp, holder, runIdAtMount){
 
   let cachedSeries=null;
 
-  async function populatePlans(){
-    topList.innerHTML='<li>Carregando…</li>';
-    cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
-    if (runIdAtMount !== currentRun) return;
-    planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    // Top 10 (mês mais recente)
-    const last=cachedSeries.labels.length-1;
-    const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
-    topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
-  }
+ async function populatePlans(){
+  topList.innerHTML='<li>Carregando…</li>';
+  cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
+  if (runIdAtMount !== currentRun) return;
+
+  // Preenche o combo de planos (do período)
+  planSel.innerHTML =
+    '<option value="" selected disabled>Selecione…</option>' +
+    cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
+
+  // === Top 10 pelo PERÍODO (soma de todos os meses do range) ===
+  const sums = Object.entries(cachedSeries.planMap).map(([nome, vals]) => {
+    const total = (vals||[]).reduce((a,v)=>a + Math.abs(Number(v||0)), 0);
+    return { nome, valor: total };
+  }).sort((a,b)=> b.valor - a.valor).slice(0,10);
+
+  // Atualiza título (mostra o range)
+  const rangeLbl = (() => {
+    try {
+      const [yf, mf] = fromInp.value.split('-').map(Number);
+      const [yt, mt] = toInp.value.split('-').map(Number);
+      const m = n => new Date(2000, n-1, 1).toLocaleString('pt-BR', { month: 'long' });
+      return `${m(mf)} de ${yf} a ${m(mt)} de ${yt}`;
+    } catch { return ''; }
+  })();
+  const topTitle = holder.querySelector(`#${cvs}-top-title`);
+  if (topTitle) topTitle.textContent = `Despesas mais caras (Top 10 no período${rangeLbl?` — ${rangeLbl}`:''})`;
+
+  // Renderiza lista
+  topList.innerHTML = sums.length
+    ? sums.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('')
+    : '<li>Nada a mostrar.</li>';
+}
 
   async function draw(){
     if(!cachedSeries){ await populatePlans(); if (runIdAtMount !== currentRun) return; }
