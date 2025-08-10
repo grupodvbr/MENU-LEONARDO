@@ -9,7 +9,7 @@
 (function (global) {
   const CONFIG = {
     // ===== Autenticação (Apps Script do login) =====
-    WEBAPP: 'https://script.google.com/macros/s/AKfycbw-6DReSoopOOSjjhPD6O7qMcubZPNrwJhhHsv4HFX44PzUTaK5BHSYdgFO1D71dfnLWg/exec',
+    WEBAPP: 'https://script.google.com/macros/s/AKfycbw-uulvaPyrNy4vGr-KkkmrFP_s_VVthhuWEMrRulWehrCJ0CLMsO3uJwS83fnG_UgJSw/exec',
 
     // (Opcional) Origens permitidas no CORS — útil p/ conferência
     ORIGINS: ['https://grupodvbr.github.io', 'http://localhost:5500'],
