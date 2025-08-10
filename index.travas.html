@@ -46,7 +46,7 @@
   .chip button{border:none;background:#0ea5e9;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
   .chart-note{margin:6px 0 0 4px;color:#6b7280;font-size:13px}
 
-  /* ===== Modal ===== */
+  /* ===== Modal de planos (existente) ===== */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
   #modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
   #modal .panel{position:relative;z-index:1;width:min(94vw,680px);max-height:80vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px}
@@ -54,10 +54,25 @@
   #modal h3{margin:0;font-size:16px}
   #modal .close{appearance:none;border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#334155}
   #modal .list{list-style:none;margin:0;padding:0}
-  #modal .item{display:flex;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px dashed #e5e7eb}
+  #modal .item{display:flex;justify-content:space-between;gap:12px;padding:0;border-bottom:1px dashed #e5e7eb}
+  #modal .item button.item-btn{display:flex;justify-content:space-between;gap:12px;width:100%;padding:10px;background:#fff;border:none;cursor:pointer;text-align:left}
+  #modal .item button.item-btn:hover{background:#f8fafc}
   #modal .item b{font-weight:600}
   #modal .item .val{white-space:nowrap}
   .empty{color:#6b7280;font-size:13px;padding:8px}
+
+  /* ===== Modal comparativo ===== */
+  #cmp-modal{display:none;position:fixed;inset:0;z-index:1100;align-items:center;justify-content:center}
+  #cmp-modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  #cmp-modal .panel{position:relative;z-index:1;width:min(94vw,900px);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px}
+  #cmp-modal header{position:sticky;top:0;background:#fff;margin:-12px -12px 8px;padding:10px 12px;border-radius:12px 12px 0 0;box-shadow:0 1px 0 rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between}
+  #cmp-modal h3{margin:0;font-size:16px}
+  #cmp-modal .close{appearance:none;border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#334155}
+  #cmp-meta{color:#6b7280;font-size:12px;margin:2px 0 8px}
+  #cmp-chart{width:100%;height:320px}
+  #cmp-list{margin:10px 0 2px 18px;color:#334155}
+  #cmp-list li{margin:4px 0}
+  #cmp-note{color:#6b7280;font-size:12px;margin-top:6px}
 
   /* evita "balanço" quando o modal abre (scroll lock + compensação) */
   body.modal-open{overflow:hidden;padding-right:var(--sbw,0px);}
@@ -86,7 +101,7 @@
   <div id="content" class="section"></div>
 </div>
 
-<!-- Modal -->
+<!-- Modal de Planos -->
 <div id="modal" aria-hidden="true">
   <div class="backdrop" data-close></div>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -99,6 +114,22 @@
   </div>
 </div>
 
+<!-- Modal Comparativo -->
+<div id="cmp-modal" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="cmp-title">
+    <header>
+      <h3 id="cmp-title">Comparativo por Plano</h3>
+      <button class="close" title="Fechar" aria-label="Fechar" data-close>&times;</button>
+    </header>
+    <div id="cmp-meta"></div>
+    <canvas id="cmp-chart"></canvas>
+    <ol id="cmp-list"></ol>
+    <div id="cmp-note">Valores e percentuais referentes ao período selecionado e ao total de Fornecedores da empresa no mês.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 /* ======= CONFIG ======= */
 const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
@@ -118,12 +149,8 @@ const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'B
 const parseBR = (val) => {
   if (val == null || val === '') return 0;
   if (typeof val === 'number') return val;
-  const s = String(val).trim()
-    .replace(/[^\d\-.,]/g,'')
-    .replace(/\.(?=\d{3})/g,'')
-    .replace(',', '.');
-  const n = Number(s);
-  return isNaN(n) ? 0 : n;
+  const s = String(val).trim().replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',', '.');
+  const n = Number(s); return isNaN(n) ? 0 : n;
 };
 const aliases=(o,keys,def=0)=>{for(const k of keys){if(o&&k in o&&o[k]!==''&&o[k]!=null){const n=parseBR(o[k]);if(!isNaN(n))return n;}}return def;};
 
@@ -247,18 +274,125 @@ function openModal(title, items){
   const ul=document.getElementById('modal-list'); const empty=document.getElementById('modal-empty'); ul.innerHTML='';
   const arr=(items||[]).slice().sort((a,b)=>Math.abs(a.valor)<Math.abs(b.valor)?1:-1);
   if(arr.length){ empty.style.display='none';
-    arr.forEach(d=>{ const li=document.createElement('li'); li.className='item';
+    arr.forEach(d=>{ 
+      const li=document.createElement('li'); li.className='item';
+      const btn=document.createElement('button'); btn.className='item-btn'; btn.type='button';
       const b=document.createElement('b'); b.textContent=d.nome||'—';
       const v=document.createElement('span'); v.className='val'; v.textContent=moeda(Math.abs(parseBR(d.valor||0)));
-      li.appendChild(b); li.appendChild(v); ul.appendChild(li);
+      btn.appendChild(b); btn.appendChild(v); li.appendChild(btn); ul.appendChild(li);
+      // Ao clicar no plano, abre comparativo entre empresas
+      btn.addEventListener('click', ()=> openComparativoPlano(d.nome||'—', inpPeriodo.value));
     });
   }else empty.style.display='block';
   modal.style.display='flex'; modal.setAttribute('aria-hidden','false');
   lockBodyScroll(true);
 }
 document.addEventListener('click',(e)=>{ if(e.target.matches('[data-close], #modal .backdrop')) closeModal(); });
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') { closeModal(); closeCmpModal(); } });
 
+/* ===== Modal Comparativo ===== */
+function closeCmpModal(){const m=document.getElementById('cmp-modal'); m.style.display='none'; m.setAttribute('aria-hidden','true'); lockBodyScroll(false); }
+document.addEventListener('click',(e)=>{ if(e.target.matches('#cmp-modal [data-close], #cmp-modal .backdrop')) closeCmpModal(); });
+
+async function ensureChart(){
+  if(ChartLib){ return ChartLib; }
+  if (window.Chart){ ChartLib = window.Chart; return ChartLib; }
+  await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});
+  ChartLib = window.Chart; return ChartLib;
+}
+
+let cmpChart = null;
+
+// Abre o modal comparativo com barras + lista de valores e %
+async function openComparativoPlano(planoNome, periodo){
+  try{
+    const Chart = await ensureChart();
+    const per = /^\d{4}-\d{2}$/.test(periodo||'') ? periodo : (()=>{
+      const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    })();
+
+    // Busca dados de todas as empresas em paralelo
+    const results = await Promise.allSettled(EMPRESAS.map(emp => getEmpresaPeriodo(emp, per)));
+
+    // Para cada empresa: valor do plano e total de Fornecedores (PLANOS_VALIDOS)
+    const labels=[], valores=[], percents=[], detalhes=[];
+    results.forEach((res, idx)=>{
+      const emp = EMPRESAS[idx];
+      let valPlano=0, totalFor=0;
+      if(res.status==='fulfilled'){
+        const rec = res.value;
+        const planos = extractPlanos(rec);
+        // total fornecedores: soma só dos válidos (fallback: soma de todos os planos)
+        const somaValid = planos.filter(p=>PLANOS_VALIDOS.has(String(p.nome))).reduce((a,p)=>a+Math.abs(parseBR(p.valor||0)),0);
+        totalFor = somaValid>0 ? somaValid : planos.reduce((a,p)=>a+Math.abs(parseBR(p.valor||0)),0);
+        // valor do plano selecionado (match normalizado)
+        const alvo = planos.find(p=>norm(p.nome)===norm(planoNome));
+        valPlano = alvo ? Math.abs(parseBR(alvo.valor||0)) : 0;
+      }
+      const pct = totalFor>0 ? (valPlano/totalFor*100) : 0;
+      labels.push(emp);
+      valores.push(valPlano);
+      percents.push(pct);
+      detalhes.push({emp, valPlano, pct});
+    });
+
+    // Monta UI
+    document.getElementById('cmp-title').textContent = `Comparativo — ${planoNome}`;
+    const [y,m] = per.split('-'); 
+    document.getElementById('cmp-meta').textContent = `Período: ${m}/${y}`;
+
+    // Lista abaixo do gráfico
+    const list = document.getElementById('cmp-list');
+    list.innerHTML = detalhes
+      .sort((a,b)=>b.valPlano-a.valPlano)
+      .map((d,i)=>`<li><b>${i+1}º</b> ${d.emp}: <b>${moeda(d.valPlano)}</b> — ${d.pct.toFixed(1)}%</li>`)
+      .join('') || '<li>Nada a mostrar.</li>';
+
+    // Gráfico
+    const ctx = document.getElementById('cmp-chart').getContext('2d');
+    if(cmpChart){ cmpChart.destroy(); cmpChart=null; }
+    cmpChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: `Valor do plano — ${planoNome}`,
+          data: valores
+          // sem cores específicas (segue padrão)
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: (ctx)=> {
+                const v = ctx.parsed.y||0;
+                const pct = percents[ctx.dataIndex]||0;
+                return `${moeda(v)} — ${pct.toFixed(1)}%`;
+              }
+            }
+          }
+        },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Abre modal
+    const modal=document.getElementById('cmp-modal');
+    modal.style.display='flex';
+    modal.setAttribute('aria-hidden','false');
+    lockBodyScroll(true);
+
+  }catch(err){
+    console.error('Falha comparativo', err);
+    alert('Não foi possível carregar o comparativo agora.');
+  }
+}
+
+/* Eventos filtros */
 selEmpresa.addEventListener('change', run);
 inpPeriodo.addEventListener('change', run);
 
@@ -423,7 +557,7 @@ async function buildSeries(emp, from, to){
   return {labels:months, planMap, plans:[...plansSet].sort()};
 }
 
-/* Chart */
+/* Chart (linha histórico) */
 async function mountChart(emp, holder, runIdAtMount){
   if(!ChartLib){
     await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});
