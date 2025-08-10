@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <title>Análise Financeira</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <script>
+  const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec';
+  (async ()=>{
+    function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
+    const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
+    try{
+      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
+      const j = await r.json();
+      if(!j.ok){ localStorage.clear(); goLogin(); return; }
+      window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,exp}
+    }catch{ goLogin(); }
+  })();
+</script>
   <style>
     body {
       margin: 0;
