@@ -4,314 +4,85 @@
   <meta charset="UTF-8">
   <title>Painel ABC de Vendas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
 
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
+  <!-- Config global -->
+  <script src="config.js"></script>
 
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
-    try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
-        goLogin();
-        return;
-      }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
-    }
-  })();
-</script>
+  <!-- Guard de autenticação via CONFIG.WEBAPP -->
+  <script>
+    (async ()=>{
+      function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
+      const WEBAPP = window.CONFIG && window.CONFIG.WEBAPP;
+      if(!WEBAPP){ console.error('CONFIG.WEBAPP não definido em config.js'); goLogin(); return; }
+      const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
+      try{
+        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+        const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
+        const j = await r.json();
+        if(!j.ok){ localStorage.clear(); goLogin(); return; }
+        window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,[exp]}
+      }catch{ goLogin(); }
+    })();
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 0;
-      font-size: 14px;
-    }
-    header {
-      background-color: white;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #ccc;
-      gap: 10px;
-    }
-    header img {
-      height: 60px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6em;
-      font-weight: bold;
-      color: #000;
-      flex-grow: 1;
-      text-align: center;
-    }
-    .container {
-  padding: 20px;
-  max-width: 100%;
-  margin: auto;
-}
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .filters label {
-      display: flex;
-      flex-direction: column;
-      font-weight: bold;
-      color: #333;
-      font-size: 0.9em;
-      flex: 1 1 200px;
-    }
-    .bloco-com-vendas {
-  background: #e9f9f0;
-  border-left: 6px solid #27ae60;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-  .analise-flex {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.card-analise {
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  flex: 1 1 100%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  min-width: unset;
-}
-
-
-.card-analise h3 {
-  margin-top: 0;
-  font-size: 1.1em;
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-.bloco-sem-vendas {
-  background: #fdecea;
-  border-left: 6px solid #c0392b;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.bloco-com-vendas h3 {
-  color: #2e7d32;
-  margin-top: 0;
-}
-
-.bloco-sem-vendas h3 {
-  color: #c0392b;
-  margin-top: 0;
-}
-
-    .filters select,
-    .filters input {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 0.95em;
-    }
-    .resumo-geral {
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      display: flex;
-      gap: 30px;
-      font-weight: bold;
-    }
-    canvas {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    #popupOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-#popupContent {
-  position: relative; /* <-- ESSA LINHA NOVA */
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 800px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-#popupClose {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 22px;
-  font-weight: bold;
-  color: #333;
-  cursor: pointer;
-  z-index: 10;
-}
-
-
-#popupContent h2 {
-  margin-top: 0;
-}
-
-    #graficoVendas {
-  display: none;
-  max-width: 700px;
-  height: 300px !important;
-  margin: 0 auto 30px auto;
-}
-
-
-    #analises h2 {
-      margin-top: 30px;
-      font-size: 1.2em;
-      color: #2c3e50;
-    }
-    #analises div {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      line-height: 1.6;
-    }
-    #menuFiltroVenda {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    #listaVendas div {
-      background: white;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      cursor: pointer;
-    }
-    #graficoProdutoSelecionado {
-      display: none;
-      background: white;
-      margin-top: 20px;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    /* Impede qualquer estouro de largura */
-* {
-  box-sizing: border-box;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Ajusta layout principal */
-.container {
-  padding: 10px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Responsividade nos filtros */
-.filters {
-  flex-direction: column;
-  gap: 15px;
-}
-
-.filters label {
-  flex: 1 1 100%;
-}
-
-/* Gráficos sempre ajustados à tela */
-canvas {
-  width: 100% !important;
-  height: auto !important;
-}
-
-/* Cartões em coluna no mobile */
-.card-analise {
-  flex: 1 1 100%;
-  min-width: unset; /* Remove largura mínima que causa quebra */
-}
-
+    body {font-family: Arial, sans-serif;background: #f7f7f7;margin: 0;padding: 0;font-size: 14px;}
+    header {background-color: white;padding: 20px;display: flex;align-items: center;border-bottom: 1px solid #ccc;gap: 10px;}
+    header img {height: 60px;}
+    header h1 {margin: 0;font-size: 1.6em;font-weight: bold;color: #000;flex-grow: 1;text-align: center;}
+    .container {padding: 20px;max-width: 100%;margin: auto;}
+    .filters {display: flex;flex-wrap: wrap;gap: 10px;margin-bottom: 20px;}
+    .filters label {display: flex;flex-direction: column;font-weight: bold;color: #333;font-size: 0.9em;flex: 1 1 200px;}
+    .bloco-com-vendas {background: #e9f9f0;border-left: 6px solid #27ae60;padding: 15px;border-radius: 12px;margin-bottom: 20px;}
+    .analise-flex {display: flex;flex-wrap: wrap;gap: 20px;margin-bottom: 30px;}
+    .card-analise {background: white;padding: 15px;border-radius: 12px;flex: 1 1 100%;box-shadow: 0 4px 10px rgba(0,0,0,0.05);min-width: unset;}
+    .card-analise h3 {margin-top: 0;font-size: 1.1em;color: #2c3e50;margin-bottom: 10px;}
+    .bloco-sem-vendas {background: #fdecea;border-left: 6px solid #c0392b;padding: 15px;border-radius: 12px;margin-bottom: 20px;}
+    .bloco-com-vendas h3 {color: #2e7d32;margin-top: 0;}
+    .bloco-sem-vendas h3 {color: #c0392b;margin-top: 0;}
+    .filters select,.filters input {padding: 10px;border-radius: 8px;border: 1px solid #ccc;font-size: 0.95em;}
+    .resumo-geral {background: white;padding: 15px;border-radius: 12px;margin-bottom: 20px;box-shadow: 0 4px 10px rgba(0,0,0,0.05);display: flex;gap: 30px;font-weight: bold;}
+    canvas {background: white;border-radius: 12px;padding: 20px;margin-bottom: 30px;box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+    #popupOverlay {position: fixed;top: 0;left: 0;width: 100vw;height: 100vh;background-color: rgba(0, 0, 0, 0.7);display: none;justify-content: center;align-items: center;z-index: 1000;}
+    #popupContent {position: relative;background: white;padding: 20px;border-radius: 10px;max-width: 800px;width: 90%;max-height: 90vh;overflow-y: auto;}
+    #popupClose {position: absolute;top: 10px;right: 15px;font-size: 22px;font-weight: bold;color: #333;cursor: pointer;z-index: 10;}
+    #popupContent h2 {margin-top: 0;}
+    #graficoVendas {display: none;max-width: 700px;height: 300px !important;margin: 0 auto 30px auto;}
+    #analises h2 {margin-top: 30px;font-size: 1.2em;color: #2c3e50;}
+    #analises div {background: white;padding: 15px;border-radius: 10px;margin-bottom: 20px;box-shadow: 0 4px 10px rgba(0,0,0,0.05);line-height: 1.6;}
+    #menuFiltroVenda {background: white;padding: 15px;border-radius: 10px;margin-bottom: 20px;box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+    #listaVendas div {background: white;margin-bottom: 10px;padding: 10px;border-radius: 10px;box-shadow: 0 2px 5px rgba(0,0,0,0.05);cursor: pointer;}
+    #graficoProdutoSelecionado {display: none;background: white;margin-top: 20px;border-radius: 12px;padding: 20px;box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+    * {box-sizing: border-box;max-width: 100%;overflow-x: hidden;}
+    html, body {width: 100%;max-width: 100%;overflow-x: hidden;}
+    .container {padding: 10px;width: 100%;box-sizing: border-box;}
+    .filters {flex-direction: column;gap: 15px;}
+    .filters label {flex: 1 1 100%;}
+    canvas {width: 100% !important;height: auto !important;}
+    .card-analise {flex: 1 1 100%;min-width: unset;}
   </style>
 </head>
 <body>
 <header>
   <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo CB Systems">
- <h1 id="tituloPainel">ABC DE VENDAS GRUPO DV</h1>
+  <h1 id="tituloPainel">ABC DE VENDAS GRUPO DV</h1>
 </header>
+
 <div class="container">
   <div class="filters">
-    <label>
-      📅 Data Início:
+    <label>📅 Data Início:
       <input type="date" id="dataInicio" />
     </label>
-    <label>
-      📅 Data Fim:
+    <label>📅 Data Fim:
       <input type="date" id="dataFim" />
     </label>
-    <label>
-      🏢 Empresa:
-     <select id="filtroEmpresa">
-  <option value="">Todas Empresas</option>
-</select>
+    <label>🏢 Empresa:
+      <select id="filtroEmpresa">
+        <option value="">Todas Empresas</option>
+      </select>
     </label>
-    <label>
-      🔍 Busca:
+    <label>🔍 Busca:
       <input type="text" id="filtroBusca" placeholder="Buscar produto..." />
     </label>
   </div>
@@ -322,399 +93,304 @@ canvas {
   </div>
 
   <div id="popupOverlay">
- <div id="popupContent">
-  <div id="popupClose" onclick="fecharPopup()">&times;</div>
-  <h2 id="popupTitle"></h2>
-  <canvas id="graficoProdutoCanvas"></canvas>
-
-  <!-- ✅ Adicione aqui dentro -->
-  <canvas id="graficoPizza" style="max-width: 400px; margin-top: 20px; display: none;"></canvas>
-
-  <div id="dadosProdutoTabela"></div>
-</div>
-</div>
+    <div id="popupContent">
+      <div id="popupClose" onclick="fecharPopup()">&times;</div>
+      <h2 id="popupTitle"></h2>
+      <canvas id="graficoProdutoCanvas"></canvas>
+      <canvas id="graficoPizza" style="max-width: 400px; margin-top: 20px; display: none;"></canvas>
+      <div id="dadosProdutoTabela"></div>
+    </div>
+  </div>
 
   <canvas id="graficoVendas"></canvas>
 
- <div class="analise-flex">
-  <div id="topVendidos" class="card-analise"></div>
-  <div id="maisLucro" class="card-analise"></div>
-  <div id="menosLucro" class="card-analise"></div>
-</div>
+  <div class="analise-flex">
+    <div id="topVendidos" class="card-analise"></div>
+    <div id="maisLucro" class="card-analise"></div>
+    <div id="menosLucro" class="card-analise"></div>
+  </div>
 
-    <h2>🚫 Produtos Sem Vendas</h2>
-    <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
-
-
-
+  <h2>🚫 Produtos Sem Vendas</h2>
+  <div id="semVendas">(Necessário lista completa de produtos para comparar)</div>
 
   <div id="listaVendas"></div>
 
-<script>
-const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz8NEPUpDI0_JZKeqQLrV4JwinN1RVGDs7-a0Rc3lWidxJa4GRin4csMkceAs5XjVOpOg/exec';
-let dados = [];
-let chartVendas = null;
-let chartProduto = null;
-  let chartPizza = null;
-let toqueLongoTimeout = null;
+  <script>
+    // URL dos dados agora vem do config.js:
+    // defina no config.js -> window.CONFIG.URLS.ABC = 'https://script.google.com/macros/s/xxxxx/exec';
+    const URL_SCRIPT = (window.CONFIG && window.CONFIG.URLS && window.CONFIG.URLS.ABC);
+    if(!URL_SCRIPT){ console.error('CONFIG.URLS.ABC não definido em config.js'); }
 
+    let dados = [];
+    let chartVendas = null;
+    let chartProduto = null;
+    let chartPizza = null;
+    let toqueLongoTimeout = null;
 
-function formatMoeda(v) { return v.toLocaleString('pt-BR',{ style:'currency',currency:'BRL'}); }
-function formatDataBr(iso){ 
-  if (!iso || !iso.includes('-')) return iso;
-  const [y,m,d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
+    function formatMoeda(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+    function formatDataBr(iso){ if(!iso||!iso.includes('-')) return iso; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 
-
-async function carregarDados(){
-  const res = await fetch(URL_SCRIPT);
-  dados = await res.json();
-  preencherFiltros();
-  aplicarFiltros();
-}
-
-function preencherFiltros() {
-  const empresas = [...new Set(dados.map(d => d.empresa))].sort();
-  const sel = document.getElementById('filtroEmpresa');
-  sel.innerHTML = '<option value="">Todas Empresas</option>' + 
-    empresas.map(e => `<option value="${e}">${e}</option>`).join('');
-}
-
-function aplicarFiltros(){
-  const eF = document.getElementById('filtroEmpresa').value;
-  const busca = document.getElementById('filtroBusca').value.toLowerCase();
-  const di = document.getElementById('dataInicio').value;
-  const df = document.getElementById('dataFim').value;
-
-  const filt = dados.filter(d=>{
-    if (d.empresa !== "ABC DE VENDAS VILLA GOURMET") return false;
-    if(busca && !d.produto.toLowerCase().includes(busca)) return false;
-    if(di && d.data<di) return false;
-    if(df && d.data>df) return false;
-    return true;
-  });
-
-  mostrarResumo(filt);
-  desenharGrafico(filt, eF);
-  mostrarAnalises(filt);
-  listarVendas(filt);
-}
-
-function mostrarResumo(filt){
-  const fat = filt.reduce((a,c)=>a+c.faturamento,0);
-  const luc = filt.reduce((a,c)=>a+c.lucro,0);
-  document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
-  document.getElementById('totalLucro').textContent = formatMoeda(luc);
-}
-
-  
- function desenharGrafico(filt, empresaSelecionada){
-  if(!empresaSelecionada){ 
-    document.getElementById('graficoVendas').style.display='none'; 
-    return; 
-  }
-
-  const dadosPorData = {};
-  filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
-
-  const labels = Object.keys(dadosPorData).sort((a,b) => new Date(a) - new Date(b));
-  const vals = labels.map(l=>dadosPorData[l]);
-
-  const ctx = document.getElementById('graficoVendas').getContext('2d');
-  if(chartVendas) chartVendas.destroy();
-
-  chartVendas = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels.map(formatDataBr),
-     datasets: [{
-  label: 'Faturamento por dia',
-  data: vals,
-  borderColor: '#3498db',
-  backgroundColor: 'rgba(52,152,219,0.2)',
-  fill: true,
-  pointRadius: 6,       // <<< TAMANHO DOS PONTOS
-  pointHoverRadius: 8   // <<< TAMANHO NO HOVER (opcional)
-}]
-
-    },
-    options: {
-  responsive: true,
-  interaction: {
-    mode: 'nearest',
-    axis: 'x',
-    intersect: false
-  },
-  plugins: {
-    legend: { display: false },
-    title: { display: true, text: 'Evolução de Vendas' },
-    tooltip: {
-      callbacks: {
-        label: function(context) {
-          const valor = context.parsed.y || 0;
-          return '💰 ' + valor.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          });
-        }
-      }
+    async function carregarDados(){
+      const res = await fetch(URL_SCRIPT);
+      dados = await res.json();
+      preencherFiltros();
+      aplicarFiltros();
     }
-  }
-}
 
-  });
-
-  document.getElementById('graficoVendas').style.display = 'block';
-}
-
-
-  function fecharPopup() {
-  document.getElementById('popupOverlay').style.display = 'none';
-  if(chartProduto) chartProduto.destroy();
-  if(chartPizza) chartPizza.destroy();
-  document.getElementById('graficoPizza').style.display = 'none';
-}
-
-function mostrarAnalises(filt) {
-  const countByProd = {};
-  filt.forEach(d => {
-    const p = d.produto;
-    if (!countByProd[p]) countByProd[p] = { qtd: 0, fat: 0, luc: 0 };
-    countByProd[p].qtd += d.quantidade;
-    countByProd[p].fat += d.faturamento;
-    countByProd[p].luc += d.lucro;
-  });
-
-
-
-  const arr = Object.entries(countByProd).map(([produto, data]) => ({ produto, ...data }));
-  const topVend = [...arr].sort((a, b) => b.fat - a.fat).slice(0, 5);
-  const maisLuc = [...arr].sort((a, b) => b.luc - a.luc).slice(0, 5);
-  const menosLuc = [...arr].sort((a, b) => a.luc - b.luc).slice(0, 5);
-
-  document.getElementById('topVendidos').innerHTML = `<h3>⭐ Top Produtos</h3>` + topVend.map(p => `<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
-document.getElementById('maisLucro').innerHTML = `<h3>💰 Produtos Mais Lucrativos</h3>` + maisLuc.map(p => `<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-document.getElementById('menosLucro').innerHTML = `<h3>📉 Produtos Menos Lucrativos</h3>` + menosLuc.map(p => `<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
-
-  // Produtos que aparecem nos dados filtrados
-  const produtosFiltrados = new Set(filt.map(d => d.produto));
-
-  // Produtos com vendas > 0 nos dados filtrados
-  const produtosComVenda = new Set(filt.filter(d => d.quantidade > 0).map(d => d.produto));
-
-  // Produtos sem nenhuma venda no período e que passaram pelo filtro
-  const naoVendidos = [...produtosFiltrados].filter(p => !produtosComVenda.has(p));
-
-
-  const container = document.getElementById('semVendas');
-  container.innerHTML = `<h3>❌ Nome nas linhas vazias (indicador de erro) (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
-
-  naoVendidos.forEach(produto => {
-    const div = document.createElement('div');
-    div.textContent = produto;
-    div.style.cursor = 'pointer';
-    div.style.color = '#c0392b';
-    div.style.padding = '4px 0';
-    div.onclick = () => mostrarHistoricoVendasProduto(produto);
-    container.appendChild(div);
-  });
-}
-
-function mostrarHistoricoVendasProduto(produto) {
-  const vendasAnteriores = dados
-    .filter(d => d.produto === produto && d.quantidade > 0)
-    .map(d => `${formatDataBr(d.data)} — ${d.empresa} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}`);
-
-  if (vendasAnteriores.length === 0) {
-    alert(`O produto "${produto}" nunca teve vendas registradas.`);
-    return;
-  }
-
-  const msg = `📅 Vendas anteriores de "${produto}":\n\n` + vendasAnteriores.join('\n');
-  alert(msg);
-}
-
-function listarVendas(filt){
-  const cont = document.getElementById('listaVendas');
-  cont.innerHTML = '';
-
-  const agrupado = {};
-
-  filt.forEach(d => {
-    if (d.quantidade > 0) {
-      const chave = d.produto + '___' + d.empresa;
-      if (!agrupado[chave]) {
-        agrupado[chave] = {
-          produto: d.produto,
-          empresa: d.empresa,
-          quantidade: 0,
-          faturamento: 0,
-          lucro: 0,
-          detalhes: []
-        };
-      }
-      agrupado[chave].quantidade += d.quantidade;
-      agrupado[chave].faturamento += d.faturamento;
-      agrupado[chave].lucro += d.lucro;
-      agrupado[chave].detalhes.push(d);
+    function preencherFiltros(){
+      const empresas = [...new Set(dados.map(d => d.empresa))].sort();
+      const sel = document.getElementById('filtroEmpresa');
+      sel.innerHTML = '<option value="">Todas Empresas</option>' + empresas.map(e => `<option value="${e}">${e}</option>`).join('');
     }
-  });
 
-  const lista = Object.values(agrupado).sort((a, b) => b.faturamento - a.faturamento);
+    function aplicarFiltros(){
+      const eF = document.getElementById('filtroEmpresa').value;
+      const busca = document.getElementById('filtroBusca').value.toLowerCase();
+      const di = document.getElementById('dataInicio').value;
+      const df = document.getElementById('dataFim').value;
 
-  if (lista.length > 0) {
-    const blocoCom = document.createElement('div');
-    blocoCom.className = 'bloco-com-vendas';
-    blocoCom.innerHTML = `<h3>✅ Produtos com Vendas (Agrupados)</h3>`;
-    
-    lista.forEach(p => {
-      const div = document.createElement('div');
-      div.innerHTML = `<p><strong>${p.produto}</strong> — ${p.quantidade} un — ${formatMoeda(p.faturamento)} — Lucro: ${formatMoeda(p.lucro)}</p>`;
-      div.onclick = () => exibirGraficoProdutoSelecionado(p.produto, p.empresa);
-      blocoCom.appendChild(div);
-    });
+      const filt = dados.filter(d=>{
+        if (d.empresa !== "ABC DE VENDAS VILLA GOURMET") return false; // (mantido)
+        if(busca && !d.produto.toLowerCase().includes(busca)) return false;
+        if(di && d.data<di) return false;
+        if(df && d.data>df) return false;
+        return true;
+      });
 
-    cont.appendChild(blocoCom);
-  }
-
-  // Produtos com quantidade 0
-  const semVendas = filt.filter(d => d.quantidade === 0);
-  if (semVendas.length > 0) {
-    const blocoSem = document.createElement('div');
-    blocoSem.className = 'bloco-sem-vendas';
-    blocoSem.innerHTML = `<h3>⚠️ Produtos Registrados mas com Quantidade 0</h3>`;
-    semVendas.forEach(d => {
-      const div = document.createElement('div');
-      div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
-      div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
-      blocoSem.appendChild(div);
-    });
-    cont.appendChild(blocoSem);
-  }
-}
-
-
-function exibirGraficoProdutoSelecionado(produto, empresa){
-  const di = document.getElementById('dataInicio').value;
-  const df = document.getElementById('dataFim').value;
-  const filtro = dados.filter(d => d.produto === produto && d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df));
-
-  const dadosPorData = {};
-  filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data] || 0) + d.faturamento);
-  const labels = Object.keys(dadosPorData).sort((a,b) => new Date(a) - new Date(b));
-  const valores = labels.map(l => dadosPorData[l]);
-
-  const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
-  if(chartProduto) chartProduto.destroy();
-  chartProduto = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: labels.map(formatDataBr),
-    datasets: [{
-      label: produto,
-      data: valores,
-      backgroundColor: 'rgba(46, 204, 113, 0.7)'
-    }]
-  },
- options: {
-  responsive: true,
-  interaction: {
-    mode: 'nearest',
-    axis: 'x',
-    intersect: false
-  },
-  plugins: {
-    legend: { display: false },
-    title: { display: true, text: 'Evolução de Vendas' },
-    tooltip: {
-      callbacks: {
-        label: function(context) {
-          const valor = context.parsed.y || 0;
-          return '💰 ' + valor.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          });
-        }
-      }
+      mostrarResumo(filt);
+      desenharGrafico(filt, eF);
+      mostrarAnalises(filt);
+      listarVendas(filt);
     }
-  },
-  scales: {
-    y: {
-      beginAtZero: true
+
+    function mostrarResumo(filt){
+      const fat = filt.reduce((a,c)=>a+c.faturamento,0);
+      const luc = filt.reduce((a,c)=>a+c.lucro,0);
+      document.getElementById('totalFaturamento').textContent = formatMoeda(fat);
+      document.getElementById('totalLucro').textContent = formatMoeda(luc);
     }
-  }
-}
 
-});
+    function desenharGrafico(filt, empresaSelecionada){
+      if(!empresaSelecionada){ document.getElementById('graficoVendas').style.display='none'; return; }
 
+      const dadosPorData = {};
+      filt.forEach(d=> dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento );
 
-  document.getElementById('popupTitle').textContent = `📊 Análise do Produto: ${produto}`;
-  const tabela = filtro.map(d => `<p>${formatDataBr(d.data)} | ${d.empresa} | ${d.quantidade} un | ${formatMoeda(d.faturamento)} | Lucro: ${formatMoeda(d.lucro)}</p>`).join('');
-  document.getElementById('dadosProdutoTabela').innerHTML = tabela;
+      const labels = Object.keys(dadosPorData).sort((a,b) => new Date(a) - new Date(b));
+      const vals = labels.map(l=>dadosPorData[l]);
 
-  document.getElementById('popupOverlay').style.display = 'flex';
-    const canvas = document.getElementById('graficoProdutoCanvas');
+      const ctx = document.getElementById('graficoVendas').getContext('2d');
+      if(chartVendas) chartVendas.destroy();
 
-  function abrirGraficoPizza() {
-    const di = document.getElementById('dataInicio').value;
-    const df = document.getElementById('dataFim').value;
-
-    const totalPeriodo = dados
-      .filter(d => d.empresa === empresa && (!di || d.data >= di) && (!df || d.data <= df))
-      .reduce((sum, d) => sum + d.faturamento, 0);
-
-    const totalProduto = filtro.reduce((sum, d) => sum + d.faturamento, 0);
-    const porcentagem = (totalProduto / totalPeriodo) * 100;
-
-    const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
-    if (chartPizza) chartPizza.destroy();
-
-    chartPizza = new Chart(ctxPizza, {
-      type: 'pie',
-      data: {
-        labels: ['💡 Esse Produto', 'Outros Produtos'],
-        datasets: [{
-          data: [totalProduto, totalPeriodo - totalProduto],
-          backgroundColor: ['#27ae60', '#bdc3c7']
-        }]
-      },
-      options: {
-        plugins: {
-          title: {
-            display: true,
-            text: `Participação no Faturamento: ${porcentagem.toFixed(1)}%`
+      chartVendas = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels.map(formatDataBr),
+          datasets: [{
+            label: 'Faturamento por dia',
+            data: vals,
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52,152,219,0.2)',
+            fill: true,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Evolução de Vendas' },
+            tooltip: {
+              callbacks: {
+                label: function(ctx){
+                  const v = ctx.parsed.y||0;
+                  return '💰 ' + v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+                }
+              }
+            }
           }
         }
+      });
+
+      document.getElementById('graficoVendas').style.display = 'block';
+    }
+
+    function fecharPopup(){
+      document.getElementById('popupOverlay').style.display = 'none';
+      if(chartProduto) chartProduto.destroy();
+      if(chartPizza) chartPizza.destroy();
+      document.getElementById('graficoPizza').style.display = 'none';
+    }
+
+    function mostrarAnalises(filt){
+      const countByProd = {};
+      filt.forEach(d => {
+        const p = d.produto;
+        if (!countByProd[p]) countByProd[p] = { qtd: 0, fat: 0, luc: 0 };
+        countByProd[p].qtd += d.quantidade;
+        countByProd[p].fat += d.faturamento;
+        countByProd[p].luc += d.lucro;
+      });
+
+      const arr = Object.entries(countByProd).map(([produto, data]) => ({ produto, ...data }));
+      const topVend = [...arr].sort((a,b)=>b.fat-a.fat).slice(0,5);
+      const maisLuc = [...arr].sort((a,b)=>b.luc-a.luc).slice(0,5);
+      const menosLuc = [...arr].sort((a,b)=>a.luc-b.luc).slice(0,5);
+
+      document.getElementById('topVendidos').innerHTML = `<h3>⭐ Top Produtos</h3>` + topVend.map(p=>`<p>⭐ ${p.produto} — ${p.qtd} un / ${formatMoeda(p.fat)}</p>`).join('');
+      document.getElementById('maisLucro').innerHTML = `<h3>💰 Produtos Mais Lucrativos</h3>` + maisLuc.map(p=>`<p>💰 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+      document.getElementById('menosLucro').innerHTML = `<h3>📉 Produtos Menos Lucrativos</h3>` + menosLuc.map(p=>`<p>📉 ${p.produto} — ${formatMoeda(p.luc)}</p>`).join('');
+
+      const produtosFiltrados = new Set(filt.map(d => d.produto));
+      const produtosComVenda = new Set(filt.filter(d => d.quantidade > 0).map(d => d.produto));
+      const naoVendidos = [...produtosFiltrados].filter(p => !produtosComVenda.has(p));
+
+      const container = document.getElementById('semVendas');
+      container.innerHTML = `<h3>❌ Nome nas linhas vazias (indicador de erro) (${document.getElementById('dataInicio').value} até ${document.getElementById('dataFim').value})</h3>`;
+      naoVendidos.forEach(produto => {
+        const div = document.createElement('div');
+        div.textContent = produto;
+        div.style.cursor = 'pointer';
+        div.style.color = '#c0392b';
+        div.style.padding = '4px 0';
+        div.onclick = () => mostrarHistoricoVendasProduto(produto);
+        container.appendChild(div);
+      });
+    }
+
+    function mostrarHistoricoVendasProduto(produto){
+      const vendasAnteriores = dados
+        .filter(d => d.produto === produto && d.quantidade > 0)
+        .map(d => `${formatDataBr(d.data)} — ${d.empresa} — ${d.quantidade} un — ${formatMoeda(d.faturamento)}`);
+
+      if (!vendasAnteriores.length){
+        alert(`O produto "${produto}" nunca teve vendas registradas.`);
+        return;
       }
-    });
+      alert(`📅 Vendas anteriores de "${produto}":\n\n` + vendasAnteriores.join('\n'));
+    }
 
-    document.getElementById('graficoPizza').style.display = 'block';
-  }
+    function listarVendas(filt){
+      const cont = document.getElementById('listaVendas');
+      cont.innerHTML = '';
+      const agrupado = {};
 
-  canvas.addEventListener('dblclick', abrirGraficoPizza);
-  canvas.addEventListener('touchstart', () => {
-    toqueLongoTimeout = setTimeout(abrirGraficoPizza, 600);
-  });
-  canvas.addEventListener('touchend', () => clearTimeout(toqueLongoTimeout));
-  canvas.addEventListener('touchmove', () => clearTimeout(toqueLongoTimeout));
+      filt.forEach(d => {
+        if (d.quantidade > 0){
+          const chave = d.produto + '___' + d.empresa;
+          if (!agrupado[chave]){
+            agrupado[chave] = { produto:d.produto, empresa:d.empresa, quantidade:0, faturamento:0, lucro:0, detalhes:[] };
+          }
+          agrupado[chave].quantidade += d.quantidade;
+          agrupado[chave].faturamento += d.faturamento;
+          agrupado[chave].lucro += d.lucro;
+          agrupado[chave].detalhes.push(d);
+        }
+      });
 
-}
+      const lista = Object.values(agrupado).sort((a,b)=>b.faturamento-a.faturamento);
 
-window.onload = () => {
-  const hoje = new Date();
-  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const ontem = new Date();
-  ontem.setDate(hoje.getDate() - 1);
-  document.getElementById('dataInicio').value = primeiroDia.toISOString().split('T')[0];
-  document.getElementById('dataFim').value = ontem.toISOString().split('T')[0];
+      if (lista.length > 0){
+        const blocoCom = document.createElement('div');
+        blocoCom.className = 'bloco-com-vendas';
+        blocoCom.innerHTML = `<h3>✅ Produtos com Vendas (Agrupados)</h3>`;
+        lista.forEach(p=>{
+          const div = document.createElement('div');
+          div.innerHTML = `<p><strong>${p.produto}</strong> — ${p.quantidade} un — ${formatMoeda(p.faturamento)} — Lucro: ${formatMoeda(p.lucro)}</p>`;
+          div.onclick = () => exibirGraficoProdutoSelecionado(p.produto, p.empresa);
+          blocoCom.appendChild(div);
+        });
+        cont.appendChild(blocoCom);
+      }
 
-  carregarDados();
-  document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-  document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-  document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
-};
-</script>
+      const semVendas = filt.filter(d => d.quantidade === 0);
+      if (semVendas.length > 0){
+        const blocoSem = document.createElement('div');
+        blocoSem.className = 'bloco-sem-vendas';
+        blocoSem.innerHTML = `<h3>⚠️ Produtos Registrados mas com Quantidade 0</h3>`;
+        semVendas.forEach(d=>{
+          const div = document.createElement('div');
+          div.innerHTML = `<p>${formatDataBr(d.data)} | ${d.empresa} | <strong>${d.produto}</strong> — ${d.quantidade} un — ${formatMoeda(d.faturamento)} — Lucro: ${formatMoeda(d.lucro)}</p>`;
+          div.onclick = () => exibirGraficoProdutoSelecionado(d.produto, d.empresa);
+          blocoSem.appendChild(div);
+        });
+        cont.appendChild(blocoSem);
+      }
+    }
+
+    function exibirGraficoProdutoSelecionado(produto, empresa){
+      const di = document.getElementById('dataInicio').value;
+      const df = document.getElementById('dataFim').value;
+      const filtro = dados.filter(d => d.produto===produto && d.empresa===empresa && (!di || d.data>=di) && (!df || d.data<=df));
+
+      const dadosPorData = {};
+      filtro.forEach(d => dadosPorData[d.data] = (dadosPorData[d.data]||0) + d.faturamento);
+      const labels = Object.keys(dadosPorData).sort((a,b)=>new Date(a)-new Date(b));
+      const valores = labels.map(l=>dadosPorData[l]);
+
+      const ctx = document.getElementById('graficoProdutoCanvas').getContext('2d');
+      if(chartProduto) chartProduto.destroy();
+      chartProduto = new Chart(ctx, {
+        type:'bar',
+        data:{ labels: labels.map(formatDataBr), datasets:[{ label: produto, data: valores, backgroundColor:'rgba(46, 204, 113, 0.7)' }] },
+        options:{
+          responsive:true,
+          interaction:{ mode:'nearest', axis:'x', intersect:false },
+          plugins:{
+            legend:{ display:false },
+            title:{ display:true, text:'Evolução de Vendas' },
+            tooltip:{ callbacks:{ label:function(context){ const v=context.parsed.y||0; return '💰 '+v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); } } }
+          },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
+
+      document.getElementById('popupTitle').textContent = `📊 Análise do Produto: ${produto}`;
+      const tabela = filtro.map(d => `<p>${formatDataBr(d.data)} | ${d.empresa} | ${d.quantidade} un | ${formatMoeda(d.faturamento)} | Lucro: ${formatMoeda(d.lucro)}</p>`).join('');
+      document.getElementById('dadosProdutoTabela').innerHTML = tabela;
+
+      document.getElementById('popupOverlay').style.display = 'flex';
+      const canvas = document.getElementById('graficoProdutoCanvas');
+
+      function abrirGraficoPizza(){
+        const di = document.getElementById('dataInicio').value;
+        const df = document.getElementById('dataFim').value;
+        const totalPeriodo = dados.filter(d => d.empresa===empresa && (!di||d.data>=di) && (!df||d.data<=df)).reduce((s,d)=>s+d.faturamento,0);
+        const totalProduto = filtro.reduce((s,d)=>s+d.faturamento,0);
+        const porcentagem = (totalProduto/totalPeriodo)*100;
+
+        const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+        if(chartPizza) chartPizza.destroy();
+        chartPizza = new Chart(ctxPizza, {
+          type:'pie',
+          data:{ labels:['💡 Esse Produto','Outros Produtos'], datasets:[{ data:[totalProduto, totalPeriodo-totalProduto], backgroundColor:['#27ae60','#bdc3c7'] }] },
+          options:{ plugins:{ title:{ display:true, text:`Participação no Faturamento: ${porcentagem.toFixed(1)}%` } } }
+        });
+        document.getElementById('graficoPizza').style.display = 'block';
+      }
+
+      canvas.addEventListener('dblclick', abrirGraficoPizza);
+      canvas.addEventListener('touchstart', () => { toqueLongoTimeout = setTimeout(abrirGraficoPizza, 600); });
+      canvas.addEventListener('touchend', () => clearTimeout(toqueLongoTimeout));
+      canvas.addEventListener('touchmove', () => clearTimeout(toqueLongoTimeout));
+    }
+
+    window.onload = () => {
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const ontem = new Date(); ontem.setDate(hoje.getDate()-1);
+      document.getElementById('dataInicio').value = primeiroDia.toISOString().split('T')[0];
+      document.getElementById('dataFim').value = ontem.toISOString().split('T')[0];
+
+      carregarDados();
+      document.getElementById('filtroEmpresa').addEventListener('change', aplicarFiltros);
+      document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+      document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+      document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+    };
+  </script>
+</div>
 </body>
 </html>
