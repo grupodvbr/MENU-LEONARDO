@@ -4,20 +4,48 @@
 <meta charset="UTF-8" />
 <title>CB Systems • Painel de Travas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script>
-  const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec';
-  (async ()=>{
-    function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
-    const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
-    try{
+<!-- carregue o config primeiro -->
+<script src="config.js"></script>
+
+<script>
+  // Usa a URL do seu WebApp de login do config.js
+  const WEBAPP = API_URLS.login;
+
+  (async () => {
+    // calcula a página atual para voltar depois do login
+    const nextPage = location.pathname.split('/').pop() || 'index.html';
+    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
+
+    // se não há token, manda para o login
+    const token = localStorage.getItem('auth_token');
+    if (!token) { goLogin(); return; }
+
+    try {
+      // envia o token NO BODY (text/plain) para evitar preflight/CORS
       const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token })
+      });
       const j = await r.json();
-      if(!j.ok){ localStorage.clear(); goLogin(); return; }
-      window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,exp}
-    }catch{ goLogin(); }
+
+      if (!j.ok) {            // token inválido/expirado
+        localStorage.clear();
+        goLogin();
+        return;
+      }
+
+      // sucesso: usuário autenticado disponível globalmente
+      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
+      // opcional: document.body.style.opacity = '1';
+    } catch (err) {
+      console.error('Auth check failed', err);
+      goLogin();
+    }
   })();
 </script>
+
 
 <style>
   :root{
@@ -144,10 +172,12 @@
   </div>
 </div>
 
+<script src="config.js"></script> <!-- carrega as URLs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-/* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
+  const API_BASE = API_URLS.travas; // vem do config.js
+</script>
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 
 /* ======= PLANOS VÁLIDOS (para soma "Fornecedores") ======= */
