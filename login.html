@@ -63,30 +63,22 @@
     </div>
   </div>
 
-  <script>
+ <script>
   // ====== CONFIG ======
-  const WEBAPP = 'https://script.google.com/macros/s/AKfycbw-uulvaPyrNy4vGr-KkkmrFP_s_VVthhuWEMrRulWehrCJ0CLMsO3uJwS83fnG_UgJSw/exec';
+  const WEBAPP = 'https://script.google.com/macros/s/AKfycbw-uulvaPyrNy4vGr-KkkmrFP_s_VVthhuWEMrRulWehrCJ0CLMsO3uJwS83fnG_UgJSw/exec'; // <- troque pela URL da implantação
 
   // ====== Helpers ======
   const qs = (id)=>document.getElementById(id);
   const setBusy = (b)=>{ qs('btn').disabled=b; qs('btn').textContent=b?'Verificando…':'Entrar'; }
-  const showErr = (m)=>{ const e=qs('err'); e.textContent=m||''; e.style.display=m?'block':'none'; qs('ok').style.display='none'; }
-  const showOk  = (m)=>{ const e=qs('ok');  e.textContent=m||''; e.style.display=m?'block':'none'; qs('err').style.display='none'; }
-  const redirect = ()=>{ const next=new URL(location.href).searchParams.get('next')||'index.html'; location.href=next; }
+  const showErr = (m)=>{ const el=qs('err'); el.textContent=m||''; el.style.display=m?'block':'none'; qs('ok').style.display='none'; }
+  const showOk  = (m)=>{ const el=qs('ok');  el.textContent=m||''; el.style.display=m?'block':'none'; qs('err').style.display='none'; }
 
-  async function me(){
-    const token = localStorage.getItem('auth_token');
-    if(!token) return null;
-    try{
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url,{
-        method:'POST',
-        headers:{ 'Content-Type':'text/plain;charset=UTF-8' },   // <- simples, sem preflight
-        body: JSON.stringify({ token })                           // <- token vai no corpo
-      });
-      const j = await r.json();
-      return j.ok ? j.user : null;
-    }catch{ return null; }
+  // id único do dispositivo (persistido no browser)
+  function getOrCreateDeviceId(){
+    const k='dv_device_id';
+    let v=localStorage.getItem(k);
+    if(!v){ v=crypto.randomUUID?.() || (Date.now().toString(36)+Math.random().toString(36).slice(2)); localStorage.setItem(k,v); }
+    return v;
   }
 
   function saveSession(j){
@@ -94,21 +86,44 @@
     localStorage.setItem('auth_user', JSON.stringify({usuario:j.usuario, empresa:j.empresa, perfil:j.perfil}));
   }
 
-  // Auto-login se já houver token válido
-  (async ()=>{ const u=await me(); if(u) redirect(); })();
+  function redirect(){
+    const next=new URL(location.href).searchParams.get('next')||'index.html';
+    location.href=next;
+  }
 
-  // UI
+  // ====== Verificar sessão (me) ======
+  async function me(){
+    const token = localStorage.getItem('auth_token');
+    if(!token) return null;
+    try{
+      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+      const r = await fetch(url, {
+        method:'POST',
+        // usar text/plain evita preflight; o Apps Script lê normalmente
+        headers:{ 'Content-Type':'text/plain;charset=UTF-8', 'Authorization':'Bearer '+token },
+        body: JSON.stringify({ device_id: getOrCreateDeviceId() })
+      });
+      const raw = await r.text();
+      let j; try{ j=JSON.parse(raw); }catch{ console.error('Resposta não-JSON:', raw); return null; }
+      return j.ok ? j.user : null;
+    }catch{ return null; }
+  }
+
+  // ====== Autologin ======
+  (async ()=>{ const u = await me(); if(u) redirect(); })();
+
+  // ====== UI ======
   qs('toggle').addEventListener('click', ()=>{
-    const f=qs('senha'); const isPw=f.type==='password'; f.type=isPw?'text':'password';
-    qs('toggle').textContent = isPw?'ocultar':'mostrar'; f.focus();
+    const f=qs('senha'); const isPw=f.type==='password';
+    f.type = isPw?'text':'password'; qs('toggle').textContent = isPw?'ocultar':'mostrar'; f.focus();
   });
 
+  // ====== Login ======
   qs('form').addEventListener('submit', async (ev)=>{
     ev.preventDefault();
     showErr(''); showOk('');
     const usuario = qs('usuario').value.trim();
-    const senha = qs('senha').value;
-    const remember = qs('remember').checked;
+    const senha   = qs('senha').value;           // pode ser ignorada no servidor se estiver usando liberação por aparelho
     if(!usuario || !senha){ showErr('Preencha usuário e senha.'); return; }
 
     setBusy(true);
@@ -116,20 +131,31 @@
       const url = `${WEBAPP}?fn=login&origin=${encodeURIComponent(location.origin)}`;
       const r = await fetch(url, {
         method:'POST',
-        headers:{ 'Content-Type':'text/plain;charset=UTF-8' },   // <- simples, sem preflight
-        body: JSON.stringify({ usuario, senha, remember })
+        headers:{ 'Content-Type':'text/plain;charset=UTF-8' },   // evita preflight
+        body: JSON.stringify({ usuario, senha, device_id: getOrCreateDeviceId() })
       });
-      const j = await r.json();
+      const raw = await r.text();
+      let j; try{ j=JSON.parse(raw); }catch(e){ console.error('Resposta não-JSON:', raw); showErr('Resposta inválida do servidor.'); setBusy(false); return; }
+
+      // Fluxo “aparelho pendente” (se o script novo estiver ativo)
+      if(j.status === 'pending'){
+        showOk('✅ Pedido enviado. Aguarde o admin liberar este aparelho.');
+        setBusy(false);
+        return;
+      }
+
       if(!j.ok){
         if(j.error==='blocked') showErr(`Muitas tentativas. Tente novamente em ${j.minutes} min.`);
         else if(j.error==='invalid_credentials') showErr('Usuário ou senha inválidos.');
         else showErr('Não foi possível entrar agora.');
-        setBusy(false); return;
+        setBusy(false);
+        return;
       }
+
       saveSession(j);
       showOk('Acesso autorizado. Redirecionando…');
       setTimeout(redirect, 500);
-    }catch{
+    }catch(e){
       showErr('Falha de rede. Tente novamente.');
       setBusy(false);
     }
