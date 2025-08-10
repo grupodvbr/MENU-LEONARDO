@@ -4,18 +4,42 @@
   <meta charset="UTF-8" />
   <title>Relatório Consolidado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>
-  const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec';
-  (async ()=>{
-    function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
-    const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
-    try{
+<script>
+  // Usa a URL do seu WebApp de login do config.js
+  const WEBAPP = API_URLS.login;
+
+  (async () => {
+    // calcula a página atual para voltar depois do login
+    const nextPage = location.pathname.split('/').pop() || 'index.html';
+    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
+
+    // se não há token, manda para o login
+    const token = localStorage.getItem('auth_token');
+    if (!token) { goLogin(); return; }
+
+    try {
+      // envia o token NO BODY (text/plain) para evitar preflight/CORS
       const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token })
+      });
       const j = await r.json();
-      if(!j.ok){ localStorage.clear(); goLogin(); return; }
-      window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,exp}
-    }catch{ goLogin(); }
+
+      if (!j.ok) {            // token inválido/expirado
+        localStorage.clear();
+        goLogin();
+        return;
+      }
+
+      // sucesso: usuário autenticado disponível globalmente
+      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
+      // opcional: document.body.style.opacity = '1';
+    } catch (err) {
+      console.error('Auth check failed', err);
+      goLogin();
+    }
   })();
 </script>
 
