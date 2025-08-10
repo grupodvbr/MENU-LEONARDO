@@ -13,7 +13,7 @@
     (async ()=>{
       function goLogin(){
         const next = (location.pathname.split('/').pop() || 'index.html');
-        location.replace('login.html?next=' + encodeURIComponent(next)); // <- não deixa voltar
+        location.replace('login.html?next=' + encodeURIComponent(next)); // não deixa voltar
       }
       const WEBAPP = (window.CONFIG && window.CONFIG.WEBAPP);
       if(!WEBAPP){ console.error('CONFIG.WEBAPP não definido'); goLogin(); return; }
@@ -22,7 +22,7 @@
       if(!token){ goLogin(); return; }
 
       try{
-        // usa text/plain pra evitar preflight e reduzir “falha de rede”
+        // usa text/plain pra evitar preflight
         const r = await fetch(`${WEBAPP}?fn=me`, {
           method: 'POST',
           headers: { 'Content-Type':'text/plain;charset=UTF-8' },
@@ -31,24 +31,29 @@
         const raw = await r.text();
         let j; try{ j = JSON.parse(raw); }catch{ goLogin(); return; }
         if(!j.ok){ localStorage.clear(); goLogin(); return; }
-
-        window.AUTH_USER = j.user; // {usuario,empresa,perfil}
-      }catch{
-        goLogin();
-      }
+        window.AUTH_USER = j.user;
+      }catch{ goLogin(); }
     })();
 
-    // **Bloqueia o botão voltar neste painel**
+    // Bloqueia o botão voltar neste painel
     (function lockBack(){
-      // empurra um estado no histórico e reempurra quando o usuário tenta voltar
       const push = ()=> history.pushState(null, '', location.href);
       push();
-      window.addEventListener('popstate', (e)=> { push(); });
+      window.addEventListener('popstate', ()=> push());
     })();
   </script>
 
   <style>
-    body { margin:0; font-family:'Segoe UI',sans-serif; background:#fff; }
+    :root{
+      --ink:#2c3e50;
+      --card:#fff;
+      --hover:#f5fbff;
+      --shadow:0 4px 10px rgba(0,0,0,.08);
+      --shadow-zoom:0 10px 24px rgba(0,0,0,.16);
+    }
+    *{box-sizing:border-box}
+    body { margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:#fff; color:var(--ink); }
+
     #splash{
       position:fixed; inset:0; background:#fff; display:flex; align-items:center; justify-content:center;
       z-index:9999; transition:opacity .5s ease;
@@ -57,15 +62,14 @@
     @keyframes pulse{ 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:.9} 100%{transform:scale(1);opacity:1} }
 
     header{
-      background:#fff; color:#2c3e50; padding:20px 16px; display:flex; align-items:center; border-bottom:1px solid #ccc;
+      background:#fff; padding:20px 16px; display:flex; align-items:center; border-bottom:1px solid #e5e7eb;
       gap:12px; flex-wrap:wrap;
     }
-    .logo-left{ display:flex; align-items:center }
     .logo-left img{ height:56px; width:auto }
     .title-center{ flex:1 1 auto }
     .title-center h1{ margin:0; font-size:22px; font-weight:700 }
     .spacer{ margin-left:auto; display:flex; align-items:center; gap:12px }
-    .relatorio-link{ text-decoration:none; font-size:22px; opacity:.6; transition:opacity .3s }
+    .relatorio-link{ text-decoration:none; font-size:22px; opacity:.6; transition:opacity .25s }
     .relatorio-link:hover{ opacity:1 }
     .user-profile img{
       width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ccc;transition:transform .2s ease
@@ -73,23 +77,37 @@
     .user-profile img:hover{ transform:scale(1.08); border-color:#2980b9 }
 
     .container{
-      display:grid; grid-template-columns:repeat(2,1fr); gap:16px; padding:20px; max-width:1200px; margin:auto;
+      display:grid; grid-template-columns:repeat(3,1fr); gap:16px; padding:20px; max-width:1200px; margin:auto;
     }
-    .card{
-      background:#fff; border-radius:12px; padding:22px 16px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,.08);
-      transition:transform .2s ease, background-color .2s ease; text-decoration:none; color:inherit; min-height:110px;
-    }
-    .card:hover{ transform:translateY(-4px); background:#f5fbff }
-    .card h2{ margin:6px 0 0; font-size:18px; color:#2c3e50; line-height:1.2; word-break:break-word }
-    .card .icon{ font-size:34px; color:#2980b9; }
 
+    /* ✅ 2 cards por linha no celular */
     @media (max-width:700px){
-      .container{ grid-template-columns:1fr }
-      header{ padding:16px }
+      .container{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px }
+      header{ padding:14px }
       .title-center h1{ font-size:20px }
-      .card{ padding:18px 14px }
-      .card .icon{ font-size:30px }
-      .card h2{ font-size:16px }
+    }
+
+    .card{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:var(--card); border-radius:12px; padding:22px 12px; text-align:center; box-shadow:var(--shadow);
+      text-decoration:none; color:inherit; min-height:110px; user-select:none;
+      transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s cubic-bezier(.2,.7,.3,1), background-color .18s;
+      transform-origin:center;
+      will-change:transform, box-shadow;
+    }
+    .card:hover{ background:var(--hover) }
+    .card h2{ margin:6px 0 0; font-size:16px; line-height:1.25; word-break:break-word }
+    .card .icon{ font-size:30px; color:#2980b9; }
+
+    /* Estado de zoom ao clicar */
+    .card.is-zoom{
+      transform:scale(1.05);
+      box-shadow:var(--shadow-zoom);
+    }
+
+    /* Acessibilidade: reduz animação */
+    @media (prefers-reduced-motion: reduce){
+      .card, .card.is-zoom{ transition:none }
     }
   </style>
 </head>
@@ -117,7 +135,7 @@
   </header>
 
   <!-- Cards -->
-  <div class="container">
+  <div class="container" id="cards">
     <a class="card" href="index.resumofinanceiro.html"><div class="icon">📈</div><h2>Resumo Financeiro</h2></a>
     <a class="card" href="index.cancelamentos.html"><div class="icon">❌</div><h2>Cancelamentos</h2></a>
     <a class="card" href="index.delivery.html"><div class="icon">🚚</div><h2>Vendas Delivery</h2></a>
@@ -129,11 +147,32 @@
     <a class="card" href="index.avaliacoes.html"><div class="icon">🔎</div><h2>Pesquisa de satisfação</h2></a>
   </div>
 
-  <!-- Splash fade -->
+  <!-- Splash fade + zoom ao clicar -->
   <script>
+    // Splash
     window.addEventListener('load', ()=>{
       const splash = document.getElementById('splash');
       setTimeout(()=>{ splash.style.opacity='0'; setTimeout(()=> splash.style.display='none', 450); }, 900);
+    });
+
+    // Zoom ao clicar e depois navega
+    document.querySelectorAll('.card').forEach(a=>{
+      a.addEventListener('click', (ev)=>{
+        // evita múltiplos cliques
+        if(a.classList.contains('is-zoom')) return;
+        ev.preventDefault();
+        const href = a.getAttribute('href');
+        a.classList.add('is-zoom');
+        // garante que a animação apareça antes da navegação
+        setTimeout(()=>{ window.location.href = href; }, 160);
+      });
+      // acessibilidade teclado
+      a.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          a.click();
+        }
+      });
     });
   </script>
 
