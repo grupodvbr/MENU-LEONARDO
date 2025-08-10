@@ -5,28 +5,27 @@
   <title>Login • GRUPO DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{
-      --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9;
-      --shadow:0 10px 30px rgba(2,6,23,.12);
-    }
+    :root{ --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9; --shadow:0 10px 30px rgba(2,6,23,.12) }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
     .wrap{min-height:100vh;display:grid;place-items:center;padding:18px}
-    .card{width:min(96vw,400px);background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+    .card{width:min(96vw,420px);background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:22px}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
     .brand img{height:42px}
     h1{font-size:18px;margin:0}
     .muted{color:var(--muted);font-size:13px;margin:2px 0 14px}
     label{display:block;font-size:13px;margin:10px 0 6px;color:#334155}
     input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px;background:#fff}
-    .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+    .row{display:flex;gap:8px;align-items:center;margin-top:12px}
     .btn{width:100%;padding:12px 14px;border:none;border-radius:999px;background:var(--primary);color:#fff;font-weight:600;cursor:pointer}
     .btn[disabled]{opacity:.6;cursor:not-allowed}
-    .err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px 12px;font-size:13px;display:none;margin-top:10px}
-    .ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:12px;padding:10px 12px;font-size:13px;display:none;margin-top:10px}
+    .err,.ok{border-radius:12px;padding:10px 12px;font-size:13px;display:none;margin-top:10px}
+    .err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
     .footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
-    .toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:999px;padding:2px 8px;cursor:pointer}
     .field{position:relative}
+    .toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:999px;padding:2px 8px;cursor:pointer}
+    .remember{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#334155}
   </style>
 </head>
 <body>
@@ -36,7 +35,7 @@
         <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo" />
         <h1>Entrar</h1>
       </div>
-      <div class="muted">Use seu usuário e senha. O acesso é verificado no servidor (planilha privada).</div>
+      <div class="muted">Use seu usuário e senha. A validação ocorre no servidor (planilha privada).</div>
 
       <form id="form">
         <label for="usuario">Usuário</label>
@@ -48,6 +47,11 @@
           <button class="toggle" type="button" id="toggle">mostrar</button>
         </div>
 
+        <label class="remember">
+          <input type="checkbox" id="remember" />
+          Manter conectado (não pedir senha novamente)
+        </label>
+
         <div class="row">
           <button class="btn" id="btn" type="submit">Entrar</button>
         </div>
@@ -55,32 +59,27 @@
         <div class="ok" id="ok"></div>
       </form>
 
-      <div class="footer">Dica: se precisar, peça para o admin redefinir sua senha.</div>
+      <div class="footer">Dica: em computador compartilhado, desmarque “manter conectado”.</div>
     </div>
   </div>
 
   <script>
     // ====== CONFIG ======
-    const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec'; // <-- troque aqui
+    const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec';
 
     // ====== Helpers ======
-    function qs(id){return document.getElementById(id)}
-    function setBusy(b){
-      qs('btn').disabled = b;
-      qs('btn').textContent = b ? 'Verificando…' : 'Entrar';
-    }
-    function showErr(msg){const el=qs('err'); el.textContent=msg; el.style.display='block'; qs('ok').style.display='none';}
-    function showOk(msg){const el=qs('ok'); el.textContent=msg; el.style.display='block'; qs('err').style.display='none';}
+    const qs = (id)=>document.getElementById(id);
+    const setBusy = (b)=>{ qs('btn').disabled=b; qs('btn').textContent=b?'Verificando…':'Entrar'; }
+    const showErr = (m)=>{ const e=qs('err'); e.textContent=m; e.style.display='block'; qs('ok').style.display='none'; }
+    const showOk  = (m)=>{ const e=qs('ok');  e.textContent=m; e.style.display='block'; qs('err').style.display='none'; }
+    const redirect = ()=>{ const next=new URL(location.href).searchParams.get('next')||'index.html'; location.href=next; }
 
     async function me(){
       const token = localStorage.getItem('auth_token');
       if(!token) return null;
       try{
-        const r = await fetch(`${WEBAPP}?fn=me`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+token},
-          body: JSON.stringify({})
-        });
+        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+        const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
         const j = await r.json();
         return j.ok ? j.user : null;
       }catch{ return null; }
@@ -91,25 +90,13 @@
       localStorage.setItem('auth_user', JSON.stringify({usuario:j.usuario, empresa:j.empresa, perfil:j.perfil}));
     }
 
-    function redirect(){
-      const url = new URL(location.href);
-      const next = url.searchParams.get('next') || 'index.html';
-      location.href = next;
-    }
+    // Auto-login se já houver token válido
+    (async ()=>{ const u=await me(); if(u) redirect(); })();
 
-    // ====== Autologin se já tiver token válido ======
-    (async ()=>{
-      const u = await me();
-      if (u) redirect();
-    })();
-
-    // ====== UI ======
+    // UI
     qs('toggle').addEventListener('click', ()=>{
-      const f = qs('senha');
-      const isPw = f.type === 'password';
-      f.type = isPw ? 'text' : 'password';
-      qs('toggle').textContent = isPw ? 'ocultar' : 'mostrar';
-      f.focus();
+      const f=qs('senha'); const isPw=f.type==='password'; f.type=isPw?'text':'password';
+      qs('toggle').textContent = isPw?'ocultar':'mostrar'; f.focus();
     });
 
     qs('form').addEventListener('submit', async (ev)=>{
@@ -117,26 +104,27 @@
       showErr(''); qs('err').style.display='none'; qs('ok').style.display='none';
       const usuario = qs('usuario').value.trim();
       const senha = qs('senha').value;
+      const remember = qs('remember').checked;
       if(!usuario || !senha){ showErr('Preencha usuário e senha.'); return; }
       setBusy(true);
       try{
-        const r = await fetch(`${WEBAPP}?fn=login`, {
+        const url = `${WEBAPP}?fn=login&origin=${encodeURIComponent(location.origin)}`;
+        const r = await fetch(url, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({usuario, senha})
+          body: JSON.stringify({usuario, senha, remember})
         });
         const j = await r.json();
         if(!j.ok){
           if(j.error==='blocked') showErr(`Muitas tentativas. Tente novamente em ${j.minutes} min.`);
           else if(j.error==='invalid_credentials') showErr('Usuário ou senha inválidos.');
           else showErr('Não foi possível entrar agora.');
-          setBusy(false);
-          return;
+          setBusy(false); return;
         }
         saveSession(j);
         showOk('Acesso autorizado. Redirecionando…');
         setTimeout(redirect, 500);
-      }catch(e){
+      }catch{
         showErr('Falha de rede. Tente novamente.');
         setBusy(false);
       }
