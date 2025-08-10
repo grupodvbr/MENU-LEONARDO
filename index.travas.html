@@ -212,45 +212,6 @@ async function getEmpresaPeriodo(emp, periodo){
   setC(emp,periodo,rec); return rec;
 }
 
-/* ======= SÉRIES • MEMOIZATION ======= */
-const seriesMemo = new Map();
-const seriesKey = (emp, from, to) => `series:${emp}|${from}|${to}`;
-
-function monthRange(from,to){
-  let a=parseYYYYMM(from),b=parseYYYYMM(to); if(!a||!b) return [];
-  if(a>b){const t=a;a=b;b=t;}
-  const out=[],c=new Date(a);
-  while(c<=b){ out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`); c.setMonth(c.getMonth()+1); }
-  return out;
-}
-
-async function buildSeries(emp, from, to){
-  const key = seriesKey(emp, from, to);
-  if (seriesMemo.has(key)) return seriesMemo.get(key);     // memo (Promise)
-
-  const promise = (async()=>{
-    const months = monthRange(from, to);
-    const results = await Promise.allSettled(months.map(per => getEmpresaPeriodo(emp, per)));
-    const planMap = {}; const plansSet = new Set();
-
-    results.forEach((res, i)=>{
-      if (res.status !== 'fulfilled') return;              // ignora falhas pontuais
-      const rec = res.value;
-      const periodOk = rec?.matchesPeriod !== false;
-      const planos = periodOk ? extractPlanos(rec) : [];
-      planos.forEach(p=>{
-        plansSet.add(p.nome);
-        if(!planMap[p.nome]) planMap[p.nome] = new Array(months.length).fill(0);
-        planMap[p.nome][i] = Math.abs(parseBR(p.valor||0));
-      });
-    });
-    return { labels: months, planMap, plans: [...plansSet].sort() };
-  })();
-
-  seriesMemo.set(key, promise);
-  return promise;
-}
-
 /* UI */
 const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
@@ -282,17 +243,10 @@ inpPeriodo.addEventListener('change', run);
 window.addEventListener('DOMContentLoaded', ()=>{
   const hoje=new Date();
   inpPeriodo.value=hoje.toISOString().slice(0,7);
-
-  // prefetch Chart.js (acelera 1ª vez do gráfico)
-  const s=document.createElement('script');
-  s.src='https://cdn.jsdelivr.net/npm/chart.js';
-  s.onload=()=> (ChartLib = window.Chart);
-  document.head.appendChild(s);
-
   run();
 });
 
-/* Skeleton por empresa */
+/* Skeleton rápido por empresa */
 function companySkeleton(nome){
   return `
     <section class="company" data-empresa="${nome}">
@@ -310,15 +264,18 @@ function companySkeleton(nome){
     </section>`;
 }
 
-/* Render principal */
+/* Render principal (com token para evitar respostas antigas) */
 async function run(){
   const runId = ++currentRun;
   const empSel=selEmpresa.value, periodo=inpPeriodo.value;
   const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
 
+  // pinta skeletons de uma vez (DOM mínimo)
   container.innerHTML = empresas.map(e => companySkeleton(e)).join('');
 
+  // busca todas em paralelo
   const results = await Promise.allSettled(empresas.map(emp => getEmpresaPeriodo(emp, periodo)));
+
   if (runId !== currentRun) return;
 
   results.forEach((res, idx)=>{
@@ -387,12 +344,11 @@ async function run(){
   }
 }
 
-/* Bloco do gráfico — default: últimos 3 meses */
+/* Bloco do gráfico — padrão: janeiro → mês atual. Gráfico vazio até escolher um plano */
 function renderChartBlock(emp){
-  const now=new Date();
-  const to=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const d=new Date(now.getFullYear(), now.getMonth()-2, 1); // 3 meses
-  const from=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const now=new Date(); const year=now.getFullYear();
+  const from=`${year}-01`;
+  const to=`${year}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const planId=`plan-${Math.random().toString(36).slice(2,7)}`, fromId=`from-${Math.random().toString(36).slice(2,7)}`, toId=`to-${Math.random().toString(36).slice(2,7)}`, cvs=`cv-${Math.random().toString(36).slice(2,7)}`;
   return `
     <div class="card">
@@ -409,9 +365,30 @@ function renderChartBlock(emp){
       </div>
       <canvas id="${cvs}" height="180"></canvas>
       <div class="chart-note" id="${cvs}-note">Escolha um plano acima para ver o gráfico.</div>
-      <div class="title" id="${cvs}-top-title" style="margin-top:12px">Despesas mais caras (Top 10 no período)</div>
+      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10 do mês mais recente)</div>
       <ul class="list" id="${cvs}-top"></ul>
     </div>`;
+}
+
+/* Range de meses */
+function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b)return[];if(a>b){const t=a;a=b;b=t;}const out=[],c=new Date(a);while(c<=b){out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`);c.setMonth(c.getMonth()+1);}return out}
+
+/* Séries — paraleliza requisições e preserva ordem */
+async function buildSeries(emp, from, to){
+  const months=monthRange(from,to);
+  const results = await Promise.all(months.map(per => getEmpresaPeriodo(emp, per)));
+  const planMap = {}; const plansSet=new Set();
+
+  results.forEach((rec, i)=>{
+    const periodOk = rec?.matchesPeriod !== false;
+    const planos = periodOk ? extractPlanos(rec) : [];
+    planos.forEach(p=>{
+      plansSet.add(p.nome);
+      if(!planMap[p.nome]) planMap[p.nome]=new Array(months.length).fill(0);
+      planMap[p.nome][i]=Math.abs(parseBR(p.valor||0));
+    });
+  });
+  return {labels:months, planMap, plans:[...plansSet].sort()};
 }
 
 /* Chart */
@@ -432,36 +409,13 @@ async function mountChart(emp, holder, runIdAtMount){
 
   async function populatePlans(){
     topList.innerHTML='<li>Carregando…</li>';
-    try{
-      cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
-      if (runIdAtMount !== currentRun) return;
-
-      // combo de planos (do período)
-      planSel.innerHTML =
-        '<option value="" selected disabled>Selecione…</option>' +
-        cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-
-      // Top 10 do PERÍODO (soma)
-      const sums = Object.entries(cachedSeries.planMap).map(([nome, vals])=>({
-        nome, valor: (vals||[]).reduce((a,v)=> a + Math.abs(Number(v||0)), 0)
-      })).sort((a,b)=> b.valor - a.valor).slice(0,10);
-
-      // título com range
-      const rangeLbl = (()=>{try{
-        const [yf,mf]=fromInp.value.split('-').map(Number);
-        const [yt,mt]=toInp.value.split('-').map(Number);
-        const m=n=>new Date(2000,n-1,1).toLocaleString('pt-BR',{month:'long'});
-        return `${m(mf)} de ${yf} a ${m(mt)} de ${yt}`;
-      }catch{return ''}})();
-      const topTitle = holder.querySelector(`#${cvs}-top-title`);
-      if (topTitle) topTitle.textContent = `Despesas mais caras (Top 10 no período${rangeLbl?` — ${rangeLbl}`:''})`;
-
-      topList.innerHTML = sums.length
-        ? sums.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('')
-        : '<li>Nada a mostrar.</li>';
-    }catch(e){
-      topList.innerHTML = `<li>Erro ao carregar: ${String(e.message||e)}</li>`;
-    }
+    cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
+    if (runIdAtMount !== currentRun) return;
+    planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
+    // Top 10 (mês mais recente)
+    const last=cachedSeries.labels.length-1;
+    const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
+    topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
   }
 
   async function draw(){
@@ -484,7 +438,7 @@ async function mountChart(emp, holder, runIdAtMount){
   btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
   planSel.addEventListener('change', draw);
 
-  await populatePlans(); // popula combo e Top 10; gráfico desenha quando escolher o plano
+  await populatePlans(); // só popula opções e top 10; gráfico continua em branco até escolher plano
 }
 </script>
 </body>
