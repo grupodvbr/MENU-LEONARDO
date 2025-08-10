@@ -3,37 +3,113 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-  <!-- config + guarda de sessão -->
-  <script src="config.js"></script>
-  <script>
-    (async ()=>{ try{ await AUTH.ensure(); }catch(e){} })();
-  </script>
-
   <title>Metas de Receita - Grupo DV</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
-    header { background-color: white; padding: 10px 20px; display: flex; align-items: center; border-bottom: 1px solid #ccc; }
-    header img { height: 50px; margin-right: 20px; }
-    header h1 { margin: 0 auto; font-size: 1.6em; font-weight: bold; text-align: center; flex: 1; }
-    .container { padding: 20px; max-width: 1200px; margin: auto; }
-    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: end; }
-    .filters label { font-weight: bold; }
-    .filters select, .filters input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; }
-    .filters > div { flex: 1 1 200px; }
-    .filters button, #btnWhats { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .filters button { background-color: #1e1e2f; color: white; }
-    #btnWhats { background-color: #25d366; color: white; margin: 10px 0; }
-    .metas-box { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-    .metas-box h2 { margin: 0 0 10px; font-size: 1.2em; color: #2c3e50; }
-    .metas-box p { margin: 5px 0; font-size: 1em; }
-    .chart-box { background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
-    .chart-box h3 { margin-top: 0; }
-    .chart-box canvas { max-width: 100%; height: 300px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    header img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    header h1 {
+      margin: 0 auto;
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      flex: 1;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: end;
+    }
+    .filters label {
+      font-weight: bold;
+    }
+    .filters select,
+    .filters input[type="date"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    .filters > div {
+      flex: 1 1 200px;
+    }
+    .filters button,
+    #btnWhats {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .filters button {
+      background-color: #1e1e2f;
+      color: white;
+    }
+    #btnWhats {
+      background-color: #25d366;
+      color: white;
+      margin: 10px 0;
+    }
+    .metas-box {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .metas-box h2 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    .metas-box p {
+      margin: 5px 0;
+      font-size: 1em;
+    }
+    .chart-box {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .chart-box h3 {
+      margin-top: 0;
+    }
+    .chart-box canvas {
+      max-width: 100%;
+      height: 300px;
+    }
     @media (max-width: 600px) {
-      header { flex-direction: column; text-align: center; }
-      header img { margin: 0 0 10px; }
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header img {
+        margin: 0 0 10px;
+      }
     }
   </style>
 </head>
@@ -76,20 +152,18 @@
 </div>
 
 <script>
-/* ===== API (via config.js) ===== */
-const urlBase = (typeof APP_APIS !== 'undefined' && APP_APIS.metas)
-  ? APP_APIS.metas
-  : 'https://script.google.com/macros/s/AKfycbzyiL6yNCj_FYWiQ2PS88mthToCvWM1wJ0q7CQy8asyg-59L8YezKzFY6d-lgQU0ni3/exec';
-
+const urlBase = 'https://script.google.com/macros/s/AKfycbzyiL6yNCj_FYWiQ2PS88mthToCvWM1wJ0q7CQy8asyg-59L8YezKzFY6d-lgQU0ni3/exec';
 let chart;
 
 function formatarNumero(valor) {
   return parseFloat(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
+
 function formatarDataBR(dataISO) {
   const [y, m, d] = dataISO.split("-");
   return `${d}/${m}/${y}`;
 }
+
 function preencherDataOntem() {
   const hoje = new Date();
   const ontem = new Date(hoje);
@@ -98,6 +172,7 @@ function preencherDataOntem() {
   document.getElementById("dataInicio").value = dataFormatada;
   document.getElementById("dataFim").value = dataFormatada;
 }
+
 window.onload = () => {
   preencherDataOntem();
   carregarMetas();
@@ -119,8 +194,10 @@ async function carregarMetas() {
     const mesRef = dataRef.getMonth();
     const anoRef = dataRef.getFullYear();
     const hoje = new Date();
+
     const ultimoDiaMesRef = new Date(anoRef, mesRef + 1, 0);
     diasCorridosNoMes = ultimoDiaMesRef.getDate();
+
     if (anoRef === hoje.getFullYear() && mesRef === hoje.getMonth()) {
       diasCorridosAteData = hoje.getDate();
     } else {
@@ -166,13 +243,13 @@ async function carregarMetas() {
       const div = document.createElement("div");
       div.className = "metas-box";
       div.innerHTML = `
-        <h2>${linha["Empresa"]}</h2>
-        <p>💰 Previsto: R$ ${formatarNumero(previsto)}</p>
-        <p>✅ Realizado: R$ ${formatarNumero(realizado)}</p>
-        <p>📊 Atingido: ${formatarNumero(atingido)}%</p>
-        <p>📅 Média por dia: R$ ${formatarNumero(mediaDiaria)}</p>
-        <p>📈 Previsão: R$ ${formatarNumero(previsaoFinal)} (${formatarNumero(previsaoPercentual)}%)</p>
-      `;
+  <h2>${linha["Empresa"]}</h2>
+  <p>💰 Previsto: R$ ${formatarNumero(previsto)}</p>
+  <p>✅ Realizado: R$ ${formatarNumero(realizado)}</p>
+  <p>📊 Atingido: ${formatarNumero(atingido)}%</p>
+  <p>📅 Média por dia: R$ ${formatarNumero(mediaDiaria)}</p>
+  <p>📈 Previsão: R$ ${formatarNumero(previsaoFinal)} (${formatarNumero(previsaoPercentual)}%)</p>
+`;
       painel.appendChild(div);
     });
 
@@ -217,7 +294,9 @@ function mostrarGrafico(metas) {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); }
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
+            }
           }
         }
       }
@@ -226,7 +305,10 @@ function mostrarGrafico(metas) {
 }
 
 function esconderGrafico() {
-  if (chart) { chart.destroy(); chart = null; }
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
 }
 
 document.getElementById("btnWhats").addEventListener("click", () => {
