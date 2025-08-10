@@ -4,44 +4,39 @@
   <meta charset="UTF-8">
   <title>Análise Financeira</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
 
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
+  <!-- Carrega as configs globais (WEBAPP, etc.) -->
+  <script src="config.js"></script>
 
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
-    try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
+  <!-- Guard de autenticação (usa CONFIG.WEBAPP) -->
+  <script>
+    (async ()=>{
+      function goLogin(){
+        location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop());
+      }
+      const WEBAPP = (window.CONFIG && window.CONFIG.WEBAPP);
+      if(!WEBAPP){
+        console.error('CONFIG.WEBAPP não definido. Crie config.js com window.CONFIG.WEBAPP.');
         goLogin();
         return;
       }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
-    }
-  })();
-</script>
+      const token = localStorage.getItem('auth_token');
+      if(!token){ goLogin(); return; }
+      try{
+        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+        const r = await fetch(url,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+          body: JSON.stringify({})
+        });
+        const j = await r.json();
+        if(!j.ok){ localStorage.clear(); goLogin(); return; }
+        window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,[exp]}
+      }catch{
+        goLogin();
+      }
+    })();
+  </script>
 
   <style>
     body {
@@ -49,7 +44,6 @@
       font-family: 'Segoe UI', sans-serif;
       background-color: white;
     }
-
     #splash {
       position: fixed;
       top: 0;
@@ -63,17 +57,8 @@
       z-index: 9999;
       transition: opacity 0.5s ease;
     }
-
-    #splash img {
-      width: 150px;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.9; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+    #splash img { width: 150px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:.9} 100%{transform:scale(1);opacity:1} }
 
     header {
       background-color: white;
@@ -83,142 +68,47 @@
       align-items: center;
       border-bottom: 1px solid #ccc;
     }
+    .logo-left { flex: 1; display: flex; align-items: center; }
+    .logo-left img { height: 60px; }
 
-    .logo-left {
-      flex: 1;
-      display: flex;
-      align-items: center;
+    .user-profile { display: inline-block; margin-left: 15px; }
+    .user-profile img {
+      width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #ccc; transition: transform .2s ease;
     }
+    .user-profile img:hover { transform: scale(1.1); border-color: #2980b9; }
 
-    .logo-left img {
-      height: 60px;
-    }
-.user-profile {
-  display: inline-block;
-  margin-left: 15px;
-}
+    .title-left { flex: 2; text-align: left; }
+    .title-left h1 { font-size: 24px; margin: 0; font-weight: bold; }
 
-.user-profile img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #ccc;
-  transition: transform 0.2s ease;
-}
-
-.user-profile img:hover {
-  transform: scale(1.1);
-  border-color: #2980b9;
-}
-
-    .title-left {
-  flex: 2;
-  text-align: left;
-}
-
-.title-left h1 {
-  font-size: 24px;
-  margin: 0;
-  font-weight: bold;
-}
-
-
-    .spacer {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-    }
-
+    .spacer { flex: 1; display: flex; justify-content: flex-end; }
     .relatorio-link {
-      text-decoration: none;
-      font-size: 22px;
-      opacity: 0.5;
-      cursor: pointer;
-      transition: opacity 0.3s;
+      text-decoration: none; font-size: 22px; opacity: .5; cursor: pointer; transition: opacity .3s;
     }
-
-    .relatorio-link:hover {
-      opacity: 1;
-    }
+    .relatorio-link:hover { opacity: 1; }
 
     .container {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+      padding: 30px; max-width: 1200px; margin: auto;
     }
-
     .card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-      text-decoration: none;
-      color: inherit;
+      background: white; border-radius: 12px; padding: 30px 20px; text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform .2s ease;
+      text-decoration: none; color: inherit;
     }
-
-    .card:hover {
-      transform: translateY(-5px);
-      background-color: #f0f8ff;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 20px;
-      color: #2c3e50;
-    }
-
-    .icon {
-      font-size: 40px;
-      color: #2980b9;
-      margin-bottom: 10px;
-    }
+    .card:hover { transform: translateY(-5px); background-color: #f0f8ff; }
+    .card h2 { margin: 0; font-size: 20px; color: #2c3e50; }
+    .icon { font-size: 40px; color: #2980b9; margin-bottom: 10px; }
 
     @media (max-width: 500px) {
-  header {
-    flex-direction: column;
-    text-align: center;
-    position: relative;
-  }
-
-  .logo-left {
-    display: none;
-  }
-
-  .title-center {
-    flex: none;
-    width: 100%;
-  }
-
-  .spacer {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .card h2 {
-    font-size: 18px;
-  }
-
-  .icon {
-    font-size: 32px;
-  }
-
-      .card h2 {
-        font-size: 18px;
-      }
-
-      .icon {
-        font-size: 32px;
-      }
+      header { flex-direction: column; text-align: center; position: relative; }
+      .logo-left { display: none; }
+      .title-center { flex: none; width: 100%; }
+      .spacer { position: absolute; top: 10px; right: 20px; display: flex; align-items: center; gap: 10px; }
+      .card h2 { font-size: 18px; }
+      .icon { font-size: 32px; }
+      .card h2 { font-size: 18px; }
+      .icon { font-size: 32px; }
     }
   </style>
 </head>
@@ -238,12 +128,11 @@
       <h1>Análise Financeira</h1>
     </div>
     <div class="spacer">
-  <a href="index.relatorios.html" class="relatorio-link" title="Relatório Consolidado">📄</a>
-  <a href="perfil.html" title="Perfil do Usuário" class="user-profile">
-    <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Usuário" />
-  </a>
-</div>
-
+      <a href="index.relatorios.html" class="relatorio-link" title="Relatório Consolidado">📄</a>
+      <a href="perfil.html" title="Perfil do Usuário" class="user-profile">
+        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Usuário" />
+      </a>
+    </div>
   </header>
 
   <!-- Cards -->
@@ -267,24 +156,29 @@
       <div class="icon">📊</div>
       <h2>Meta de Faturamento</h2>
     </a>
-   <a class="card" href="index.travas.html">
+
+    <a class="card" href="index.travas.html">
       <div class="icon">🔒</div>
       <h2>Travas</h2>
     </a>
+
     <a class="card" href="index.conciliacao.html">
       <div class="icon">💳</div>
       <h2>Conciliações</h2>
     </a>
 
-   <a class="card" href="https://grupodvbr.github.io/SISTEMA-CAP-GRUPO-DV/aprovacao.html">
-  <div class="icon">✅</div>
-  <h2>Aprovação de CAP</h2>
-  </a>
-  <a class="card" href="index.abc.html">
+    <!-- Se quiser, pode mover esta URL externa para CONFIG.PAGES.CAP_APROVACAO e usar via JS -->
+    <a class="card" href="https://grupodvbr.github.io/SISTEMA-CAP-GRUPO-DV/aprovacao.html">
+      <div class="icon">✅</div>
+      <h2>Aprovação de CAP</h2>
+    </a>
+
+    <a class="card" href="index.abc.html">
       <div class="icon">ABC</div>
       <h2>ABC de Vendas</h2>
     </a>
-  <a class="card" href="index.avaliacoes.html">
+
+    <a class="card" href="index.avaliacoes.html">
       <div class="icon">🔎</div>
       <h2>Pesquisa de satisfação</h2>
     </a>
