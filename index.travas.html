@@ -345,6 +345,7 @@ async function run(){
             Disponível: <b style="color:${gTotal.available<0?'#b91c1c':'inherit'}">${moeda(gTotal.available)}</b>
           </div>
           <div class="progress"><span style="width:${Math.min(Math.max(gTotal.pct,0),100)}%"></span></div>
+          <div class="note">Atualizado em: ${rec?.dataRef || '—'}</div>
           ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
         </div>
 
@@ -358,6 +359,7 @@ async function run(){
             Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
           </div>
           <div class="progress"><span style="width:${Math.min(Math.max(gForn.pct,0),100)}%"></span></div>
+          <div class="note">Atualizado em: ${rec?.dataRef || '—'}</div>
           ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
         </div>
       </div>
