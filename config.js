@@ -4,7 +4,7 @@
 // Dica: pode deixar algum vazio por enquanto; só preencha o que já existe.
 window.API_URLS = {
   // Autenticação (login/me) — o mesmo Web App que valida token
-  login: "https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec",
+  login: "https://script.google.com/macros/s/AKfycby4G9i4Ohgps-xcyUQmyxrjxNmRTlr3lI8qPRZxeU6dpj2sSGhUYneQBs79wltn2vcW_g/exec",
 
   // Dados de cada painel:
   travas: "https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec",
