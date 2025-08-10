@@ -351,7 +351,7 @@ async function run(){
 
         <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
           <button class="btn-link" data-ver-planos>Ver planos</button>
-          <div class="label">Fornecedores Total (D2)</div>
+          <div class="label">Trava para fornecedores</div>
           <div class="value">${moeda(fornecLim)}</div>
           <div class="hint">
             Já comprado em FORNECEDORES: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
