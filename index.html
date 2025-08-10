@@ -5,7 +5,7 @@
   <title>Análise Financeira</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
    <script>
-  const WEBAPP = 'https://script.google.com/macros/s/AKfycbzbwI7zmPH5owQ1PGHmKeolFL2za-24GiqiT4Ue3Ec-fAIzDyZjTFqX1THAsD8Wx14iRA/exec';
+  const WEBAPP = 'https://script.google.com/macros/s/AKfycbz7Gx3t3F3wlc5qN_B8yc50a1Q1R6FLa04-itdnb5Q9RqAQ1IMpbVFWnejFvHFfKBfy9g/exec';
   (async ()=>{
     function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
     const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
