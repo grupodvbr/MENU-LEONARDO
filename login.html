@@ -64,71 +64,77 @@
   </div>
 
   <script>
-    // ====== CONFIG ======
-    const WEBAPP = 'https://script.google.com/macros/s/AKfycbw-6DReSoopOOSjjhPD6O7qMcubZPNrwJhhHsv4HFX44PzUTaK5BHSYdgFO1D71dfnLWg/exec';
+  // ====== CONFIG ======
+  const WEBAPP = 'https://script.google.com/macros/s/AKfycbw-6DReSoopOOSjjhPD6O7qMcubZPNrwJhhHsv4HFX44PzUTaK5BHSYdgFO1D71dfnLWg/exec';
 
-    // ====== Helpers ======
-    const qs = (id)=>document.getElementById(id);
-    const setBusy = (b)=>{ qs('btn').disabled=b; qs('btn').textContent=b?'Verificando…':'Entrar'; }
-    const showErr = (m)=>{ const e=qs('err'); e.textContent=m; e.style.display='block'; qs('ok').style.display='none'; }
-    const showOk  = (m)=>{ const e=qs('ok');  e.textContent=m; e.style.display='block'; qs('err').style.display='none'; }
-    const redirect = ()=>{ const next=new URL(location.href).searchParams.get('next')||'index.html'; location.href=next; }
+  // ====== Helpers ======
+  const qs = (id)=>document.getElementById(id);
+  const setBusy = (b)=>{ qs('btn').disabled=b; qs('btn').textContent=b?'Verificando…':'Entrar'; }
+  const showErr = (m)=>{ const e=qs('err'); e.textContent=m||''; e.style.display=m?'block':'none'; qs('ok').style.display='none'; }
+  const showOk  = (m)=>{ const e=qs('ok');  e.textContent=m||''; e.style.display=m?'block':'none'; qs('err').style.display='none'; }
+  const redirect = ()=>{ const next=new URL(location.href).searchParams.get('next')||'index.html'; location.href=next; }
 
-    async function me(){
-      const token = localStorage.getItem('auth_token');
-      if(!token) return null;
-      try{
-        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-        const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({})});
-        const j = await r.json();
-        return j.ok ? j.user : null;
-      }catch{ return null; }
-    }
+  async function me(){
+    const token = localStorage.getItem('auth_token');
+    if(!token) return null;
+    try{
+      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
+      const r = await fetch(url,{
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=UTF-8' },   // <- simples, sem preflight
+        body: JSON.stringify({ token })                           // <- token vai no corpo
+      });
+      const j = await r.json();
+      return j.ok ? j.user : null;
+    }catch{ return null; }
+  }
 
-    function saveSession(j){
-      localStorage.setItem('auth_token', j.token);
-      localStorage.setItem('auth_user', JSON.stringify({usuario:j.usuario, empresa:j.empresa, perfil:j.perfil}));
-    }
+  function saveSession(j){
+    localStorage.setItem('auth_token', j.token);
+    localStorage.setItem('auth_user', JSON.stringify({usuario:j.usuario, empresa:j.empresa, perfil:j.perfil}));
+  }
 
-    // Auto-login se já houver token válido
-    (async ()=>{ const u=await me(); if(u) redirect(); })();
+  // Auto-login se já houver token válido
+  (async ()=>{ const u=await me(); if(u) redirect(); })();
 
-    // UI
-    qs('toggle').addEventListener('click', ()=>{
-      const f=qs('senha'); const isPw=f.type==='password'; f.type=isPw?'text':'password';
-      qs('toggle').textContent = isPw?'ocultar':'mostrar'; f.focus();
-    });
+  // UI
+  qs('toggle').addEventListener('click', ()=>{
+    const f=qs('senha'); const isPw=f.type==='password'; f.type=isPw?'text':'password';
+    qs('toggle').textContent = isPw?'ocultar':'mostrar'; f.focus();
+  });
 
-    qs('form').addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      showErr(''); qs('err').style.display='none'; qs('ok').style.display='none';
-      const usuario = qs('usuario').value.trim();
-      const senha = qs('senha').value;
-      const remember = qs('remember').checked;
-      if(!usuario || !senha){ showErr('Preencha usuário e senha.'); return; }
-      setBusy(true);
-      try{
-        const url = `${WEBAPP}?fn=login&origin=${encodeURIComponent(location.origin)}`;
-        const r = await fetch(url, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({usuario, senha, remember})
-        });
-        const j = await r.json();
-        if(!j.ok){
-          if(j.error==='blocked') showErr(`Muitas tentativas. Tente novamente em ${j.minutes} min.`);
-          else if(j.error==='invalid_credentials') showErr('Usuário ou senha inválidos.');
-          else showErr('Não foi possível entrar agora.');
-          setBusy(false); return;
-        }
-        saveSession(j);
-        showOk('Acesso autorizado. Redirecionando…');
-        setTimeout(redirect, 500);
-      }catch{
-        showErr('Falha de rede. Tente novamente.');
-        setBusy(false);
+  qs('form').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    showErr(''); showOk('');
+    const usuario = qs('usuario').value.trim();
+    const senha = qs('senha').value;
+    const remember = qs('remember').checked;
+    if(!usuario || !senha){ showErr('Preencha usuário e senha.'); return; }
+
+    setBusy(true);
+    try{
+      const url = `${WEBAPP}?fn=login&origin=${encodeURIComponent(location.origin)}`;
+      const r = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=UTF-8' },   // <- simples, sem preflight
+        body: JSON.stringify({ usuario, senha, remember })
+      });
+      const j = await r.json();
+      if(!j.ok){
+        if(j.error==='blocked') showErr(`Muitas tentativas. Tente novamente em ${j.minutes} min.`);
+        else if(j.error==='invalid_credentials') showErr('Usuário ou senha inválidos.');
+        else showErr('Não foi possível entrar agora.');
+        setBusy(false); return;
       }
-    });
-  </script>
+      saveSession(j);
+      showOk('Acesso autorizado. Redirecionando…');
+      setTimeout(redirect, 500);
+    }catch{
+      showErr('Falha de rede. Tente novamente.');
+      setBusy(false);
+    }
+  });
+</script>
+
 </body>
 </html>
