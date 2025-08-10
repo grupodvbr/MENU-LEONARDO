@@ -4,48 +4,20 @@
 <meta charset="UTF-8" />
 <title>CB Systems • Painel de Travas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<!-- carregue o config primeiro -->
+
+<!-- [AUTH] carrega a configuração central (URLs + helpers de sessão/fetch) -->
 <script src="config.js"></script>
 
+<!-- [AUTH] guarda de sessão: valida token no servidor (sem CORS/preflight) -->
 <script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
-
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
-
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
+  (async ()=>{
     try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
-        goLogin();
-        return;
-      }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
+      await AUTH.ensure(); // redireciona p/ login se não houver sessão válida
+    } catch(e) {
+      // AUTH.ensure já redireciona; isto aqui evita erro no console
     }
   })();
 </script>
-
 
 <style>
   :root{
@@ -172,12 +144,11 @@
   </div>
 </div>
 
-<script src="config.js"></script> <!-- carrega as URLs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-  const API_BASE = API_URLS.travas; // vem do config.js
-</script>
+/* ======= CONFIG ======= */
+/* [API] troca URL fixa pelo config.js */
+const API_BASE = API_URLS.travas; // definido no config.js
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 
 /* ======= PLANOS VÁLIDOS (para soma "Fornecedores") ======= */
@@ -257,7 +228,7 @@ function extractPlanos(rec){
   return [];
 }
 
-/* Fetch com timeout + retry leve */
+/* Fetch com timeout + retry leve (fallback) */
 async function fetchWithTimeout(url, { timeout=12000, retries=1 } = {}){
   for(let i=0;i<=retries;i++){
     const ctrl=new AbortController();
@@ -274,12 +245,27 @@ async function fetchWithTimeout(url, { timeout=12000, retries=1 } = {}){
   }
 }
 
-/* API */
+/* API (agora autenticada) */
 async function getEmpresaPeriodo(emp, periodo){
   const c=getC(emp,periodo); if(c) return c;
-  const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
-  const t=await fetchWithTimeout(url,{timeout:12000,retries:1});
-  let j; try{j=JSON.parse(t);}catch{throw new Error('JSON inválido');}
+
+  // [API] preferir authGet (token + origin). Se não existir (ex.: ambiente antigo),
+  // cai no fetch clássico com query string.
+  let text;
+  const params = { empresa: emp };
+  if (periodo) params.periodo = periodo;
+
+  if (typeof authGet === 'function' && API_BASE) {
+    const r = await authGet('travas', params);
+    if (!r.ok) throw new Error('Falha ao carregar');
+    text = await r.text();
+  } else {
+    const qs = new URLSearchParams(params).toString();
+    const url = `${API_BASE}?${qs}`;
+    text = await fetchWithTimeout(url,{timeout:12000,retries:1});
+  }
+
+  let j; try{ j=JSON.parse(text); }catch{ throw new Error('JSON inválido'); }
   let rec=j;
   if(j?.empresa) rec=j;
   else if(Array.isArray(j?.data)) rec=j.data.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||j.data[0];
@@ -403,7 +389,6 @@ async function openComparativoPlano(planoNome, periodo){
         datasets: [{
           label: `Valor do plano — ${planoNome}`,
           data: valores
-          // sem cores específicas (segue padrão)
         }]
       },
       options: {
@@ -438,6 +423,12 @@ async function openComparativoPlano(planoNome, periodo){
 }
 
 /* Eventos filtros */
+const selEmpresa=document.getElementById('empresa');
+const inpPeriodo=document.getElementById('periodo');
+const container=document.getElementById('content');
+let ChartLib=null;
+let currentRun = 0;
+
 selEmpresa.addEventListener('change', run);
 inpPeriodo.addEventListener('change', run);
 
