@@ -46,7 +46,7 @@
   .chip button{border:none;background:#0ea5e9;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
   .chart-note{margin:6px 0 0 4px;color:#6b7280;font-size:13px}
 
-  /* Modal */
+  /* ===== Modal ===== */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
   #modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
   #modal .panel{position:relative;z-index:1;width:min(94vw,680px);max-height:80vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px}
@@ -58,6 +58,9 @@
   #modal .item b{font-weight:600}
   #modal .item .val{white-space:nowrap}
   .empty{color:#6b7280;font-size:13px;padding:8px}
+
+  /* evita "balanço" quando o modal abre (scroll lock + compensação) */
+  body.modal-open{overflow:hidden;padding-right:var(--sbw,0px);}
 </style>
 </head>
 <body>
@@ -98,8 +101,16 @@
 
 <script>
 /* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec'; // URL exposta OK
+const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
+
+/* ======= PLANOS VÁLIDOS (para soma "Fornecedores") ======= */
+const PLANOS_VALIDOS = new Set([
+  'Fornecedores em geral (insumos)','Bebidas (adegas)','Cerveja/Long','Refrigerantes/água/suco',
+  'Frios/congelados','Doces e chocolates','Laticínios','Gelatto','Hortaliças (Padaria)','Hortifruti',
+  'Processados/assados (Panificação)','Salmão','Pescados (peixaria)','Chopp Brahma','Açougues','Aves',
+  'Mercados Locais LEM','Mercado (Materiais Não Consumo)'
+]);
 
 /* ======= HELPERS ======= */
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
@@ -136,7 +147,7 @@ function progressCalc(limit, spent, perStr){
   return {pct,available,forecast,forecastPct,status};
 }
 
-/* Fonte 9 total (estrito, com fallbacks) */
+/* Fonte 9 total (fallbacks) */
 function fonte9Total(rec){
   const keys=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
   for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!=='') return parseBR(v);}
@@ -147,37 +158,29 @@ function fonte9Total(rec){
   return 0;
 }
 
-/* Planos (usa planosFonte9 da API; fallbacks se faltar) */
+/* Planos (detecta layout vertical B:C e inclui a linha onde A tem a data) */
 function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
     return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(parseBR(p.valor??0))}));
   }
-  const PLAN_NAME_COLS=[1,6,11,16,21];
-  const planosFromGrid = (grid=>{
-    if(!Array.isArray(grid)||!Array.isArray(grid[0])) return [];
-    const map=new Map();
-    grid.forEach(row=>{
-      PLAN_NAME_COLS.forEach(idx=>{
-        const nome=row[idx]; const val=row[idx+1];
-        if(nome!=null && nome!=='' && val!=null && val!==''){
-          const v=parseBR(val);
-          if(!isNaN(v)) map.set(String(nome),(map.get(String(nome))||0)+Math.abs(v));
-        }
-      });
-    });
-    return Array.from(map, ([nome,valor])=>({nome,valor}));
-  })(rec?.grid || rec?.tabela);
-  if (planosFromGrid.length) return planosFromGrid;
-
+  const grid = rec?.grid || rec?.tabela;
+  if (Array.isArray(grid) && Array.isArray(grid[0]) && grid[0].length >= 3) {
+    const out=[];
+    for (let r=0; r<grid.length; r++){
+      const nome = grid[r][1];           // Coluna B
+      const val  = parseBR(grid[r][2]);  // Coluna C
+      if (nome != null && nome !== '' && !isNaN(val) && val !== 0){
+        out.push({nome:String(nome), valor:Math.abs(val)});
+      }
+    }
+    if (out.length) return out;
+  }
   if (Array.isArray(rec?.fonte9Detalhe) && rec.fonte9Detalhe.length) {
     return rec.fonte9Detalhe.map(i=>({nome:i.nome??i.planocontas??i.categoria??'—',valor:Math.abs(parseBR(i.valor??i.total??0))}));
   }
   if (Array.isArray(rec?.categorias)){
     const out=[]; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9) out.push({nome:s.nome??'—',valor:Math.abs(parseBR(s.valor||0))})}));
     if(out.length) return out;
-  }
-  if (Array.isArray(rec?.fornecedoresDetalhe) && rec.fornecedoresDetalhe.length) {
-    return rec.fornecedoresDetalhe.map(i=>({nome:i.nome??'—',valor:Math.abs(parseBR(i.valor||0))}));
   }
   return [];
 }
@@ -219,12 +222,30 @@ const container=document.getElementById('content');
 let ChartLib=null;
 let currentRun = 0;
 
-/* Modal */
-function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.setAttribute('aria-hidden','true');}
+/* Modal helpers — evita balanço */
+function scrollbarWidth(){
+  const div=document.createElement('div');
+  div.style.visibility='hidden'; div.style.overflow='scroll'; div.style.position='absolute'; div.style.top='-9999px'; div.style.width='100px'; div.style.height='100px';
+  document.body.appendChild(div);
+  const inner=document.createElement('div'); inner.style.width='100%'; inner.style.height='200px'; div.appendChild(inner);
+  const sbw=div.offsetWidth - div.clientWidth;
+  document.body.removeChild(div);
+  return sbw;
+}
+function lockBodyScroll(lock){
+  if(lock){
+    document.documentElement.style.setProperty('--sbw', scrollbarWidth()+'px');
+    document.body.classList.add('modal-open');
+  }else{
+    document.body.classList.remove('modal-open');
+    document.documentElement.style.removeProperty('--sbw');
+  }
+}
+function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.setAttribute('aria-hidden','true');lockBodyScroll(false);}
 function openModal(title, items){
   const modal=document.getElementById('modal'); document.getElementById('modal-title').textContent=title||'Detalhes';
   const ul=document.getElementById('modal-list'); const empty=document.getElementById('modal-empty'); ul.innerHTML='';
-  const arr=(items||[]).slice().sort((a,b)=>Math.abs(b.valor)-Math.abs(a.valor));
+  const arr=(items||[]).slice().sort((a,b)=>Math.abs(a.valor)<Math.abs(b.valor)?1:-1);
   if(arr.length){ empty.style.display='none';
     arr.forEach(d=>{ const li=document.createElement('li'); li.className='item';
       const b=document.createElement('b'); b.textContent=d.nome||'—';
@@ -233,6 +254,7 @@ function openModal(title, items){
     });
   }else empty.style.display='block';
   modal.style.display='flex'; modal.setAttribute('aria-hidden','false');
+  lockBodyScroll(true);
 }
 document.addEventListener('click',(e)=>{ if(e.target.matches('[data-close], #modal .backdrop')) closeModal(); });
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
@@ -264,18 +286,15 @@ function companySkeleton(nome){
     </section>`;
 }
 
-/* Render principal (com token para evitar respostas antigas) */
+/* Render principal */
 async function run(){
   const runId = ++currentRun;
   const empSel=selEmpresa.value, periodo=inpPeriodo.value;
   const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
 
-  // pinta skeletons de uma vez (DOM mínimo)
   container.innerHTML = empresas.map(e => companySkeleton(e)).join('');
 
-  // busca todas em paralelo
   const results = await Promise.allSettled(empresas.map(emp => getEmpresaPeriodo(emp, periodo)));
-
   if (runId !== currentRun) return;
 
   results.forEach((res, idx)=>{
@@ -296,9 +315,21 @@ async function run(){
 
     const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
     const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
-    const fonte9    = periodOk ? fonte9Total(rec) : 0;
-    const fornComp  = periodOk ? aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0) : 0;
+
     const planos    = periodOk ? extractPlanos(rec) : [];
+
+    // TOTAL GASTO (Trava Total): soma de todos os planos (ou fallback fonte9Total)
+    const fonte9 = periodOk
+      ? (planos.length ? planos.reduce((a,p)=>a+Math.abs(parseBR(p.valor||0)),0) : fonte9Total(rec))
+      : 0;
+
+    // JÁ COMPRADO Fornecedores: apenas planos válidos (ou campos agregados se existirem)
+    const fornComp = periodOk
+      ? (planos.length
+          ? planos.filter(p => PLANOS_VALIDOS.has(String(p.nome)))
+                  .reduce((a,p)=>a+Math.abs(parseBR(p.valor||0)),0)
+          : aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores'],0))
+      : 0;
 
     const gTotal=progressCalc(travaTotal, fonte9, periodo);
     const gForn =progressCalc(fornecLim,  fornComp, periodo);
@@ -335,7 +366,6 @@ async function run(){
     if(btn) btn.addEventListener('click',()=>openModal(`Detalhamento Fornecedores — ${emp}`, planos));
   });
 
-  // gráfico apenas quando 1 empresa selecionada
   if(empSel!=='TODAS AS EMPRESAS'){
     const chartWrap=document.createElement('div'); chartWrap.className='grid';
     chartWrap.innerHTML=renderChartBlock(empSel);
@@ -344,7 +374,7 @@ async function run(){
   }
 }
 
-/* Bloco do gráfico — padrão: janeiro → mês atual. Gráfico vazio até escolher um plano */
+/* Bloco do gráfico */
 function renderChartBlock(emp){
   const now=new Date(); const year=now.getFullYear();
   const from=`${year}-01`;
@@ -412,7 +442,6 @@ async function mountChart(emp, holder, runIdAtMount){
     cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
     if (runIdAtMount !== currentRun) return;
     planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    // Top 10 (mês mais recente)
     const last=cachedSeries.labels.length-1;
     const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
     topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
@@ -438,7 +467,7 @@ async function mountChart(emp, holder, runIdAtMount){
   btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
   planSel.addEventListener('change', draw);
 
-  await populatePlans(); // só popula opções e top 10; gráfico continua em branco até escolher plano
+  await populatePlans();
 }
 </script>
 </body>
