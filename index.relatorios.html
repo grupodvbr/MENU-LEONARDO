@@ -4,44 +4,12 @@
   <meta charset="UTF-8" />
   <title>Relatório Consolidado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
 
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
-
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
-    try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
-        goLogin();
-        return;
-      }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
-    }
-  })();
-</script>
+  <!-- config + guarda de sessão -->
+  <script src="config.js"></script>
+  <script>
+    (async ()=>{ try{ await AUTH.ensure(); }catch(e){} })();
+  </script>
 
   <style>
     body {
@@ -187,7 +155,6 @@
 
   <header>
     <a href="index.html" title="Voltar para tela principal" aria-label="Voltar para tela principal">
-      <!-- Ícone de casa simples SVG -->
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>
@@ -195,25 +162,26 @@
   </header>
 
   <div class="grid">
-    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html">
+    <!-- agora usamos data-key; as URLs vêm do APP_PAGES no config.js -->
+    <div class="card" data-key="resumoFinanceiro">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html"></iframe>
+      <iframe src=""></iframe>
     </div>
-    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html">
+    <div class="card" data-key="delivery">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html"></iframe>
+      <iframe src=""></iframe>
     </div>
-    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html">
+    <div class="card" data-key="cancelamentos">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html"></iframe>
+      <iframe src=""></iframe>
     </div>
-    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html">
+    <div class="card" data-key="conciliacao">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html"></iframe>
+      <iframe src=""></iframe>
     </div>
-    <div class="card" data-url="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html">
+    <div class="card" data-key="meta">
       <button class="btn-open" title="Abrir relatório">Abrir</button>
-      <iframe src="https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html"></iframe>
+      <iframe src=""></iframe>
     </div>
   </div>
 
@@ -226,22 +194,36 @@
   </div>
 
   <script>
+    // Fallback local caso APP_PAGES não esteja no config.js (dev)
+    const PAGES = (typeof APP_PAGES !== 'undefined') ? APP_PAGES : {
+      resumoFinanceiro: 'https://grupodvbr.github.io/MENU-LEONARDO/index.resumofinanceiro.html',
+      delivery:         'https://grupodvbr.github.io/MENU-LEONARDO/index.delivery.html',
+      cancelamentos:    'https://grupodvbr.github.io/MENU-LEONARDO/index.cancelamentos.html',
+      conciliacao:      'https://grupodvbr.github.io/MENU-LEONARDO/index.conciliacao.html',
+      meta:             'https://grupodvbr.github.io/MENU-LEONARDO/index.meta.html'
+    };
+
+    // injeta URLs nos cards/iframes
+    document.querySelectorAll('.card').forEach(card=>{
+      const key = card.dataset.key;
+      const url = PAGES[key] || '';
+      card.dataset.url = url;
+      const iframe = card.querySelector('iframe');
+      if (iframe && url) iframe.src = url;
+    });
+
     const modalOverlay = document.getElementById('modalOverlay');
     const modalIframe = modalOverlay.querySelector('iframe');
     const modalClose = document.getElementById('modalClose');
 
-    // Abrir modal com url
     function abrirModal(url) {
       modalIframe.src = url;
       modalOverlay.style.display = 'flex';
     }
-
-    // Fechar modal
     function fecharModal() {
       modalIframe.src = '';
       modalOverlay.style.display = 'none';
     }
-
     modalClose.addEventListener('click', fecharModal);
     modalOverlay.addEventListener('click', e => {
       if(e.target === modalOverlay) fecharModal();
@@ -250,7 +232,7 @@
     // Botões abrir nos cards
     document.querySelectorAll('.btn-open').forEach(btn => {
       btn.addEventListener('click', e => {
-        e.stopPropagation(); // para não disparar o triple click do card
+        e.stopPropagation();
         const card = btn.closest('.card');
         const url = card.getAttribute('data-url');
         abrirModal(url);
@@ -273,9 +255,7 @@
         }
 
         if (clickTimer) clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => {
-          resetClicks();
-        }, 600);
+        clickTimer = setTimeout(() => { resetClicks(); }, 600);
 
         function resetClicks() {
           clickCount = 0;
