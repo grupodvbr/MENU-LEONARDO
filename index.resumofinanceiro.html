@@ -3,45 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<script>
-  // Usa a URL do seu WebApp de login do config.js
-  const WEBAPP = API_URLS.login;
 
-  (async () => {
-    // calcula a página atual para voltar depois do login
-    const nextPage = location.pathname.split('/').pop() || 'index.html';
-    const goLogin = () => location.href = 'login.html?next=' + encodeURIComponent(nextPage);
-
-    // se não há token, manda para o login
-    const token = localStorage.getItem('auth_token');
-    if (!token) { goLogin(); return; }
-
-    try {
-      // envia o token NO BODY (text/plain) para evitar preflight/CORS
-      const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token })
-      });
-      const j = await r.json();
-
-      if (!j.ok) {            // token inválido/expirado
-        localStorage.clear();
-        goLogin();
-        return;
-      }
-
-      // sucesso: usuário autenticado disponível globalmente
-      window.AUTH_USER = j.user; // {usuario, empresa, perfil, iat, [exp]}
-      // opcional: document.body.style.opacity = '1';
-    } catch (err) {
-      console.error('Auth check failed', err);
-      goLogin();
-    }
-  })();
-</script>
-
+  <!-- [AUTH] config central: define API_URLS, AUTH.ensure, authGet -->
+  <script src="config.js"></script>
+  <script>
+    // [AUTH] guarda de sessão (redireciona pro login se não tiver token válido)
+    (async ()=>{
+      try { await AUTH.ensure(); } catch(e) {}
+    })();
+  </script>
 
   <title>Resumo de Entradas</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -175,7 +145,11 @@
 </div>
 
 <script>
-const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
+// [API] centralizado via config.js, com fallback pra URL antiga só pra desenvolvimento
+const API_ENTRADAS = (typeof API_URLS!=='undefined' && API_URLS.entradas)
+  ? API_URLS.entradas
+  : 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
+
 const emojis = {
   "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
   "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
@@ -186,7 +160,7 @@ const emojis = {
 let dados = [];
 
 window.onload = () => {
-  const hoje = new Date(); // usa a data real do navegador
+  const hoje = new Date();
   const ontem = new Date(hoje);
   ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
@@ -195,20 +169,35 @@ window.onload = () => {
   carregarDados();
 };
 
-
 async function carregarDados() {
-  const resposta = await fetch(url);
-  dados = await resposta.json();
-  const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
-  const select = document.getElementById("empresaFiltro");
-  select.innerHTML = '<option value="">Todas</option>';
-  empresas.forEach(emp => {
-    const option = document.createElement("option");
-    option.value = emp;
-    option.textContent = emp;
-    select.appendChild(option);
-  });
-  aplicarFiltro();
+  try{
+    // [API] usa authGet, se disponível (envia Authorization Bearer + origin)
+    let res;
+    if (typeof authGet === 'function' && typeof API_URLS !== 'undefined') {
+      res = await authGet('entradas'); // GET simples, sem params
+      if (!res.ok) throw new Error('Falha ao carregar');
+      dados = await res.json();
+    } else {
+      // fallback (sem auth) — útil no dev/local
+      const resposta = await fetch(API_ENTRADAS);
+      dados = await resposta.json();
+    }
+
+    const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
+    const select = document.getElementById("empresaFiltro");
+    select.innerHTML = '<option value="">Todas</option>';
+    empresas.forEach(emp => {
+      const option = document.createElement("option");
+      option.value = emp;
+      option.textContent = emp;
+      select.appendChild(option);
+    });
+    aplicarFiltro();
+  }catch(e){
+    document.getElementById('painel').innerHTML =
+      "<p style='text-align:center;color:#b91c1c'>Não foi possível carregar os dados agora.</p>";
+    console.error(e);
+  }
 }
 
 function aplicarFiltro() {
