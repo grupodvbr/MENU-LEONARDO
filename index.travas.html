@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <title>CB Systems • Painel de Travas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
     --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9; --shadow:0 1px 8px rgba(0,0,0,.06);
@@ -17,35 +18,27 @@
   select,input[type="month"]{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff}
   .section{margin-top:14px}
   .company>.title{font-weight:800;margin:10px 2px 12px}
-
-  /* 1 card/linha no mobile; 2 em telas >=680px */
-  .kpis{display:grid;grid-template-columns:1fr;gap:10px}
-  @media(min-width:680px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  .kpi{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--shadow);position:relative}
+  /* 2 cards por linha no mobile e desktop, e cards compactos */
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .kpi{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--shadow);touch-action:manipulation;position:relative}
   .kpi .label{color:var(--muted);font-size:11px;margin-bottom:4px}
   .kpi .value{font-size:18px;font-weight:900}
   .kpi .hint{color:var(--muted);font-size:11px;margin-top:2px}
   .kpi.bad{background:var(--redbg);color:var(--red)}
   .kpi.good{background:var(--greenbg);color:var(--green)}
   .kpi.warn{background:var(--amberbg);color:var(--amber)}
+  .badge{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 6px;border-radius:999px;background:#e5e7eb;color:#111}
+  .badge.red{background:#fecaca;color:#7f1d1d}
+  .badge.green{background:#bbf7d0;color:#065f46}
+  .badge.amber{background:#fde68a;color:#78350f}
   .progress{height:6px;background:#e5e7eb;border-radius:999px;margin-top:8px;overflow:hidden}
   .progress>span{display:block;height:100%;background:var(--primary);width:0;border-radius:999px;transition:width .2s}
-  .note{color:#6b7280;font-size:12px;margin-top:6px}
-
-  .btn-link{position:absolute;top:6px;right:8px;font-size:11px;border:1px solid #bae6fd;background:#e0f2fe;color:#0369a1;padding:4px 8px;border-radius:999px;cursor:pointer}
-  .btn-link:hover{filter:brightness(.97)}
 
   .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
   .card{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
   .card .title{font-weight:700;margin-bottom:8px}
   .list{margin:0;padding-left:18px}
   .list li+li{margin-top:6px}
-
-  .chart-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center}
-  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff}
-  .chip select,.chip input{border:none;background:transparent;outline:none;font-size:13px}
-  .chip button{border:none;background:#0ea5e9;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
-  .chart-note{margin:6px 0 0 4px;color:#6b7280;font-size:13px}
 
   /* Modal */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
@@ -89,7 +82,7 @@
   <div class="backdrop" data-close></div>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <header style="display:flex;align-items:center;justify-content:space-between">
-      <h3 id="modal-title">Detalhamento</h3>
+      <h3 id="modal-title">Detalhamento Fornecedores</h3>
       <button class="close" title="Fechar" aria-label="Fechar" data-close>&times;</button>
     </header>
     <ul id="modal-list" class="list"></ul>
@@ -98,425 +91,328 @@
 </div>
 
 <script>
-/* ======= CONFIG ======= */
-/* 1) API trocada para o link que você enviou */
-const API_BASE='https://script.google.com/macros/s/AKfycbyFSAY2T6Xnqg1D0ksCo9YRtvzl_FF4KmGTpuHgMjhbpwO_7swQ3iB_Vm-QNJ27ToauBw/exec';
-const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
+/* ======= ENDPOINT ======= */
+const API_BASE='https://script.google.com/macros/s/AKfycbxUf9oERSm53CpZQKkpp3mFXR3aLWc4tzSVW8DPHqsGvVt-keB_KtzAJiIgLMm9GYnB/exec';
 
 /* ======= HELPERS ======= */
+const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def;};
+const aliases=(obj,keys,def=0)=>{for(const k of keys){if(obj&&obj[k]!=null&&obj[k]!==''&&!isNaN(Number(obj[k])))return Number(obj[k]);}return def;};
+const idSafe=(p,k)=>`${p}-${norm(k).replace(/[^A-Z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
 
-/* Cache (5 min) */
-const TTL=5*60*1000, CK=(e,p)=>`travas:${e}|${p}`;
-const getC=(e,p)=>{try{const r=sessionStorage.getItem(CK(e,p));if(!r)return null;const o=JSON.parse(r);return (Date.now()-o.t<TTL)?o.v:null}catch{return null}};
-const setC=(e,p,v)=>{try{sessionStorage.setItem(CK(e,p),JSON.stringify({t:Date.now(),v}))}catch{}};
+/* ======= Datas / previsão ======= */
+function parsePeriodoYYYYMM(per){ // "2025-08" -> Date at first day
+  if(!per) return null;
+  const [y,m]=per.split('-').map(Number);
+  if(!y||!m) return null;
+  return new Date(y, m-1, 1); // local
+}
+function daysInMonth(date){ return new Date(date.getFullYear(), date.getMonth()+1, 0).getDate(); }
+function monthCompare(a,b){ // -1 a<b, 0 equal month, 1 a>b
+  if(a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth()) return 0;
+  if(a.getFullYear()<b.getFullYear() || (a.getFullYear()===b.getFullYear() && a.getMonth()<b.getMonth())) return -1;
+  return 1;
+}
+function progressCalc(limit, spent, periodoStr){
+  const today=new Date();
+  const perDate=parsePeriodoYYYYMM(periodoStr) || new Date(today.getFullYear(), today.getMonth(), 1);
+  const dim=daysInMonth(perDate);
+  const cmp=monthCompare(perDate, new Date(today.getFullYear(), today.getMonth(), 1));
+  let elapsed=0, remaining=0;
+  if(cmp<0){ // mês passado
+    elapsed=dim; remaining=0;
+  }else if(cmp>0){ // mês futuro
+    elapsed=0; remaining=dim;
+  }else{ // mês corrente
+    elapsed=Math.min(today.getDate(), dim);
+    remaining=Math.max(dim - elapsed, 0);
+  }
+  const pct = limit>0 ? (spent/limit*100) : 0;
+  const daily = elapsed>0 ? (spent/elapsed) : 0;
+  const forecastSpent = spent + daily*remaining;
+  const forecastPct = limit>0 ? (forecastSpent/limit*100) : 0;
+  const available = limit - spent;
 
-/* Datas / previsão */
-function parseYYYYMM(s){if(!s)return null;const [y,m]=s.split('-').map(Number);if(!y||!m)return null;return new Date(y,m-1,1)}
-function daysInMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0).getDate()}
-function monthCompare(a,b){if(a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth())return 0;return (a<b)?-1:1}
-function progressCalc(limit, spent, perStr){
-  const today=new Date(), pd=parseYYYYMM(perStr)||new Date(today.getFullYear(),today.getMonth(),1);
-  const dim=daysInMonth(pd), cmp=monthCompare(pd,new Date(today.getFullYear(),today.getMonth(),1));
-  let elapsed=0, remain=0;
-  if(cmp<0){elapsed=dim;remain=0;} else if(cmp>0){elapsed=0;remain=dim;} else {elapsed=Math.min(today.getDate(),dim);remain=Math.max(dim-elapsed,0);}
-  const pct=limit>0?spent/limit*100:0, available=limit-spent;
-  const daily=elapsed>0?spent/elapsed:0, forecast=spent+daily*remain, forecastPct=limit>0?forecast/limit*100:0;
-  let status='neutral'; if(cmp<0) status=spent>limit?'bad':'good'; else if(cmp===0) status=forecast>limit?'bad':(pct>=80?'warn':'good'); else status=pct>=80?'warn':'neutral';
-  return {pct,available,forecast,forecastPct,status};
+  // status visual:
+  // - mês passado: final (spent vs limit)
+  // - mês corrente: projetado (forecast vs limit)
+  // - mês futuro: neutro (usa pct atual)
+  let status='neutral'; // 'good','bad','warn'
+  if(cmp<0){ // passado
+    status = (spent>limit) ? 'bad' : 'good';
+  }else if(cmp===0){ // corrente
+    if(forecastSpent>limit) status='bad';
+    else if(pct>=80) status='warn';
+    else status='good';
+  }else{ // futuro
+    if(pct>=80) status='warn';
+    else status='neutral';
+  }
+  return {pct, available, daily, forecastSpent, forecastPct, remaining, elapsed, dim, status, isPast:(cmp<0), isCurrent:(cmp===0)};
 }
 
-/* Total “fonte 9” (planos de contas) */
-function fonte9Total(rec){
-  const keys=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
-  for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!==''&&!isNaN(Number(v))) return Number(v);}
-  if(Array.isArray(rec?.fonte9Detalhe)) return rec.fonte9Detalhe.reduce((a,i)=>a+Math.abs(Number(i.valor??i.total??0)),0);
+/* ======= Fonte 9 total ======= */
+function getFonte9Total(rec){
+  const ready=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
+  for(const k of ready){ if(rec && rec[k]!=null && rec[k]!=='' && !isNaN(Number(rec[k]))) return Number(rec[k]); }
+  if(Array.isArray(rec?.fonte9Detalhe)){
+    const t=rec.fonte9Detalhe.reduce((a,i)=>a+Math.abs(Number(i.valor||i.total||0)),0);
+    if(t) return t;
+  }
   if(Array.isArray(rec?.categorias)){
-    let t=0; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9||s.isSub===true||s.font==null) t+=Math.abs(Number(s.valor||0))})); return t;
+    let total=0;
+    rec.categorias.forEach(cat=>{
+      (cat.subs||[]).forEach(s=>{
+        const f=Number(s.font);
+        if(f===9 || s.isSub===true || s.font==null) total+=Math.abs(Number(s.valor||0));
+      });
+    });
+    if(total) return total;
+  }
+  const lists=[rec?.todos,rec?.itens,rec?.rows,rec?.linhas];
+  for(const L of lists){
+    if(Array.isArray(L)){
+      let total=0,any=false;
+      L.forEach(r=>{
+        const f=Number(r?.font);
+        const v=Number(r?.valor ?? r?.total ?? 0);
+        if(isNaN(f)||f===9){ total+=Math.abs(v); any=true; }
+      });
+      if(any) return total;
+    }
+  }
+  if(Array.isArray(rec?.grid)&&Array.isArray(rec.grid[0])){
+    let total=0,any=false;
+    for(const row of rec.grid){ const v=Number(row[2]??0); if(isFinite(v)){ total+=Math.abs(v); any=true; } }
+    if(any) return total;
+  }
+  if(Array.isArray(rec?.tabela)&&Array.isArray(rec.tabela[0])){
+    let total=0,any=false;
+    for(const row of rec.tabela){ const v=Number(row[2]??0); if(isFinite(v)){ total+=Math.abs(v); any=true; } }
+    if(any) return total;
   }
   return 0;
 }
 
-/* Planos (usa planosFonte9; fallbacks se faltar) */
-function extractPlanos(rec){
-  if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
-    return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(Number(p.valor??0))}));
+/* ======= Série temporal (evolução) ======= */
+function extractSeries(rec){
+  let arr = rec?.series || rec?.historico || rec?.diario || rec?.timeline || rec?.evolucao || rec?.historicoDias || [];
+  if(!Array.isArray(arr)) arr=[];
+  if(!arr.length && rec && Array.isArray(rec.datas) && (Array.isArray(rec.fonte9)||Array.isArray(rec.fornecedores))){
+    arr=rec.datas.map((d,i)=>({data:d,fonte9:Number(rec.fonte9?.[i]??0),fornecedores:Number(rec.fornecedores?.[i]??0)}));
   }
-  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (se sua tabela de planos mudar, ajusta aqui)
-  const planosFromGrid = (grid=>{
-    if(!Array.isArray(grid)||!Array.isArray(grid[0])) return [];
-    const map=new Map();
-    grid.forEach(row=>{
-      PLAN_NAME_COLS.forEach(idx=>{
-        const nome=row[idx]; const val=row[idx+1];
-        if(nome!=null && nome!=='' && val!=null && val!==''){
-          const v=Number(String(val).toString().replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.'));
-          if(!isNaN(v)) map.set(String(nome),(map.get(String(nome))||0)+Math.abs(v));
-        }
-      });
-    });
-    return Array.from(map, ([nome,valor])=>({nome,valor}));
-  })(rec?.grid || rec?.tabela);
-  if (planosFromGrid.length) return planosFromGrid;
-
-  if (Array.isArray(rec?.fonte9Detalhe) && rec.fonte9Detalhe.length) {
-    return rec.fonte9Detalhe.map(i=>({nome:i.nome??i.planocontas??i.categoria??'—',valor:Math.abs(Number(i.valor??i.total??0))}));
-  }
-  if (Array.isArray(rec?.categorias)){
-    const out=[]; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9||s.isSub===true||s.font==null) out.push({nome:s.nome??'—',valor:Math.abs(Number(s.valor||0))})}));
-    if(out.length) return out;
-  }
-  if (Array.isArray(rec?.fornecedoresDetalhe) && rec.fornecedoresDetalhe.length) {
-    return rec.fornecedoresDetalhe.map(i=>({nome:i.nome??'—',valor:Math.abs(Number(i.valor||0))}));
-  }
-  return [];
-}
-
-/* ========== ADAPTAÇÃO PARA SUA PLANILHA (empresas em blocos horizontais) ========== */
-/* Utils extras para ler a grade */
-const EMPRESAS_LIST = ['MERCATTO DELICIA','DELICIA GOURMET','PADARIA DELICIA','VILLA GOURMET','M. KIDS'];
-const toNum = (v)=>{
-  if (v == null || v === '') return 0;
-  if (typeof v === 'number') return v;
-  const txt = String(v).trim();
-  const clean = txt.replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'');
-  const normalized = clean.replace(',', '.');
-  const n = Number(normalized);
-  return isNaN(n) ? 0 : n;
-};
-const toDate = (v)=>{
-  if (v instanceof Date) return v;
-  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000)); // serial Excel
-  const m = String(v||'').trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (m){ const d=new Date(Number(m[3]), Number(m[2])-1, Number(m[1])); if(!isNaN(d)) return d; }
-  return null;
-};
-const ym = (d)=> d? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
-
-function detectarBlocos(grid){
   const out=[];
-  for (let r=0; r<grid.length; r++){
-    const row = grid[r]||[];
-    for (let c=0; c<row.length; c++){
-      const cell = norm(row[c]);
-      if (!cell) continue;
-      if (EMPRESAS_LIST.some(e=> norm(e)===cell)){
-        const labCompras = norm(row[c+3]);
-        const labTotal   = norm(row[c+4]);
-        if (labCompras.includes('TRAVA') && labCompras.includes('COMPRAS') &&
-            labTotal.includes('TRAVA') && labTotal.includes('TOTAL')){
-          const empresa = EMPRESAS_LIST.find(e=> norm(e)===cell);
-          out.push({row:r, col:c, empresa});
-        }
-      }
-    }
-  }
+  arr.forEach(p=>{
+    const label = p.label||p.dia||p.data||p.date||p.dt||p.mes||p.periodo||'';
+    const f9 = Number(p.f9??p.fonte9??p.totalFonte9??p.valorCompradoFonte9??p.compradoFonte9??p.c??p.colC??p.valor??p.total??0);
+    const forn = Number(p.fornecedores??p.fornecedoresComprado??p.valorCompradoFornecedores??p.compradoFornecedores??p.cForn??0);
+    if(label) out.push({label:String(label),f9:isFinite(f9)?f9:0,forn:isFinite(forn)?forn:0});
+  });
+  out.sort((a,b)=>new Date(a.label)-new Date(b.label));
   return out;
 }
 
-function selecionarBlocoDoPeriodo(grid, empresa, periodoYM){
-  const blocos = detectarBlocos(grid).filter(b=> norm(b.empresa)===norm(empresa));
-  if (!blocos.length) return null;
-  for (const b of blocos){
-    const d = toDate((grid[b.row+1]||[])[b.col]); // data fica logo abaixo do nome da empresa
-    if (ym(d) === periodoYM) return b;
-  }
-  // fallback: mais recente
-  let best=null, bestKey='';
-  for (const b of blocos){
-    const d = toDate((grid[b.row+1]||[])[b.col]);
-    const key = ym(d);
-    if (!key) continue;
-    if (!best || key>bestKey){ best=b; bestKey=key; }
-  }
-  return best;
+/* ======= API ======= */
+async function fetchTravasPorEmpresa(empresa, periodo){
+  const qs=`?empresa=${encodeURIComponent(empresa)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
+  const url=API_BASE+qs;
+  const res=await fetch(url,{cache:'no-store'});
+  const txt=await res.text();
+  if(!res.ok) throw new Error(`HTTP ${res.status} • ${txt.slice(0,120)}`);
+  let json; try{ json=JSON.parse(txt);}catch{ throw new Error('JSON inválido do endpoint'); }
+  if(json?.ok===false) throw new Error(json.error||'Erro do endpoint');
+  if(json?.empresa) return json;
+  if(Array.isArray(json?.data)) return json.data.find(r=>norm(r.empresa||r.Empresa)===norm(empresa))||json.data[0];
+  if(Array.isArray(json)) return json.find(r=>norm(r.empresa||r.Empresa)===norm(empresa))||json[0];
+  return json;
 }
 
-function extrairValores(grid, bloco){
-  const r = bloco.row, c = bloco.col;
-  const data = toDate((grid[r+1]||[])[c]);
-  const travaCompras = toNum((grid[r+1]||[])[c+3]);
-  const travaTotal   = toNum((grid[r+1]||[])[c+4]);
-  return { dataRef: data? ym(data): '', travaCompras, travaTotal };
-}
-
-/* API — substituída: busca o período inteiro e extrai por empresa a partir da grade */
-async function getEmpresaPeriodo(emp, periodo){
-  const c=getC(emp,periodo); if(c) return c;
-
-  const url = `${API_BASE}${periodo?`?periodo=${encodeURIComponent(periodo)}`:''}`;
-  const r = await fetch(url, {cache:'no-store'});
-  const t = await r.text();
-  if (!r.ok) throw new Error(t);
-  let j; try{ j = JSON.parse(t); } catch { throw new Error('JSON inválido'); }
-
-  // pega a grade de dentro do JSON (aceita várias chaves comuns)
-  const grid = j?.grid || j?.tabela || j?.sheet || j?.dados || j?.data || j;
-  if (!Array.isArray(grid) || !Array.isArray(grid[0])){
-    throw new Error('Resposta sem grade (grid) válida');
-  }
-
-  const bloco = selecionarBlocoDoPeriodo(grid, emp, periodo);
-  if (!bloco){
-    const rec = { empresa: emp, matchesPeriod:false, dataRef:'—', travaCompras:0, travaTotal:0 };
-    setC(emp,periodo,rec); return rec;
-  }
-  const vals = extrairValores(grid, bloco);
-
-  const rec = {
-    empresa: emp,
-    dataRef: vals.dataRef || periodo,
-    travaCompras: vals.travaCompras, // D2
-    travaTotal: vals.travaTotal,     // E2
-    matchesPeriod: vals.dataRef === periodo,
-    // os demais campos (fonte9, planos etc.) continuam como o seu painel calcula depois
-  };
-
-  setC(emp,periodo,rec);
-  return rec;
-}
-
-/* UI + corrida de execução para evitar “flicker” */
+/* ======= UI ======= */
 const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
 const container=document.getElementById('content');
-let ChartLib=null;
-let currentRun = 0;
 
-/* Modal */
-function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.setAttribute('aria-hidden','true');}
+selEmpresa.addEventListener('change', run, {passive:true});
+inpPeriodo.addEventListener('change', run, {passive:true});
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); }, {passive:true});
+window.addEventListener('DOMContentLoaded', ()=>{
+  const hoje=new Date();
+  inpPeriodo.value = hoje.toISOString().slice(0,7); // YYYY-MM
+  run();
+});
+
+/* ======= Modal ======= */
 function openModal(title, items){
   const modal=document.getElementById('modal');
   document.getElementById('modal-title').textContent=title||'Detalhes';
   const ul=document.getElementById('modal-list');
   const empty=document.getElementById('modal-empty');
   ul.innerHTML='';
-
-  const arr=(items||[]).slice();
-  if(arr.length){
+  if(Array.isArray(items) && items.length){
     empty.style.display='none';
-    arr.forEach(d=>{
+    items.forEach(d=>{
       const li=document.createElement('li'); li.className='item';
-      const b=document.createElement('b'); b.textContent=d.nome||'—';
-      const v=document.createElement('span'); v.className='val';
-      if(d.fmt==='pct'){ v.textContent = `${(Number(d.valor)||0).toFixed(1)}%`; }
-      else{ v.textContent = moeda(Math.abs(Number(d.valor||0))); }
-      li.appendChild(b); li.appendChild(v); ul.appendChild(li);
+      const nome=document.createElement('b'); nome.textContent=d.nome||'—';
+      const val=document.createElement('span'); val.className='val'; val.textContent=moeda(Math.abs(Number(d.valor||0)));
+      li.appendChild(nome); li.appendChild(val); ul.appendChild(li);
     });
   }else{
     empty.style.display='block';
   }
-  modal.style.display='flex'; modal.setAttribute('aria-hidden','false');
+  modal.style.display='flex';
+  modal.setAttribute('aria-hidden','false');
 }
-document.addEventListener('click',(e)=>{ if(e.target.matches('[data-close], #modal .backdrop')) closeModal(); });
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
+function closeModal(){
+  const modal=document.getElementById('modal');
+  modal.style.display='none';
+  modal.setAttribute('aria-hidden','true');
+}
+document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click', closeModal, {passive:true}));
 
-selEmpresa.addEventListener('change', run);
-inpPeriodo.addEventListener('change', run);
-
-window.addEventListener('DOMContentLoaded', ()=>{
-  const hoje=new Date();
-  inpPeriodo.value=hoje.toISOString().slice(0,7); // mês atual por padrão
-  run();
-});
-
-/* Render principal */
+/* ======= Render ======= */
 async function run(){
-  const runId = ++currentRun;
-  const empSel=selEmpresa.value, periodo=inpPeriodo.value;
-  container.innerHTML='';
+  const empSel=selEmpresa.value;
+  const periodo=inpPeriodo.value;
+  container.innerHTML='<div style="padding:10px;color:#64748b">Carregando…</div>';
 
   const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
+  const blocks=[];
 
   for(const emp of empresas){
     try{
-      const rec=await getEmpresaPeriodo(emp, periodo);
-      if (runId !== currentRun) return;
+      const rec=await fetchTravasPorEmpresa(emp, periodo);
+      if(!rec){ blocks.push(renderErro(emp,'Sem dados.')); continue; }
 
-      const periodOk = rec?.matchesPeriod !== false;
+      const travaTotal=aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0);          // E2
+      const fornecLim=aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0);  // D2
+      let fonte9Tot=aliases(rec,['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'],0);
+      if(!fonte9Tot) fonte9Tot=getFonte9Total(rec);
+      const fornComp=aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0);
 
-      const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
-      const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
-      const fonte9    = periodOk ? fonte9Total(rec) : 0;
-      const fornComp  = periodOk ? aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0) : 0;
-      const planos    = periodOk ? extractPlanos(rec) : [];
+      // progresso / previsão
+      const gTotal = progressCalc(travaTotal, fonte9Tot, periodo);  // total (fonte9 vs E2)
+      const gForn  = progressCalc(fornecLim,  fornComp,  periodo);  // fornecedores (C2→C19 vs D2)
 
-      const gTotal=progressCalc(travaTotal, fonte9, periodo);
-      const gForn =progressCalc(fornecLim,  fornComp, periodo);
+      // detalhamento fornecedores (ordenado)
+      const detRaw=rec.fornecedoresDetalhe||rec.detalhesFornecedores||rec.detalhamento||[];
+      const det=[...detRaw].map(d=>({nome:d.nome??d.planocontas??d.categoria??'—',valor:Number(d.valor??d.total??0)}))
+                           .sort((a,b)=>Math.abs(b.valor)-Math.abs(a.valor));
 
-      const sec=document.createElement('section'); sec.className='company';
-      sec.innerHTML = `
-        <div class="title">${emp}</div>
-        <div class="kpis">
-          <div class="kpi">
-            <div class="label">Trava Total (E2)</div>
-            <div class="value">${moeda(travaTotal)}</div>
-            <div class="hint">
-              Gasto: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
-              Disponível: <b>${moeda(gTotal.available)}</b>
-            </div>
-            <div class="progress"><span style="width:${Math.min(gTotal.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
-          </div>
+      // série temporal: só quando 1 empresa selecionada
+      const serie = (empSel==='TODAS AS EMPRESAS') ? [] : extractSeries(rec);
 
-          <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
-            <button class="btn-link" data-ver-planos>Ver planos</button>
-            <div class="label">Fornecedores Total (D2)</div>
-            <div class="value">${moeda(fornecLim)}</div>
-            <div class="hint">
-              Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
-              Disponível: <b>${moeda(gForn.available)}</b><br/>
-              Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
-            </div>
-            <div class="progress"><span style="width:${Math.min(gForn.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
-          </div>
-        </div>
-      `;
-      container.appendChild(sec);
-      sec.querySelector('[data-ver-planos]').addEventListener('click',()=>openModal(`Detalhamento Fornecedores — ${emp}`, planos));
-
-      // gráfico apenas quando 1 empresa selecionada
-      if(empSel!=='TODAS AS EMPRESAS'){
-        const chartWrap=document.createElement('div'); chartWrap.className='grid';
-        chartWrap.innerHTML=renderChartBlock(emp);
-        container.appendChild(chartWrap);
-        await mountChart(emp, chartWrap, runId);
-      }
-    }catch(err){
-      if (runId !== currentRun) return;
-      container.insertAdjacentHTML('beforeend', `<section class="company"><div class="title">${emp}</div><div class="kpi bad"><div class="label">Erro</div><div class="value" style="font-size:16px">${String(err.message||err)}</div></div></section>`);
+      blocks.push(renderEmpresa(emp,{travaTotal,fonte9Tot,fornecLim,fornComp,gTotal,gForn,det,serie,showChart: empSel!=='TODAS AS EMPRESAS'}));
+    }catch(e){
+      blocks.push(renderErro(emp, e.message||String(e)));
     }
   }
+
+  container.innerHTML=blocks.join('');
 }
 
-/* Bloco do gráfico — padrão: janeiro → mês atual. Gráfico vazio até escolher um plano */
-function renderChartBlock(emp){
-  const now=new Date(); const year=now.getFullYear();
-  const from=`${year}-01`;
-  const to=`${year}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const planId=`plan-${Math.random().toString(36).slice(2,7)}`, fromId=`from-${Math.random().toString(36).slice(2,7)}`, toId=`to-${Math.random().toString(36).slice(2,7)}`, cvs=`cv-${Math.random().toString(36).slice(2,7)}`;
-  return `
+/* ======= Templates ======= */
+function renderErro(emp,msg){
+  return `<section class="company">
+    <div class="title">${emp}</div>
+    <div class="kpi bad"><div class="label">Erro</div><div class="value" style="font-size:16px">${msg}</div></div>
+  </section>`;
+}
+
+function kpiClassFromStatus(status){
+  if(status==='bad') return 'bad';
+  if(status==='good') return 'good';
+  if(status==='warn') return 'warn';
+  return '';
+}
+function badgeFromStatus(status, isPast, isCurrent){
+  if(isPast) return (status==='bad')
+    ? `<span class="badge red">Mês encerrado • Estourou</span>`
+    : `<span class="badge green">Mês encerrado • OK</span>`;
+  if(isCurrent){
+    if(status==='bad') return `<span class="badge red">Previsão: vermelho</span>`;
+    if(status==='warn') return `<span class="badge amber">Atenção</span>`;
+    return `<span class="badge green">Previsão: verde</span>`;
+  }
+  return '';
+}
+
+function renderEmpresa(emp, d){
+  const {travaTotal,fonte9Tot,fornecLim,fornComp,gTotal,gForn,det,serie,showChart}=d;
+  const cardForId=idSafe('cardFor', emp);
+  const chartId=idSafe('chart','evolucao');
+
+  const chartBlock = (showChart && Array.isArray(serie) && serie.length>0) ? `
     <div class="card">
-      <div class="title">Evolução de compras (por Plano de Contas)</div>
-      <div class="chart-toolbar">
-        <span class="chip">Plano de contas:
-          <select id="${planId}">
-            <option value="" selected disabled>Selecione…</option>
-          </select>
-        </span>
-        <span class="chip">De: <input id="${fromId}" type="month" value="${from}"></span>
-        <span class="chip">Até: <input id="${toId}" type="month" value="${to}"></span>
-        <span class="chip"><button id="${cvs}-apply">Aplicar</button></span>
+      <div class="title">Evolução do Mês</div>
+      <canvas id="${chartId}" height="170"></canvas>
+      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10)</div>
+      <ul class="list">
+        ${det.slice(0,10).map(i=>`<li>${i.nome} — <b>${moeda(Math.abs(i.valor||0))}</b></li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  const html=`
+  <section class="company">
+    <div class="title">${emp}</div>
+
+    <div class="kpis">
+      <div class="kpi ${kpiClassFromStatus(gTotal.status)}">
+        ${badgeFromStatus(gTotal.status, gTotal.isPast, gTotal.isCurrent)}
+        <div class="label">Trava Total (E2)</div>
+        <div class="value">${moeda(travaTotal)}</div>
+        <div class="hint">
+          Gasto: <b>${moeda(fonte9Tot)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
+          Disponível: <b>${moeda(gTotal.available)}</b><br/>
+          Previsão fim do mês: <b>${moeda(gTotal.forecastSpent)}</b> (${gTotal.forecastPct.toFixed(1)}%)
+        </div>
+        <div class="progress"><span style="width:${Math.min(gTotal.pct,100)}%"></span></div>
       </div>
-      <canvas id="${cvs}" height="180"></canvas>
-      <div class="chart-note" id="${cvs}-note">Escolha um plano acima para ver o gráfico.</div>
-      <div class="title" style="margin-top:12px">Despesas mais caras (Top 10 do mês mais recente)</div>
-      <ul class="list" id="${cvs}-top"></ul>
-    </div>`;
-}
 
-/* Range de meses */
-function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b)return[];if(a>b){const t=a;a=b;b=t;}const out=[],c=new Date(a);while(c<=b){out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`);c.setMonth(c.getMonth()+1);}return out}
+      <div class="kpi ${kpiClassFromStatus(gForn.status)}" id="${cardForId}" style="cursor:pointer">
+        ${badgeFromStatus(gForn.status, gForn.isPast, gForn.isCurrent)}
+        <div class="label">Fornecedores Total (D2)</div>
+        <div class="value">${moeda(fornecLim)}</div>
+        <div class="hint">
+          Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
+          Disponível: <b>${moeda(gForn.available)}</b><br/>
+          Previsão fim do mês: <b>${moeda(gForn.forecastSpent)}</b> (${gForn.forecastPct.toFixed(1)}%)
+        </div>
+        <div class="progress"><span style="width:${Math.min(gForn.pct,100)}%"></span></div>
+      </div>
+    </div>
 
-/* Séries (valor do ÚLTIMO dia do mês; se não houver dados, 0) */
-async function buildSeries(emp, from, to){
-  const months=monthRange(from,to), labels=[...months];
-  const planMap={};                 
-  const plansSet=new Set();
-  const totalsByMonth=new Array(months.length).fill(0);
+    <div class="grid">${chartBlock}</div>
+  </section>`;
 
-  for(let i=0;i<months.length;i++){
-    const per=months[i];
-    const rec=await getEmpresaPeriodo(emp, per);
-    const periodOk = rec?.matchesPeriod !== false;
-    const planos= periodOk ? extractPlanos(rec) : [];
-    planos.forEach(p=>{
-      const nome=String(p.nome);
-      const val=Math.abs(Number(p.valor||0));
-      plansSet.add(nome);
-      if(!planMap[nome]) planMap[nome]=new Array(months.length).fill(0);
-      planMap[nome][i]=val;
-      totalsByMonth[i]+=val;
-    });
-  }
-  const totalsOverall=totalsByMonth.reduce((a,b)=>a+b,0);
-  return {labels,planMap,plans:[...plansSet].sort(),totalsByMonth,totalsOverall};
-}
-
-/* Chart */
-async function mountChart(emp, holder, runIdAtMount){
-  if(!ChartLib){
-    await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});
-    ChartLib=window.Chart;
-  }
-  const planSel=holder.querySelector('select');
-  const fromInp=holder.querySelector('input[id^="from-"]');
-  const toInp=holder.querySelector('input[id^="to-"]');
-  const cvs=holder.querySelector('canvas');
-  const btn=holder.querySelector('button[id$="-apply"]');
-  const topList=holder.querySelector('ul');
-  const note=holder.querySelector('.chart-note');
-
-  let cachedSeries=null;
-
-  async function populatePlans(){
-    topList.innerHTML='<li>Carregando…</li>';
-    cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
-    if (runIdAtMount !== currentRun) return;
-    planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    const last=cachedSeries.labels.length-1;
-    const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
-    topList.innerHTML=arr.map(i=>`<li data-plan="${i.nome}" style="cursor:pointer">${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
-    topList.onclick=(ev)=>{
-      const li=ev.target.closest('li[data-plan]'); if(!li) return;
-      const plan=li.getAttribute('data-plan');
-      showShare(plan);
-    };
-  }
-
-  function showShare(plan){
-    const vals=cachedSeries.planMap[plan]||[];
-    const sumPlan=vals.reduce((a,b)=>a+Math.abs(b||0),0);
-    const sumTot=cachedSeries.totalsByMonth.reduce((a,b)=>a+Math.abs(b||0),0);
-    const pct=sumTot>0?(sumPlan/sumTot*100):0;
-    openModal(`Participação — ${plan}`,[
-      {nome:'Valor no período',valor:sumPlan},
-      {nome:'Total do período',valor:sumTot},
-      {nome:'Participação',fmt:'pct',valor:pct}
-    ]);
-  }
-
-  async function draw(){
-    if(holder.__chart) holder.__chart.destroy();
-    if(!cachedSeries){ await populatePlans(); }
-    const chosen=planSel.value||'';
-    if(!chosen){
-      note.textContent='Escolha um plano acima para ver o gráfico.';
-      return;
+  // eventos e gráfico
+  queueMicrotask(()=>{
+    // popup de fornecedores (sempre abre, inclusive em "TODAS AS EMPRESAS")
+    const el=document.getElementById(cardForId);
+    if(el){
+      const open = ()=>openModal(`Detalhamento Fornecedores — ${emp}`, det);
+      el.addEventListener('click', open, {passive:true});
+      el.addEventListener('touchend', open, {passive:true});
     }
-    note.textContent='';
-    const ds=[{label:chosen,data:cachedSeries.planMap[chosen]||new Array(cachedSeries.labels.length).fill(0),tension:.25}];
-    holder.__chart=new ChartLib(cvs.getContext('2d'),{
-      type:'line',
-      data:{labels:cachedSeries.labels,datasets:ds},
-      options:{
-        responsive:true,
-        plugins:{
-          legend:{position:'bottom'},
-          tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${moeda(ctx.parsed.y)}` } }
-        },
-        scales:{y:{beginAtZero:true}}
-      }
-    });
-  }
 
-  btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
-  planSel.addEventListener('change', draw);
+    // gráfico
+    if(showChart && document.getElementById(chartId) && Array.isArray(serie) && serie.length>0){
+      const ctx=document.getElementById(chartId).getContext('2d');
+      const labels=serie.map(p=>p.label);
+      const f9=serie.map(p=>p.f9||0);
+      const forn=serie.map(p=>p.forn||0);
+      new Chart(ctx,{
+        type:'line',
+        data:{labels,datasets:[
+          {label:'Fonte 9 (Total Comprado)',data:f9,tension:.25},
+          {label:'Fornecedores (C2→C19)',data:forn,tension:.25}
+        ]},
+        options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}
+      });
+    }
+  });
 
-  await populatePlans();
+  return html;
 }
 </script>
 </body>
