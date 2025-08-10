@@ -4,27 +4,6 @@
   <meta charset="UTF-8" />
   <title>Vendas Delivery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-  <!-- Configs globais -->
-  <script src="config.js"></script>
-
-  <!-- Guard de autenticação (token via WEBAPP do config.js) -->
-  <script>
-    (async ()=>{
-      function goLogin(){ location.href = 'login.html?next='+encodeURIComponent(location.pathname.split('/').pop()); }
-      const WEBAPP = (window.CONFIG && window.CONFIG.WEBAPP);
-      if(!WEBAPP){ console.error('CONFIG.WEBAPP não definido em config.js'); goLogin(); return; }
-      const token = localStorage.getItem('auth_token'); if(!token){ goLogin(); return; }
-      try{
-        const url = `${WEBAPP}?fn=me&origin=${encodeURIComponent(location.origin)}`;
-        const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({}) });
-        const j = await r.json();
-        if(!j.ok){ localStorage.clear(); goLogin(); return; }
-        window.AUTH_USER = j.user; // {usuario,empresa,perfil,iat,[exp]}
-      }catch{ goLogin(); }
-    })();
-  </script>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -239,11 +218,7 @@
   </div>
 
   <script>
-    // URL dos dados vem do config.js:
-    // defina em config.js -> window.CONFIG.URLS.DELIVERY = 'https://script.google.com/macros/s/xxxxx/exec';
-    const URL_SCRIPT = (window.CONFIG && window.CONFIG.URLS && window.CONFIG.URLS.DELIVERY);
-    if(!URL_SCRIPT){ console.error('CONFIG.URLS.DELIVERY não definido em config.js'); }
-
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby3tGjtsUXcak51bcWG175VU4SWT2RV6pA9vJLyQxlMXSt3bGJFoi2R0YmDmuwzbcbOnw/exec";
     let dados = [];
     let chart;
 
