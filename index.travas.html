@@ -18,10 +18,9 @@
   .section{margin-top:14px}
   .company>.title{font-weight:800;margin:10px 2px 12px}
 
-  /* 1 card/linha no mobile; 2 em telas >=680px */
   .kpis{display:grid;grid-template-columns:1fr;gap:10px}
   @media(min-width:680px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  .kpi{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--shadow);position:relative}
+  .kpi{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--shadow);position:relative;min-height:92px}
   .kpi .label{color:var(--muted);font-size:11px;margin-bottom:4px}
   .kpi .value{font-size:18px;font-weight:900}
   .kpi .hint{color:var(--muted);font-size:11px;margin-top:2px}
@@ -99,13 +98,23 @@
 
 <script>
 /* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec'; // <<< coloque sua URL do Apps Script
+const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec'; // URL exposta OK
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 
 /* ======= HELPERS ======= */
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def;};
+const parseBR = (val) => {
+  if (val == null || val === '') return 0;
+  if (typeof val === 'number') return val;
+  const s = String(val).trim()
+    .replace(/[^\d\-.,]/g,'')
+    .replace(/\.(?=\d{3})/g,'')
+    .replace(',', '.');
+  const n = Number(s);
+  return isNaN(n) ? 0 : n;
+};
+const aliases=(o,keys,def=0)=>{for(const k of keys){if(o&&k in o&&o[k]!==''&&o[k]!=null){const n=parseBR(o[k]);if(!isNaN(n))return n;}}return def;};
 
 /* Cache (5 min) */
 const TTL=5*60*1000, CK=(e,p)=>`travas:${e}|${p}`;
@@ -127,13 +136,13 @@ function progressCalc(limit, spent, perStr){
   return {pct,available,forecast,forecastPct,status};
 }
 
-/* Fonte 9 total */
+/* Fonte 9 total (estrito, com fallbacks) */
 function fonte9Total(rec){
   const keys=['totalFonte9','fonte9Total','valorCompradoFonte9','compradoFonte9','valorTotalComprado'];
-  for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!==''&&!isNaN(Number(v))) return Number(v);}
-  if(Array.isArray(rec?.fonte9Detalhe)) return rec.fonte9Detalhe.reduce((a,i)=>a+Math.abs(Number(i.valor??i.total??0)),0);
+  for(const k of keys){const v=rec?.[k]; if(v!==undefined&&v!=='') return parseBR(v);}
+  if(Array.isArray(rec?.fonte9Detalhe)) return rec.fonte9Detalhe.reduce((a,i)=>a+Math.abs(parseBR(i.valor??i.total??0)),0);
   if(Array.isArray(rec?.categorias)){
-    let t=0; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9||s.isSub===true||s.font==null) t+=Math.abs(Number(s.valor||0))})); return t;
+    let t=0; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9) t+=Math.abs(parseBR(s.valor||0))})); return t;
   }
   return 0;
 }
@@ -141,9 +150,9 @@ function fonte9Total(rec){
 /* Planos (usa planosFonte9 da API; fallbacks se faltar) */
 function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
-    return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(Number(p.valor??0))}));
+    return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(parseBR(p.valor??0))}));
   }
-  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (zero-based dentro de grid/tabela, se vier)
+  const PLAN_NAME_COLS=[1,6,11,16,21];
   const planosFromGrid = (grid=>{
     if(!Array.isArray(grid)||!Array.isArray(grid[0])) return [];
     const map=new Map();
@@ -151,7 +160,7 @@ function extractPlanos(rec){
       PLAN_NAME_COLS.forEach(idx=>{
         const nome=row[idx]; const val=row[idx+1];
         if(nome!=null && nome!=='' && val!=null && val!==''){
-          const v=Number(String(val).toString().replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.'));
+          const v=parseBR(val);
           if(!isNaN(v)) map.set(String(nome),(map.get(String(nome))||0)+Math.abs(v));
         }
       });
@@ -161,23 +170,40 @@ function extractPlanos(rec){
   if (planosFromGrid.length) return planosFromGrid;
 
   if (Array.isArray(rec?.fonte9Detalhe) && rec.fonte9Detalhe.length) {
-    return rec.fonte9Detalhe.map(i=>({nome:i.nome??i.planocontas??i.categoria??'—',valor:Math.abs(Number(i.valor??i.total??0))}));
+    return rec.fonte9Detalhe.map(i=>({nome:i.nome??i.planocontas??i.categoria??'—',valor:Math.abs(parseBR(i.valor??i.total??0))}));
   }
   if (Array.isArray(rec?.categorias)){
-    const out=[]; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9||s.isSub===true||s.font==null) out.push({nome:s.nome??'—',valor:Math.abs(Number(s.valor||0))})}));
+    const out=[]; rec.categorias.forEach(c=>(c.subs||[]).forEach(s=>{const f=Number(s.font); if(f===9) out.push({nome:s.nome??'—',valor:Math.abs(parseBR(s.valor||0))})}));
     if(out.length) return out;
   }
   if (Array.isArray(rec?.fornecedoresDetalhe) && rec.fornecedoresDetalhe.length) {
-    return rec.fornecedoresDetalhe.map(i=>({nome:i.nome??'—',valor:Math.abs(Number(i.valor||0))}));
+    return rec.fornecedoresDetalhe.map(i=>({nome:i.nome??'—',valor:Math.abs(parseBR(i.valor||0))}));
   }
   return [];
+}
+
+/* Fetch com timeout + retry leve */
+async function fetchWithTimeout(url, { timeout=12000, retries=1 } = {}){
+  for(let i=0;i<=retries;i++){
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(), timeout);
+    try{
+      const r=await fetch(url,{cache:'no-store',signal:ctrl.signal});
+      clearTimeout(to);
+      if(!r.ok) throw new Error(await r.text());
+      return await r.text();
+    }catch(err){
+      clearTimeout(to);
+      if(i===retries) throw err;
+    }
+  }
 }
 
 /* API */
 async function getEmpresaPeriodo(emp, periodo){
   const c=getC(emp,periodo); if(c) return c;
   const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
-  const r=await fetch(url,{cache:'no-store'}); const t=await r.text(); if(!r.ok) throw new Error(t);
+  const t=await fetchWithTimeout(url,{timeout:12000,retries:1});
   let j; try{j=JSON.parse(t);}catch{throw new Error('JSON inválido');}
   let rec=j;
   if(j?.empresa) rec=j;
@@ -186,7 +212,7 @@ async function getEmpresaPeriodo(emp, periodo){
   setC(emp,periodo,rec); return rec;
 }
 
-/* UI + corrida de execução para evitar flicker */
+/* UI */
 const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
 const container=document.getElementById('content');
@@ -202,7 +228,7 @@ function openModal(title, items){
   if(arr.length){ empty.style.display='none';
     arr.forEach(d=>{ const li=document.createElement('li'); li.className='item';
       const b=document.createElement('b'); b.textContent=d.nome||'—';
-      const v=document.createElement('span'); v.className='val'; v.textContent=moeda(Math.abs(Number(d.valor||0)));
+      const v=document.createElement('span'); v.className='val'; v.textContent=moeda(Math.abs(parseBR(d.valor||0)));
       li.appendChild(b); li.appendChild(v); ul.appendChild(li);
     });
   }else empty.style.display='block';
@@ -216,77 +242,105 @@ inpPeriodo.addEventListener('change', run);
 
 window.addEventListener('DOMContentLoaded', ()=>{
   const hoje=new Date();
-  inpPeriodo.value=hoje.toISOString().slice(0,7); // mês atual por padrão
+  inpPeriodo.value=hoje.toISOString().slice(0,7);
   run();
 });
+
+/* Skeleton rápido por empresa */
+function companySkeleton(nome){
+  return `
+    <section class="company" data-empresa="${nome}">
+      <div class="title">${nome}</div>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="label">Carregando…</div>
+          <div class="progress"><span style="width:35%"></span></div>
+        </div>
+        <div class="kpi">
+          <div class="label">Carregando…</div>
+          <div class="progress"><span style="width:55%"></span></div>
+        </div>
+      </div>
+    </section>`;
+}
 
 /* Render principal (com token para evitar respostas antigas) */
 async function run(){
   const runId = ++currentRun;
   const empSel=selEmpresa.value, periodo=inpPeriodo.value;
-  container.innerHTML='';
-
   const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
 
-  for(const emp of empresas){
-    try{
-      const rec=await getEmpresaPeriodo(emp, periodo);
-      if (runId !== currentRun) return; // abandonamos se já existe outra execução
+  // pinta skeletons de uma vez (DOM mínimo)
+  container.innerHTML = empresas.map(e => companySkeleton(e)).join('');
 
-      const periodOk = rec?.matchesPeriod !== false;
+  // busca todas em paralelo
+  const results = await Promise.allSettled(empresas.map(emp => getEmpresaPeriodo(emp, periodo)));
 
-      const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
-      const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
-      const fonte9    = periodOk ? fonte9Total(rec) : 0;
-      const fornComp  = periodOk ? aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0) : 0;
-      const planos    = periodOk ? extractPlanos(rec) : [];
+  if (runId !== currentRun) return;
 
-      const gTotal=progressCalc(travaTotal, fonte9, periodo);
-      const gForn =progressCalc(fornecLim,  fornComp, periodo);
-
-      const sec=document.createElement('section'); sec.className='company';
+  results.forEach((res, idx)=>{
+    const emp = empresas[idx];
+    const sec = container.querySelector(`section[data-empresa="${emp}"]`);
+    if(!sec) return;
+    if(res.status!=='fulfilled'){
       sec.innerHTML = `
         <div class="title">${emp}</div>
-        <div class="kpis">
-          <div class="kpi">
-            <div class="label">Trava Total (E2)</div>
-            <div class="value">${moeda(travaTotal)}</div>
-            <div class="hint">
-              Gasto: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
-              Disponível: <b>${moeda(gTotal.available)}</b>
-            </div>
-            <div class="progress"><span style="width:${Math.min(gTotal.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
-          </div>
-
-          <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
-            <button class="btn-link" data-ver-planos>Ver planos</button>
-            <div class="label">Fornecedores Total (D2)</div>
-            <div class="value">${moeda(fornecLim)}</div>
-            <div class="hint">
-              Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
-              Disponível: <b>${moeda(gForn.available)}</b><br/>
-              Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
-            </div>
-            <div class="progress"><span style="width:${Math.min(gForn.pct,100)}%"></span></div>
-            ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
-          </div>
-        </div>
-      `;
-      container.appendChild(sec);
-      sec.querySelector('[data-ver-planos]').addEventListener('click',()=>openModal(`Detalhamento Fornecedores — ${emp}`, planos));
-
-      // gráfico apenas quando 1 empresa selecionada
-      if(empSel!=='TODAS AS EMPRESAS'){
-        const chartWrap=document.createElement('div'); chartWrap.className='grid';
-        chartWrap.innerHTML=renderChartBlock(emp);
-        container.appendChild(chartWrap);
-        await mountChart(emp, chartWrap, runId);
-      }
-    }catch(err){
-      if (runId !== currentRun) return;
-      container.insertAdjacentHTML('beforeend', `<section class="company"><div class="title">${emp}</div><div class="kpi bad"><div class="label">Erro</div><div class="value" style="font-size:16px">${String(err.message||err)}</div></div></section>`);
+        <div class="kpi bad">
+          <div class="label">Erro</div>
+          <div class="value" style="font-size:16px">${String(res.reason?.message||res.reason||'Falha ao carregar')}</div>
+        </div>`;
+      return;
     }
+    const rec = res.value;
+    const periodOk = rec?.matchesPeriod !== false;
+
+    const travaTotal= periodOk ? aliases(rec,['travaTotal','trava_total','E2','travaTotalE2'],0) : 0;
+    const fornecLim = periodOk ? aliases(rec,['travaCompras','trava_compras','fornecedoresTotal','D2'],0) : 0;
+    const fonte9    = periodOk ? fonte9Total(rec) : 0;
+    const fornComp  = periodOk ? aliases(rec,['fornecedoresComprado','valorCompradoFornecedores','compradoFornecedores','C2_C19'],0) : 0;
+    const planos    = periodOk ? extractPlanos(rec) : [];
+
+    const gTotal=progressCalc(travaTotal, fonte9, periodo);
+    const gForn =progressCalc(fornecLim,  fornComp, periodo);
+
+    sec.innerHTML = `
+      <div class="title">${emp}</div>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="label">Trava Total (E2)</div>
+          <div class="value">${moeda(travaTotal)}</div>
+          <div class="hint">
+            Gasto: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
+            Disponível: <b style="color:${gTotal.available<0?'#b91c1c':'inherit'}">${moeda(gTotal.available)}</b>
+          </div>
+          <div class="progress"><span style="width:${Math.min(Math.max(gTotal.pct,0),100)}%"></span></div>
+          ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
+        </div>
+
+        <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
+          <button class="btn-link" data-ver-planos>Ver planos</button>
+          <div class="label">Fornecedores Total (D2)</div>
+          <div class="value">${moeda(fornecLim)}</div>
+          <div class="hint">
+            Já comprado: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
+            Disponível: <b style="color:${gForn.available<0?'#b91c1c':'inherit'}">${moeda(gForn.available)}</b><br/>
+            Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
+          </div>
+          <div class="progress"><span style="width:${Math.min(Math.max(gForn.pct,0),100)}%"></span></div>
+          ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
+        </div>
+      </div>
+    `;
+    const btn = sec.querySelector('[data-ver-planos]');
+    if(btn) btn.addEventListener('click',()=>openModal(`Detalhamento Fornecedores — ${emp}`, planos));
+  });
+
+  // gráfico apenas quando 1 empresa selecionada
+  if(empSel!=='TODAS AS EMPRESAS'){
+    const chartWrap=document.createElement('div'); chartWrap.className='grid';
+    chartWrap.innerHTML=renderChartBlock(empSel);
+    container.appendChild(chartWrap);
+    await mountChart(empSel, chartWrap, runId);
   }
 }
 
@@ -319,23 +373,22 @@ function renderChartBlock(emp){
 /* Range de meses */
 function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b)return[];if(a>b){const t=a;a=b;b=t;}const out=[],c=new Date(a);while(c<=b){out.push(`${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`);c.setMonth(c.getMonth()+1);}return out}
 
-/* Séries (valor do ÚLTIMO dia do mês; se não houver dados, usa 0) */
+/* Séries — paraleliza requisições e preserva ordem */
 async function buildSeries(emp, from, to){
-  const months=monthRange(from,to), labels=[...months];
-  const planMap={}; const plansSet=new Set();
+  const months=monthRange(from,to);
+  const results = await Promise.all(months.map(per => getEmpresaPeriodo(emp, per)));
+  const planMap = {}; const plansSet=new Set();
 
-  for(let i=0;i<months.length;i++){
-    const per=months[i];
-    const rec=await getEmpresaPeriodo(emp, per);
+  results.forEach((rec, i)=>{
     const periodOk = rec?.matchesPeriod !== false;
-    const planos= periodOk ? extractPlanos(rec) : [];
+    const planos = periodOk ? extractPlanos(rec) : [];
     planos.forEach(p=>{
       plansSet.add(p.nome);
       if(!planMap[p.nome]) planMap[p.nome]=new Array(months.length).fill(0);
-      planMap[p.nome][i]=Math.abs(Number(p.valor||0)); // valor do mês (sem acumular)
+      planMap[p.nome][i]=Math.abs(parseBR(p.valor||0));
     });
-  }
-  return {labels,planMap,plans:[...plansSet].sort()};
+  });
+  return {labels:months, planMap, plans:[...plansSet].sort()};
 }
 
 /* Chart */
@@ -359,16 +412,16 @@ async function mountChart(emp, holder, runIdAtMount){
     cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
     if (runIdAtMount !== currentRun) return;
     planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    // Top 10 (mês mais recente), independente de seleção
+    // Top 10 (mês mais recente)
     const last=cachedSeries.labels.length-1;
     const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
     topList.innerHTML=arr.map(i=>`<li>${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
   }
 
   async function draw(){
-    if(holder.__chart) holder.__chart.destroy();
-    if(!cachedSeries){ await populatePlans(); }
+    if(!cachedSeries){ await populatePlans(); if (runIdAtMount !== currentRun) return; }
     const chosen=planSel.value||'';
+    if(holder.__chart){ holder.__chart.destroy(); holder.__chart=null; }
     if(!chosen){
       note.textContent='Escolha um plano acima para ver o gráfico.';
       return;
@@ -385,7 +438,7 @@ async function mountChart(emp, holder, runIdAtMount){
   btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
   planSel.addEventListener('change', draw);
 
-  await populatePlans(); // só popula opções e top 10; gráfico continua em branco
+  await populatePlans(); // só popula opções e top 10; gráfico continua em branco até escolher plano
 }
 </script>
 </body>
