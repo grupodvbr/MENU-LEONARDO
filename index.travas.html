@@ -99,13 +99,14 @@
 
 <script>
 /* ======= CONFIG ======= */
-const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
+/* 1) API trocada para o link que você enviou */
+const API_BASE='https://script.google.com/macros/s/AKfycbwQJKfG5Z6-QZD9jCD3KWQ2t1x1dWOzQCHKGomGMvlE3ooDJaErHRzG-uGseHV18MFqAg/exec';
 const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
 
 /* ======= HELPERS ======= */
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def};
+const aliases=(o,keys,def=0)=>{for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==''&&!isNaN(Number(v)))return Number(v);}return def;};
 
 /* Cache (5 min) */
 const TTL=5*60*1000, CK=(e,p)=>`travas:${e}|${p}`;
@@ -143,7 +144,7 @@ function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length) {
     return rec.planosFonte9.map(p=>({nome:String(p.nome??'—'),valor:Math.abs(Number(p.valor??0))}));
   }
-  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (grid/tabela)
+  const PLAN_NAME_COLS=[1,6,11,16,21]; // B,G,L,Q,V (se sua tabela de planos mudar, ajusta aqui)
   const planosFromGrid = (grid=>{
     if(!Array.isArray(grid)||!Array.isArray(grid[0])) return [];
     const map=new Map();
@@ -173,17 +174,108 @@ function extractPlanos(rec){
   return [];
 }
 
-/* API */
+/* ========== ADAPTAÇÃO PARA SUA PLANILHA (empresas em blocos horizontais) ========== */
+/* Utils extras para ler a grade */
+const EMPRESAS_LIST = ['MERCATTO DELICIA','DELICIA GOURMET','PADARIA DELICIA','VILLA GOURMET','M. KIDS'];
+const toNum = (v)=>{
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const txt = String(v).trim();
+  const clean = txt.replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'');
+  const normalized = clean.replace(',', '.');
+  const n = Number(normalized);
+  return isNaN(n) ? 0 : n;
+};
+const toDate = (v)=>{
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000)); // serial Excel
+  const m = String(v||'').trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m){ const d=new Date(Number(m[3]), Number(m[2])-1, Number(m[1])); if(!isNaN(d)) return d; }
+  return null;
+};
+const ym = (d)=> d? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
+
+function detectarBlocos(grid){
+  const out=[];
+  for (let r=0; r<grid.length; r++){
+    const row = grid[r]||[];
+    for (let c=0; c<row.length; c++){
+      const cell = norm(row[c]);
+      if (!cell) continue;
+      if (EMPRESAS_LIST.some(e=> norm(e)===cell)){
+        const labCompras = norm(row[c+3]);
+        const labTotal   = norm(row[c+4]);
+        if (labCompras.includes('TRAVA') && labCompras.includes('COMPRAS') &&
+            labTotal.includes('TRAVA') && labTotal.includes('TOTAL')){
+          const empresa = EMPRESAS_LIST.find(e=> norm(e)===cell);
+          out.push({row:r, col:c, empresa});
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function selecionarBlocoDoPeriodo(grid, empresa, periodoYM){
+  const blocos = detectarBlocos(grid).filter(b=> norm(b.empresa)===norm(empresa));
+  if (!blocos.length) return null;
+  for (const b of blocos){
+    const d = toDate((grid[b.row+1]||[])[b.col]); // data fica logo abaixo do nome da empresa
+    if (ym(d) === periodoYM) return b;
+  }
+  // fallback: mais recente
+  let best=null, bestKey='';
+  for (const b of blocos){
+    const d = toDate((grid[b.row+1]||[])[b.col]);
+    const key = ym(d);
+    if (!key) continue;
+    if (!best || key>bestKey){ best=b; bestKey=key; }
+  }
+  return best;
+}
+
+function extrairValores(grid, bloco){
+  const r = bloco.row, c = bloco.col;
+  const data = toDate((grid[r+1]||[])[c]);
+  const travaCompras = toNum((grid[r+1]||[])[c+3]);
+  const travaTotal   = toNum((grid[r+1]||[])[c+4]);
+  return { dataRef: data? ym(data): '', travaCompras, travaTotal };
+}
+
+/* API — substituída: busca o período inteiro e extrai por empresa a partir da grade */
 async function getEmpresaPeriodo(emp, periodo){
   const c=getC(emp,periodo); if(c) return c;
-  const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
-  const r=await fetch(url,{cache:'no-store'}); const t=await r.text(); if(!r.ok) throw new Error(t);
-  let j; try{j=JSON.parse(t);}catch{throw new Error('JSON inválido');}
-  let rec=null;
-  if(j?.empresa) rec=j;
-  else if(Array.isArray(j?.data)) rec=j.data.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||null;
-  else if(Array.isArray(j)) rec=j.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||null;
-  setC(emp,periodo,rec); return rec;
+
+  const url = `${API_BASE}${periodo?`?periodo=${encodeURIComponent(periodo)}`:''}`;
+  const r = await fetch(url, {cache:'no-store'});
+  const t = await r.text();
+  if (!r.ok) throw new Error(t);
+  let j; try{ j = JSON.parse(t); } catch { throw new Error('JSON inválido'); }
+
+  // pega a grade de dentro do JSON (aceita várias chaves comuns)
+  const grid = j?.grid || j?.tabela || j?.sheet || j?.dados || j?.data || j;
+  if (!Array.isArray(grid) || !Array.isArray(grid[0])){
+    throw new Error('Resposta sem grade (grid) válida');
+  }
+
+  const bloco = selecionarBlocoDoPeriodo(grid, emp, periodo);
+  if (!bloco){
+    const rec = { empresa: emp, matchesPeriod:false, dataRef:'—', travaCompras:0, travaTotal:0 };
+    setC(emp,periodo,rec); return rec;
+  }
+  const vals = extrairValores(grid, bloco);
+
+  const rec = {
+    empresa: emp,
+    dataRef: vals.dataRef || periodo,
+    travaCompras: vals.travaCompras, // D2
+    travaTotal: vals.travaTotal,     // E2
+    matchesPeriod: vals.dataRef === periodo,
+    // os demais campos (fonte9, planos etc.) continuam como o seu painel calcula depois
+  };
+
+  setC(emp,periodo,rec);
+  return rec;
 }
 
 /* UI + corrida de execução para evitar “flicker” */
@@ -332,7 +424,7 @@ function monthRange(from,to){let a=parseYYYYMM(from),b=parseYYYYMM(to);if(!a||!b
 /* Séries (valor do ÚLTIMO dia do mês; se não houver dados, 0) */
 async function buildSeries(emp, from, to){
   const months=monthRange(from,to), labels=[...months];
-  const planMap={};                 // {plano:[v1,v2,...]}
+  const planMap={};                 
   const plansSet=new Set();
   const totalsByMonth=new Array(months.length).fill(0);
 
@@ -375,12 +467,9 @@ async function mountChart(emp, holder, runIdAtMount){
     cachedSeries = await buildSeries(emp, fromInp.value, toInp.value);
     if (runIdAtMount !== currentRun) return;
     planSel.innerHTML='<option value="" selected disabled>Selecione…</option>' + cachedSeries.plans.map(p=>`<option value="${p}">${p}</option>`).join('');
-    // Top 10 (mês mais recente)
     const last=cachedSeries.labels.length-1;
     const arr=Object.entries(cachedSeries.planMap).map(([nome,vals])=>({nome,valor:Math.abs(vals[last]||0)})).sort((a,b)=>b.valor-a.valor).slice(0,10);
     topList.innerHTML=arr.map(i=>`<li data-plan="${i.nome}" style="cursor:pointer">${i.nome} — <b>${moeda(i.valor)}</b></li>`).join('') || '<li>Nada a mostrar.</li>';
-
-    // clique item Top10 → participação no período
     topList.onclick=(ev)=>{
       const li=ev.target.closest('li[data-plan]'); if(!li) return;
       const plan=li.getAttribute('data-plan');
@@ -427,7 +516,7 @@ async function mountChart(emp, holder, runIdAtMount){
   btn.addEventListener('click', async()=>{ cachedSeries=null; await populatePlans(); await draw(); });
   planSel.addEventListener('change', draw);
 
-  await populatePlans(); // carrega planos e Top10; gráfico fica vazio até escolher
+  await populatePlans();
 }
 </script>
 </body>
