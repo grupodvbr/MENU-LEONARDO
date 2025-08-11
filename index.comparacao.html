@@ -8,13 +8,13 @@
 <style>
   :root{
     --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9;
-    --red:#dc2626; --green:#16a34a;
+    --red:#ef4444; --green:#22c55e;
   }
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',sans-serif}
   header{background:#0b1220;color:#fff;padding:14px 18px;font-weight:700}
-  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
   .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
-  select,input[type="month"],button{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px}
+  select,input,button{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px}
   button{background:var(--primary);color:#fff;border:none;cursor:pointer}
   .grid{display:grid;gap:16px}
   .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.1)}
@@ -38,7 +38,8 @@
       <option>M. KIDS</option>
       <option>PADARIA DELICIA</option>
     </select>
-    <input id="periodo" type="month">
+    <input id="dataInicio" type="month">
+    <input id="dataFim" type="month">
     <button id="aplicar">Aplicar</button>
   </div>
 
@@ -73,7 +74,6 @@
 const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const parseBR=v=>{ if(v==null) return 0; const s=String(v).replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.'); return parseFloat(s)||0; };
-function prevMonthStr(ym){ const [y,m]=ym.split('-').map(Number); const d=new Date(y,m-1,1); d.setMonth(d.getMonth()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
 function extractPlanos(rec){ return (rec?.planosFonte9||[]).map(p=>({nome:p.nome,valor:parseBR(p.valor)})); }
 function planosToMap(planos){ const map={}; planos.forEach(p=>{ map[p.nome]=(map[p.nome]||0)+p.valor; }); return map; }
 async function getEmpresaPeriodo(emp, periodo){ const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}&periodo=${encodeURIComponent(periodo)}`; const r=await fetch(url); return r.json(); }
@@ -90,18 +90,20 @@ function buildRows(mapCurr, mapPrev){
 let chart1, chart2;
 async function run(){
   const emp=document.getElementById('empresa').value;
-  const per=document.getElementById('periodo').value;
-  const prev=prevMonthStr(per);
+  const perFim=document.getElementById('dataFim').value;
+  const perInicio=document.getElementById('dataInicio').value || perFim;
 
-  const curr=await getEmpresaPeriodo(emp, per);
-  const old=await getEmpresaPeriodo(emp, prev);
+  const curr=await getEmpresaPeriodo(emp, perFim);
+  const old=await getEmpresaPeriodo(emp, perInicio);
 
   const planosCurr=extractPlanos(curr);
   const planosPrev=extractPlanos(old);
   const mapCurr=planosToMap(planosCurr);
   const mapPrev=planosToMap(planosPrev);
 
-  const rows=buildRows(mapCurr,mapPrev);
+  const rows=buildRows(mapCurr,mapPrev)
+    .sort((a,b)=>Math.abs(b.inc)-Math.abs(a.inc));
+
   const labels=rows.map(r=>r.nome);
   const valsCurr=rows.map(r=>r.atual);
   const valsPrev=rows.map(r=>r.antes);
@@ -112,10 +114,10 @@ async function run(){
   chart1=new Chart(document.getElementById('chartComparativo'),{
     type:'bar',
     data:{labels:labels,datasets:[
-      {label:'Mês Anterior',data:valsPrev,backgroundColor:'#94a3b8'},
-      {label:'Mês Atual',data:valsCurr,backgroundColor:'#0ea5e9'}
+      {label:perInicio,data:valsPrev,backgroundColor:'#94a3b8',barThickness:20},
+      {label:perFim,data:valsCurr,backgroundColor:'#0ea5e9',barThickness:20}
     ]},
-    options:{responsive:true,plugins:{legend:{position:'top'}}}
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>moeda(v)}}}}
   });
 
   // Chart 2 - Variação %
@@ -123,21 +125,25 @@ async function run(){
   chart2=new Chart(document.getElementById('chartVariacao'),{
     type:'bar',
     data:{labels:labels,datasets:[
-      {label:'Variação %',data:pct,backgroundColor:pct.map(v=>v>=0?'#16a34a':'#dc2626')}
+      {label:'Variação %',data:pct,backgroundColor:pct.map(v=>v>=0?'#22c55e':'#ef4444')}
     ]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}}
   });
 
   // Listas
-  const topAum=rows.filter(r=>r.inc>0).sort((a,b)=>b.inc-a.inc).slice(0,10);
-  const topQued=rows.filter(r=>r.inc<0).sort((a,b)=>a.inc-b.inc).slice(0,10);
+  const topAum=rows.filter(r=>r.inc>0).slice(0,10);
+  const topQued=rows.filter(r=>r.inc<0).slice(0,10);
   document.getElementById('listaAumentos').innerHTML=topAum.map(r=>`<li>${r.nome} — ${moeda(r.inc)}</li>`).join('');
   document.getElementById('listaQuedas').innerHTML=topQued.map(r=>`<li>${r.nome} — ${moeda(r.inc)}</li>`).join('');
 }
 
 document.getElementById('aplicar').addEventListener('click',run);
 window.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('periodo').value=new Date().toISOString().slice(0,7);
+  const hoje=new Date();
+  const mesAtual=hoje.toISOString().slice(0,7);
+  const mesAnterior=new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,7);
+  document.getElementById('dataFim').value=mesAtual;
+  document.getElementById('dataInicio').value=mesAnterior;
   run();
 });
 </script>
