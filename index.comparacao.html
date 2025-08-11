@@ -324,10 +324,28 @@ async function openPlanModal(planName){
   if(lineModal) { lineModal.destroy(); lineModal=null; }
   lineModal = new Chart(ctx,{
     type:'line',
-    data:{ labels: serie.labels, datasets:[{ label: planName, data: serie.data, tension:.25 }]},
+    data:{
+      labels: serie.labels,
+      datasets:[{
+        label: planName,
+        data: serie.data,
+        tension: .25,
+        borderColor: '#d4af37',        // linha dourada
+        backgroundColor: 'rgba(212, 175, 55, 0.15)', // área suave
+        borderWidth: 2,
+        pointRadius: 6,                // tamanho normal da bolinha
+        pointHoverRadius: 8,           // tamanho no hover
+        pointBackgroundColor: '#d4af37', // cor interna da bolinha
+        pointBorderColor: '#000',      // borda preta
+        pointBorderWidth: 2
+      }]
+    },
     options:{
       responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> moeda(c.parsed.y||0) } } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> moeda(c.parsed.y||0) } }
+      },
       scales:{ y:{ beginAtZero:true } }
     }
   });
@@ -336,6 +354,7 @@ async function openPlanModal(planName){
   modal.style.display='flex';
   modal.setAttribute('aria-hidden','false');
 }
+
 
 /* ===== fluxo principal ===== */
 async function run(){
