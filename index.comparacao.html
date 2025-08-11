@@ -2,149 +2,274 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>CB Systems • Comparativo de Planos de Contas</title>
+<title>CB Systems • Comparativo (mês atual × anterior)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
     --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9;
-    --red:#ef4444; --green:#22c55e;
+    --red:#dc2626; --amber:#f59e0b; --ok:#16a34a; --line:#e5e7eb;
   }
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
   header{background:#0b1220;color:#fff;padding:14px 18px;font-weight:700}
   .wrap{max-width:1200px;margin:0 auto;padding:16px}
-  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
-  select,input,button{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 14px}
+  select,input[type="month"],button{padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:14px;background:#fff}
   button{background:var(--primary);color:#fff;border:none;cursor:pointer}
-  .grid{display:grid;gap:16px}
-  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.1)}
-  h3{margin:0 0 10px}
-  ul{margin:0;padding-left:18px}
-  li{margin-bottom:6px}
-  .btn-link{display:inline-block;margin-top:20px;background:var(--primary);color:#fff;padding:10px 20px;border-radius:8px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:0.2s}
-  .btn-link:hover{filter:brightness(1.1)}
+  .grid{display:grid;gap:14px}
+  .card{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+  .title{font-weight:800;margin:2px 2px 10px}
+  .small{color:var(--muted);font-size:12px}
+  /* tabela estilo planilha */
+  .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+  table{width:100%;border-collapse:collapse;min-width:860px;background:#fff}
+  thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--line);text-align:left;font-size:12px;color:#475569;padding:8px}
+  tbody td{border-bottom:1px solid var(--line);padding:8px;font-size:14px}
+  tbody tr:hover{background:#f9fafb}
+  .num{text-align:right;white-space:nowrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff}
+  .pill{display:inline-block;border-radius:999px;padding:2px 8px;font-size:12px}
+  .pill.red{background:#fee2e2;color:#991b1b}
+  .pill.amber{background:#fef3c7;color:#92400e}
+  .ok{color:var(--ok)}
+  .warn{color:var(--amber)}
+  .danger{color:var(--red);font-weight:700}
+  .charts{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+  @media (max-width:900px){.charts{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header>CB Systems • Comparativo de Planos de Contas</header>
-<div class="wrap">
+<header>CB Systems • Comparativo (mês atual × anterior)</header>
 
+<div class="wrap">
   <!-- Filtros -->
   <div class="filters">
-    <select id="empresa">
-      <option>MERCATTO DELICIA</option>
-      <option>DELICIA GOURMET</option>
-      <option>VILLA GOURMET</option>
-      <option>M. KIDS</option>
-      <option>PADARIA DELICIA</option>
-    </select>
-    <input id="dataInicio" type="month">
-    <input id="dataFim" type="month">
+    <label class="chip">Empresa
+      <select id="empresa">
+        <option>MERCATTO DELICIA</option>
+        <option>DELICIA GOURMET</option>
+        <option>VILLA GOURMET</option>
+        <option>M. KIDS</option>
+        <option>PADARIA DELICIA</option>
+      </select>
+    </label>
+    <label class="chip">Mês de referência
+      <input id="periodo" type="month">
+    </label>
     <button id="aplicar">Aplicar</button>
   </div>
 
-  <div class="grid">
+  <!-- Resumo + gráficos simples -->
+  <div class="charts">
     <div class="card">
-      <h3>Comparativo Geral (R$)</h3>
-      <canvas id="chartComparativo" height="120"></canvas>
+      <div class="title">Barras — Top 5 (R$ atual vs. mês anterior)</div>
+      <canvas id="barTop" height="180"></canvas>
     </div>
-
     <div class="card">
-      <h3>Variação Percentual</h3>
-      <canvas id="chartVariacao" height="120"></canvas>
-    </div>
-
-    <div class="grid" style="grid-template-columns:1fr 1fr;">
-      <div class="card">
-        <h3>Maiores Aumentos</h3>
-        <ul id="listaAumentos"></ul>
-      </div>
-      <div class="card">
-        <h3>Maiores Quedas</h3>
-        <ul id="listaQuedas"></ul>
-      </div>
+      <div class="title">Pizza — Participação no mês atual (Top 5 + 85%)</div>
+      <canvas id="pieShare" height="180"></canvas>
     </div>
   </div>
 
-  <a href="index.html" class="btn-link">⬅ Voltar ao Painel</a>
+  <!-- Planilha -->
+  <div class="card">
+    <div class="title" id="titleTabela">Planos (mês atual × anterior)</div>
+    <div class="small">Regra de destaque: ≥ 90% do mês anterior fica <b class="danger">vermelho ⚠️</b>. Itens com ≥ 85% também entram na lista.</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Plano de Contas</th>
+            <th>Mês anterior</th>
+            <th class="num">Valor mês anterior (R$)</th>
+            <th>Mês atual</th>
+            <th class="num">Valor mês atual (R$)</th>
+            <th class="num">% do mês anterior</th>
+            <th class="num">Falta p/ igualar (R$)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyPlanos">
+          <tr><td colspan="8" class="small" style="padding:12px">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
+  <a href="index.html" class="chip" style="text-decoration:none;margin-top:6px">⬅ Voltar ao Painel</a>
 </div>
 
 <script>
+/* ===== CONFIG ===== */
 const API_BASE='https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec';
+
+/* ===== HELPERS ===== */
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const parseBR=v=>{ if(v==null) return 0; const s=String(v).replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.'); return parseFloat(s)||0; };
-function extractPlanos(rec){ return (rec?.planosFonte9||[]).map(p=>({nome:p.nome,valor:parseBR(p.valor)})); }
-function planosToMap(planos){ const map={}; planos.forEach(p=>{ map[p.nome]=(map[p.nome]||0)+p.valor; }); return map; }
-async function getEmpresaPeriodo(emp, periodo){ const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}&periodo=${encodeURIComponent(periodo)}`; const r=await fetch(url); return r.json(); }
-function buildRows(mapCurr, mapPrev){
-  const nomes = new Set([...Object.keys(mapCurr), ...Object.keys(mapPrev)]);
+const parseBR=v=>{
+  if(v==null||v==='') return 0;
+  if(typeof v==='number') return v;
+  const s=String(v).trim().replace(/[^\d\-.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.');
+  const n=Number(s); return isNaN(n)?0:n;
+};
+const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+function prevMonthStr(ym){
+  if(!/^\d{4}-\d{2}$/.test(ym||'')){ const d=new Date(); return d.toISOString().slice(0,7); }
+  const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y,m-1,1); d.setMonth(d.getMonth()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+/* pega planos do retorno (usa .planosFonte9 ou grid/tabela) */
+function extractPlanos(rec){
+  if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length){
+    return rec.planosFonte9.map(p=>({nome:String(p.nome||'—'), valor:Math.abs(parseBR(p.valor))}));
+  }
+  const grid=rec?.grid||rec?.tabela;
+  if(Array.isArray(grid) && Array.isArray(grid[0]) && grid[0].length>=3){
+    const out=[];
+    for(let r=0;r<grid.length;r++){
+      const nome=grid[r][1], val=parseBR(grid[r][2]);
+      if(nome!=null && nome!=='' && !isNaN(val) && val!==0) out.push({nome:String(nome), valor:Math.abs(val)});
+    }
+    if(out.length) return out;
+  }
+  if(Array.isArray(rec?.fonte9Detalhe)){
+    return rec.fonte9Detalhe.map(i=>({nome:String(i.nome||i.planocontas||i.categoria||'—'), valor:Math.abs(parseBR(i.valor||i.total||0))}));
+  }
+  return [];
+}
+function planosToMap(arr){ const m={}; (arr||[]).forEach(p=>{ m[p.nome]=(m[p.nome]||0)+Math.abs(parseBR(p.valor)); }); return m; }
+
+async function fetchJSON(url){
+  const r=await fetch(url,{cache:'no-store'});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function getEmpresaPeriodo(emp, periodo){
+  const url=`${API_BASE}?empresa=${encodeURIComponent(emp)}${periodo?`&periodo=${encodeURIComponent(periodo)}`:''}`;
+  const j=await fetchJSON(url);
+  if(j?.empresa) return j;
+  if(Array.isArray(j?.data)) return j.data.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||j.data[0];
+  if(Array.isArray(j)) return j.find(x=>norm(x.empresa||x.Empresa)===norm(emp))||j[0];
+  return j;
+}
+
+/* ===== DOM ===== */
+const selEmpresa=document.getElementById('empresa');
+const inpPeriodo=document.getElementById('periodo');
+const btnAplicar=document.getElementById('aplicar');
+const tbody=document.getElementById('tbodyPlanos');
+const titleTabela=document.getElementById('titleTabela');
+
+let bar, pie;
+
+/* monta lista: top 5 por gasto atual + qualquer outro com pct>=85% */
+function buildRows(mapCurr, mapPrev, mesAtual, mesAnt){
+  const nomes=new Set([...Object.keys(mapCurr),...Object.keys(mapPrev)]);
   const rows=[];
   nomes.forEach(nome=>{
-    const atual=mapCurr[nome]||0, antes=mapPrev[nome]||0;
-    rows.push({nome, antes, atual, inc:atual-antes, pct:antes?((atual-antes)/antes*100):0});
+    const atual=mapCurr[nome]||0;
+    const antes=mapPrev[nome]||0;
+    const pct = antes>0 ? (atual/antes*100) : (atual>0?100:0);
+    const falta = Math.max(antes-atual, 0);
+    rows.push({
+      nome, antes, atual, pct, falta,
+      mesAnt, mesAtual
+    });
   });
-  return rows;
+  // top 5 por atual
+  const top5=[...rows].sort((a,b)=>b.atual-a.atual).slice(0,5).map(r=>r.nome);
+  // + todos com pct >= 85%
+  const out = rows.filter(r=> top5.includes(r.nome) || r.pct>=85);
+  // ordena por gasto atual desc
+  return out.sort((a,b)=>b.atual-a.atual);
 }
 
-let chart1, chart2;
-async function run(){
-  const emp=document.getElementById('empresa').value;
-  const perFim=document.getElementById('dataFim').value;
-  const perInicio=document.getElementById('dataInicio').value || perFim;
+/* renderiza tabela */
+function renderTable(rows){
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Nada a mostrar para o período.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r=>{
+    const cls = r.pct>=90 ? 'danger' : (r.pct>=85 ? 'warn' : 'ok');
+    const status = r.pct>=90 ? '⚠️ Acima de 90%' : (r.pct>=85 ? '⚠️ 85%+' : 'OK');
+    return `<tr>
+      <td>${r.nome}</td>
+      <td>${r.mesAnt}</td>
+      <td class="num">${moeda(r.antes)}</td>
+      <td>${r.mesAtual}</td>
+      <td class="num">${moeda(r.atual)}</td>
+      <td class="num ${cls}">${r.pct.toFixed(1)}%</td>
+      <td class="num">${moeda(r.falta)}</td>
+      <td class="${cls}">${status}</td>
+    </tr>`;
+  }).join('');
+}
 
-  const curr=await getEmpresaPeriodo(emp, perFim);
-  const old=await getEmpresaPeriodo(emp, perInicio);
-
-  const planosCurr=extractPlanos(curr);
-  const planosPrev=extractPlanos(old);
-  const mapCurr=planosToMap(planosCurr);
-  const mapPrev=planosToMap(planosPrev);
-
-  const rows=buildRows(mapCurr,mapPrev)
-    .sort((a,b)=>Math.abs(b.inc)-Math.abs(a.inc));
-
+/* gráficos simples */
+function renderCharts(rows){
   const labels=rows.map(r=>r.nome);
-  const valsCurr=rows.map(r=>r.atual);
-  const valsPrev=rows.map(r=>r.antes);
-  const pct=rows.map(r=>r.pct);
+  const prev=rows.map(r=>r.antes);
+  const curr=rows.map(r=>r.atual);
 
-  // Chart 1 - Comparativo R$
-  if(chart1) chart1.destroy();
-  chart1=new Chart(document.getElementById('chartComparativo'),{
+  if(bar) bar.destroy();
+  bar=new Chart(document.getElementById('barTop'),{
     type:'bar',
-    data:{labels:labels,datasets:[
-      {label:perInicio,data:valsPrev,backgroundColor:'#94a3b8',barThickness:20},
-      {label:perFim,data:valsCurr,backgroundColor:'#0ea5e9',barThickness:20}
+    data:{labels, datasets:[
+      {label:'Mês anterior', data:prev},
+      {label:'Mês atual', data:curr}
     ]},
-    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>moeda(v)}}}}
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
   });
 
-  // Chart 2 - Variação %
-  if(chart2) chart2.destroy();
-  chart2=new Chart(document.getElementById('chartVariacao'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'Variação %',data:pct,backgroundColor:pct.map(v=>v>=0?'#22c55e':'#ef4444')}
-    ]},
-    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}}
+  if(pie) pie.destroy();
+  pie=new Chart(document.getElementById('pieShare'),{
+    type:'pie',
+    data:{labels, datasets:[{label:'Participação mês atual', data:curr}]},
+    options:{responsive:true}
   });
-
-  // Listas
-  const topAum=rows.filter(r=>r.inc>0).slice(0,10);
-  const topQued=rows.filter(r=>r.inc<0).slice(0,10);
-  document.getElementById('listaAumentos').innerHTML=topAum.map(r=>`<li>${r.nome} — ${moeda(r.inc)}</li>`).join('');
-  document.getElementById('listaQuedas').innerHTML=topQued.map(r=>`<li>${r.nome} — ${moeda(r.inc)}</li>`).join('');
 }
 
-document.getElementById('aplicar').addEventListener('click',run);
-window.addEventListener('DOMContentLoaded',()=>{
-  const hoje=new Date();
-  const mesAtual=hoje.toISOString().slice(0,7);
-  const mesAnterior=new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,7);
-  document.getElementById('dataFim').value=mesAtual;
-  document.getElementById('dataInicio').value=mesAnterior;
-  run();
+/* ===== fluxo principal ===== */
+async function run(){
+  const emp=selEmpresa.value;
+  const per=inpPeriodo.value || new Date().toISOString().slice(0,7);
+  const ant=prevMonthStr(per);
+
+  titleTabela.textContent=`Planos — ${per.split('-').reverse().join('/')} vs ${ant.split('-').reverse().join('/')}`;
+  tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Carregando…</td></tr>`;
+
+  try{
+    const [curr, old] = await Promise.all([ getEmpresaPeriodo(emp, per), getEmpresaPeriodo(emp, ant) ]);
+    if(!curr || !old){ tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Sem dados.</td></tr>`; return; }
+
+    const planosCurr=extractPlanos(curr);
+    const planosPrev=extractPlanos(old);
+    const mapCurr=planosToMap(planosCurr);
+    const mapPrev=planosToMap(planosPrev);
+
+    const mesAtual = per.split('-').reverse().join('/');
+    const mesAnt   = ant.split('-').reverse().join('/');
+
+    const rows = buildRows(mapCurr, mapPrev, mesAtual, mesAnt);
+
+    renderTable(rows);
+    renderCharts(rows);
+
+  }catch(e){
+    console.error(e);
+    tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Erro ao carregar. Tente novamente.</td></tr>`;
+  }
+}
+
+/* init */
+btnAplicar.addEventListener('click', run);
+window.addEventListener('DOMContentLoaded', ()=>{
+  const d=new Date();
+  document.getElementById('periodo').value=d.toISOString().slice(0,7); // padrão: mês atual
+  run(); // compara automaticamente com o mês anterior
 });
 </script>
 </body>
