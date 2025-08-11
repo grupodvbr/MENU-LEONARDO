@@ -17,26 +17,29 @@
   .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 14px}
   select,input[type="month"],button{padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:14px;background:#fff}
   button{background:var(--primary);color:#fff;border:none;cursor:pointer}
+
   .grid{display:grid;gap:14px}
   .card{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 8px rgba(0,0,0,.06)}
   .title{font-weight:800;margin:2px 2px 10px}
   .small{color:var(--muted);font-size:12px}
+
   /* tabela estilo planilha */
   .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
-  table{width:100%;border-collapse:collapse;min-width:860px;background:#fff}
+  table{width:100%;border-collapse:collapse;min-width:940px;background:#fff}
   thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--line);text-align:left;font-size:12px;color:#475569;padding:8px}
   tbody td{border-bottom:1px solid var(--line);padding:8px;font-size:14px}
   tbody tr:hover{background:#f9fafb}
   .num{text-align:right;white-space:nowrap}
+
   .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff}
-  .pill{display:inline-block;border-radius:999px;padding:2px 8px;font-size:12px}
-  .pill.red{background:#fee2e2;color:#991b1b}
-  .pill.amber{background:#fef3c7;color:#92400e}
-  .ok{color:var(--ok)}
-  .warn{color:var(--amber)}
-  .danger{color:var(--red);font-weight:700}
+  .ok{color:var(--ok)} .warn{color:var(--amber)} .danger{color:var(--red);font-weight:700}
+
+  /* layout dos “gráficos” (bar + lista sem mov) */
   .charts{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
   @media (max-width:900px){.charts{grid-template-columns:1fr}}
+  @media (max-width:600px){
+    #barTop{max-height:150px !important;}
+  }
 </style>
 </head>
 <body>
@@ -60,15 +63,17 @@
     <button id="aplicar">Aplicar</button>
   </div>
 
-  <!-- Resumo + gráficos simples -->
+  <!-- Resumo + bar + lista de planos sem movimentações -->
   <div class="charts">
     <div class="card">
       <div class="title">Barras — Top 5 (R$ atual vs. mês anterior)</div>
       <canvas id="barTop" height="180"></canvas>
     </div>
     <div class="card">
-      <div class="title">Pizza — Participação no mês atual (Top 5 + 85%)</div>
-      <canvas id="pieShare" height="180"></canvas>
+      <div class="title">Planos sem movimentação no mês atual</div>
+      <ul id="listaSemMov" class="small" style="margin:0;padding-left:18px">
+        <li>Carregando…</li>
+      </ul>
     </div>
   </div>
 
@@ -87,22 +92,19 @@
             <th class="num">Valor mês atual (R$)</th>
             <th class="num">% do mês anterior</th>
             <th class="num">Falta p/ igualar (R$)</th>
+            <th class="num">Excedeu limite (R$)</th><!-- NOVA COLUNA -->
             <th>Status</th>
           </tr>
         </thead>
         <tbody id="tbodyPlanos">
-          <tr><td colspan="8" class="small" style="padding:12px">Carregando…</td></tr>
+          <tr><td colspan="9" class="small" style="padding:12px">Carregando…</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
- <a href="javascript:void(0)" 
-   onclick="history.back()" 
-   class="chip" 
-   style="text-decoration:none;margin-top:6px">
-   ⬅ Voltar ao Painel
-</a>
+  <a href="javascript:void(0)" onclick="history.back()" class="chip" style="text-decoration:none;margin-top:6px">⬅ Voltar ao Painel</a>
+</div>
 
 <script>
 /* ===== CONFIG ===== */
@@ -165,8 +167,9 @@ const inpPeriodo=document.getElementById('periodo');
 const btnAplicar=document.getElementById('aplicar');
 const tbody=document.getElementById('tbodyPlanos');
 const titleTabela=document.getElementById('titleTabela');
+const ulSemMov=document.getElementById('listaSemMov');
 
-let bar, pie;
+let bar;
 
 /* monta lista: top 5 por gasto atual + qualquer outro com pct>=85% */
 function buildRows(mapCurr, mapPrev, mesAtual, mesAnt){
@@ -177,23 +180,21 @@ function buildRows(mapCurr, mapPrev, mesAtual, mesAnt){
     const antes=mapPrev[nome]||0;
     const pct = antes>0 ? (atual/antes*100) : (atual>0?100:0);
     const falta = Math.max(antes-atual, 0);
-    rows.push({
-      nome, antes, atual, pct, falta,
-      mesAnt, mesAtual
-    });
+    const excedeu = Math.max(atual-antes, 0); // NOVO
+    rows.push({ nome, antes, atual, pct, falta, excedeu, mesAnt, mesAtual });
   });
   // top 5 por atual
   const top5=[...rows].sort((a,b)=>b.atual-a.atual).slice(0,5).map(r=>r.nome);
   // + todos com pct >= 85%
   const out = rows.filter(r=> top5.includes(r.nome) || r.pct>=85);
   // ordena por gasto atual desc
-  return out.sort((a,b)=>b.atual-a.atual);
+  return {selected: out.sort((a,b)=>b.atual-a.atual), all: rows};
 }
 
 /* renderiza tabela */
 function renderTable(rows){
   if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Nada a mostrar para o período.</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Nada a mostrar para o período.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(r=>{
@@ -207,13 +208,14 @@ function renderTable(rows){
       <td class="num">${moeda(r.atual)}</td>
       <td class="num ${cls}">${r.pct.toFixed(1)}%</td>
       <td class="num">${moeda(r.falta)}</td>
+      <td class="num">${moeda(r.excedeu)}</td>
       <td class="${cls}">${status}</td>
     </tr>`;
   }).join('');
 }
 
-/* gráficos simples */
-function renderCharts(rows){
+/* gráfico de barras simples */
+function renderBar(rows){
   const labels=rows.map(r=>r.nome);
   const prev=rows.map(r=>r.antes);
   const curr=rows.map(r=>r.atual);
@@ -227,13 +229,16 @@ function renderCharts(rows){
     ]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
   });
+}
 
-  if(pie) pie.destroy();
-  pie=new Chart(document.getElementById('pieShare'),{
-    type:'pie',
-    data:{labels, datasets:[{label:'Participação mês atual', data:curr}]},
-    options:{responsive:true}
-  });
+/* lista de planos sem movimentação neste mês (atual == 0) */
+function renderSemMov(allRows){
+  const sem = allRows.filter(r=>r.atual===0).sort((a,b)=>b.antes-a.antes);
+  if(!sem.length){
+    ulSemMov.innerHTML = '<li>Nenhum plano sem movimentação neste mês.</li>';
+    return;
+  }
+  ulSemMov.innerHTML = sem.map(r=>`<li><b>${r.nome}</b> — mês anterior: ${moeda(r.antes)}</li>`).join('');
 }
 
 /* ===== fluxo principal ===== */
@@ -243,11 +248,12 @@ async function run(){
   const ant=prevMonthStr(per);
 
   titleTabela.textContent=`Planos — ${per.split('-').reverse().join('/')} vs ${ant.split('-').reverse().join('/')}`;
-  tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Carregando…</td></tr>`;
+  tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Carregando…</td></tr>`;
+  ulSemMov.innerHTML='<li>Carregando…</li>';
 
   try{
     const [curr, old] = await Promise.all([ getEmpresaPeriodo(emp, per), getEmpresaPeriodo(emp, ant) ]);
-    if(!curr || !old){ tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Sem dados.</td></tr>`; return; }
+    if(!curr || !old){ tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Sem dados.</td></tr>`; ulSemMov.innerHTML=''; return; }
 
     const planosCurr=extractPlanos(curr);
     const planosPrev=extractPlanos(old);
@@ -257,14 +263,16 @@ async function run(){
     const mesAtual = per.split('-').reverse().join('/');
     const mesAnt   = ant.split('-').reverse().join('/');
 
-    const rows = buildRows(mapCurr, mapPrev, mesAtual, mesAnt);
+    const {selected, all} = buildRows(mapCurr, mapPrev, mesAtual, mesAnt);
 
-    renderTable(rows);
-    renderCharts(rows);
+    renderTable(selected);
+    renderBar(selected);
+    renderSemMov(all);
 
   }catch(e){
     console.error(e);
-    tbody.innerHTML=`<tr><td colspan="8" class="small" style="padding:12px">Erro ao carregar. Tente novamente.</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Erro ao carregar. Tente novamente.</td></tr>`;
+    ulSemMov.innerHTML='';
   }
 }
 
