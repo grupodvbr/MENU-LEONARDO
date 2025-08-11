@@ -4,54 +4,54 @@
 <meta charset="utf-8">
 <title>CB Systems • Comparativo (mês atual × anterior)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
 <style>
   :root{
-    --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --primary:#0ea5e9;
-    --red:#dc2626; --amber:#f59e0b; --ok:#16a34a; --line:#e5e7eb;
-    --chart-h: 200px;
+    --bg:#f6f8fb; --ink:#0b1220; --muted:#64748b; --card:#fff; --primary:#0ea5e9;
+    --gold:#d4af37; --black:#111827; --red:#dc2626; --amber:#f59e0b; --ok:#16a34a; --line:#e5e7eb;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
   header{background:#0b1220;color:#fff;padding:14px 18px;font-weight:700}
   .wrap{max-width:1200px;margin:0 auto;padding:16px}
-  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 14px}
+  .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin:0 0 14px}
+  @media(max-width:720px){.filters{grid-template-columns:1fr 1fr}}
   select,input[type="month"],button{padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:14px;background:#fff}
-  button{background:#0ea5e9;color:#fff;border:none;cursor:pointer}
+  button#aplicar{background:#1292d6;color:#fff;border:none;cursor:pointer}
   .grid{display:grid;gap:14px}
   .card{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 8px rgba(0,0,0,.06)}
   .title{font-weight:800;margin:2px 2px 10px}
   .small{color:var(--muted);font-size:12px}
-  .charts{display:grid;grid-template-columns:1fr;gap:14px}
-  canvas{width:100%;height:var(--chart-h)}
-  @media (max-width:600px){ :root{ --chart-h: 150px; } }
-
   /* tabela */
   .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
-  table{width:100%;border-collapse:collapse;min-width:980px;background:#fff}
+  table{width:100%;border-collapse:collapse;min-width:940px;background:#fff}
   thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--line);text-align:left;font-size:12px;color:#475569;padding:8px}
   tbody td{border-bottom:1px solid var(--line);padding:8px;font-size:14px}
   tbody tr:hover{background:#f9fafb}
   .num{text-align:right;white-space:nowrap}
-  .ok{color:var(--ok)}
-  .warn{color:var(--amber)}
-  .danger{color:var(--red);font-weight:700}
-  .neg{color:var(--red);font-weight:600}
-  .clickable{cursor:pointer}
-  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff}
-
-  /* modal linha */
+  .ok{color:var(--ok)} .warn{color:var(--amber)} .danger{color:var(--red);font-weight:700}
+  /* charts */
+  .charts{display:grid;grid-template-columns:1fr;gap:14px}
+  /* modal */
   #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center}
   #modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-  #modal .panel{position:relative;z-index:1;width:min(94vw,900px);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px}
-  #modal header{position:sticky;top:0;background:#fff;margin:-12px -12px 8px;padding:10px 12px;border-radius:12px 12px 0 0;box-shadow:0 1px 0 rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between}
+  #modal .panel{position:relative;z-index:1;width:min(96vw,980px);max-height:92vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:12px}
+  #modal header{position:sticky;top:0;background:#fff;margin:-12px -12px 8px;padding:10px 12px;border-radius:14px 14px 0 0;box-shadow:0 1px 0 rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between}
   #modal h3{margin:0;font-size:16px}
   #modal .close{appearance:none;border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#334155}
-
-  /* box com rolagem para "sem movimentação" */
-  .scrollbox{max-height:280px;overflow:auto;border:1px dashed #e5e7eb;border-radius:10px;padding:10px;background:#fff}
-  .scrollbox ul{margin:0;padding-left:18px}
-  .scrollbox li+li{margin-top:6px}
+  .modal-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px;align-items:center}
+  .modal-toolbar .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer}
+  .modal-toolbar button{padding:8px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#0b1220;color:#d4af37;cursor:pointer}
+  /* sem movimentação */
+  .no-mov-wrap{max-height:240px;overflow:auto;border:1px dashed #e5e7eb;border-radius:12px;padding:8px}
+  .no-mov-wrap ul{margin:0;padding-left:18px}
+  .no-mov-wrap li+li{margin-top:6px}
+  /* barras responsivas menores no celular */
+  @media(max-width:480px){
+    canvas{height:160px!important}
+  }
 </style>
 </head>
 <body>
@@ -75,18 +75,19 @@
     <button id="aplicar">Aplicar</button>
   </div>
 
-  <!-- Gráfico -->
-  <div class="charts">
-    <div class="card">
-      <div class="title">Barras — Top 10 (R$ atual vs. mês anterior)</div>
-      <canvas id="barTop"></canvas>
-    </div>
+  <!-- Gráfico Top 10 -->
+  <div class="card">
+    <div class="title">Barras — Top 10 (R$ atual vs. mês anterior)</div>
+    <canvas id="barTop" height="220"></canvas>
   </div>
 
   <!-- Planilha -->
   <div class="card">
-    <div class="title" id="titleTabela">Planos — mês atual × anterior</div>
-    <div class="small">Regra: ≥ 90% do mês anterior fica <b class="danger">vermelho ⚠️</b>. Itens com ≥ 85% ficam <b class="warn">laranja</b>. <u>Excedeu limite</u> aparece como valor negativo (o quanto passou).</div>
+    <div class="title" id="titleTabela">Planos (mês atual × anterior)</div>
+    <div class="small">
+      Regra: ≥ 90% do mês anterior fica <b class="danger">vermelho</b> 🔺.
+      Itens com ≥ 85% ficam <b class="warn">laranja</b>. <b>Excedeu limite</b> aparece como valor <b>negativo</b> (quanto passou).
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -112,15 +113,17 @@
   <!-- Sem movimentação -->
   <div class="card">
     <div class="title">Planos sem movimentação no mês atual</div>
-    <div class="scrollbox">
+    <div class="no-mov-wrap">
       <ul id="listaSemMov"><li class="small">Carregando…</li></ul>
     </div>
   </div>
 
-  <a href="javascript:void(0)" onclick="history.back()" class="chip" style="text-decoration:none;margin-top:6px">⬅ Voltar ao Painel</a>
+  <a href="javascript:void(0)" onclick="history.back()" class="chip" style="text-decoration:none;margin-top:6px">
+    ⬅ Voltar ao Painel
+  </a>
 </div>
 
-<!-- Modal evolução plano -->
+<!-- Modal Linha -->
 <div id="modal" aria-hidden="true">
   <div class="backdrop" data-close></div>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -128,7 +131,15 @@
       <h3 id="modal-title">Evolução do plano</h3>
       <button class="close" title="Fechar" aria-label="Fechar" data-close>&times;</button>
     </header>
-    <canvas id="line-evolucao" style="width:100%;height:260px"></canvas>
+
+    <div class="modal-toolbar">
+      <label class="chip"><input type="radio" name="modeLine" value="valor" checked> R$</label>
+      <label class="chip"><input type="radio" name="modeLine" value="pct"> % vs mês anterior</label>
+      <label class="chip"><input type="checkbox" id="toggleAvg" checked> Mostrar média (3m)</label>
+      <button id="btnExportPng" type="button">Baixar PNG</button>
+    </div>
+
+    <canvas id="line-evolucao" style="width:100%;height:360px"></canvas>
     <div class="small" id="modal-note" style="margin-top:8px"></div>
   </div>
 </div>
@@ -147,13 +158,13 @@ const parseBR=v=>{
 };
 const norm=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 function prevMonthStr(ym){
-  if(!/^\d{4}-\d{2}$/.test(ym||'')){ const d=new Date(); return d.toISOString().slice(0,7); }
+  if(!/^\d{4}-\d{2}$/.test(ym||'')){ const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); }
   const [y,m]=ym.split('-').map(Number);
   const d=new Date(y,m-1,1); d.setMonth(d.getMonth()-1);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
 
-/* pega planos */
+/* pega planos do retorno (usa .planosFonte9 ou grid/tabela) */
 function extractPlanos(rec){
   if (Array.isArray(rec?.planosFonte9) && rec.planosFonte9.length){
     return rec.planosFonte9.map(p=>({nome:String(p.nome||'—'), valor:Math.abs(parseBR(p.valor))}));
@@ -194,122 +205,55 @@ const inpPeriodo=document.getElementById('periodo');
 const btnAplicar=document.getElementById('aplicar');
 const tbody=document.getElementById('tbodyPlanos');
 const titleTabela=document.getElementById('titleTabela');
-const ulSemMov=document.getElementById('listaSemMov');
+const listNoMov=document.getElementById('listaSemMov');
 
-let bar=null, lineModal=null;
+let barChart=null, lineModal=null;
 
-/* ===== linhas (com excedeu negativo) ===== */
-function buildRows(mapCurr, mapPrev, mesAtual, mesAnt){
-  const nomes=new Set([...Object.keys(mapCurr),...Object.keys(mapPrev)]);
-  const rows=[];
-  nomes.forEach(nome=>{
-    const atual   = mapCurr[nome] || 0;
-    const antes   = mapPrev[nome] || 0;
-    const pct     = antes>0 ? (atual/antes*100) : (atual>0 ? 100 : 0);
-    const falta   = Math.max(antes - atual, 0);
-    const excedeu = (atual>antes) ? -(atual-antes) : 0;   // NEGATIVO quando passou
-
-    let tag='ok', priority=2;
-    if(pct>=90){ tag='red'; priority=0; }
-    else if(pct>=85){ tag='orange'; priority=1; }
-
-    rows.push({ nome, antes, atual, pct, falta, excedeu, mesAnt, mesAtual, tag, priority });
-  });
-
-  rows.sort((a,b)=>{
-    if (a.priority !== b.priority) return a.priority - b.priority;
-    if (b.pct !== a.pct) return b.pct - a.pct;
-    return b.atual - a.atual;
-  });
-
-  return rows;
+/* ===== LINHA (MODAL) ===== */
+const pctFmt = v => `${(v||0).toFixed(1)}%`;
+function seriesPctFromValues(vals){
+  const out = vals.map((v,i)=> i===0 ? 0 : (vals[i-1] ? ((v/vals[i-1])-1)*100 : 0));
+  return out;
 }
-
-/* ===== tabela ===== */
-function renderTable(rows){
-  if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Nada a mostrar para o período.</td></tr>`;
-    return;
+function movingAverage(vals, k=3){
+  const out = [];
+  for(let i=0;i<vals.length;i++){
+    const a=Math.max(0,i-k+1);
+    const slice = vals.slice(a,i+1);
+    out.push(slice.reduce((x,y)=>x+y,0)/slice.length);
   }
-  tbody.innerHTML = rows.map(r=>{
-    const cls = r.tag==='red' ? 'danger' : (r.tag==='orange' ? 'warn' : 'ok');
-    const status = r.tag==='red' ? '⚠️ Acima de 90%' : (r.tag==='orange' ? '⚠️ 85%+' : 'OK');
-    return `<tr class="clickable" data-plan="${encodeURIComponent(r.nome)}">
-      <td>${r.nome}</td>
-      <td>${r.mesAnt}</td>
-      <td class="num">${moeda(r.antes)}</td>
-      <td>${r.mesAtual}</td>
-      <td class="num">${moeda(r.atual)}</td>
-      <td class="num ${cls}">${r.pct.toFixed(1)}%</td>
-      <td class="num">${moeda(r.falta)}</td>
-      <td class="num ${r.excedeu<0?'neg':''}">${moeda(r.excedeu)}</td>
-      <td class="${cls}">${status}</td>
-    </tr>`;
-  }).join('');
+  return out;
 }
-
-/* clique na TABELA (delegação) => abre modal de linhas */
-tbody.addEventListener('click', (e)=>{
-  const tr = e.target.closest('tr[data-plan]');
-  if(!tr) return;
-  const nome = decodeURIComponent(tr.getAttribute('data-plan'));
-  openPlanModal(nome);
-});
-
-/* ===== gráfico barras (preto x dourado) ===== */
-function renderBar(rows){
-  const top = rows.slice(0,10);
-  const labels = top.map(r=>r.nome);
-  const prev   = top.map(r=>r.antes);
-  const curr   = top.map(r=>r.atual);
-
-  if(bar) bar.destroy();
-  bar=new Chart(document.getElementById('barTop'),{
-    type:'bar',
-    data:{labels, datasets:[
-      {label:'Mês anterior', data:prev, backgroundColor:'#000000', borderColor:'#000000', borderWidth:1, borderRadius:6},
-      {label:'Mês atual',    data:curr, backgroundColor:'#d4af37', borderColor:'#b8891a', borderWidth:1, borderRadius:6}
-    ]},
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{position:'top'},
-        tooltip:{callbacks:{label:(ctx)=> `${ctx.dataset.label}: ${moeda(ctx.parsed.y||0)}`}}
-      },
-      scales:{y:{beginAtZero:true}}
-    }
-  });
-}
-
-/* ===== lista sem movimentação usa união de planos ===== */
-function renderSemMov(mapCurr, mapPrev){
-  const nomes=new Set([...Object.keys(mapPrev), ...Object.keys(mapCurr)]);
-  const itens=[];
-  nomes.forEach(n=>{
-    const atual=mapCurr[n]||0, antes=mapPrev[n]||0;
-    if(atual===0 && antes>0){ itens.push({n,antes}); }
-  });
-  if(!itens.length){ ulSemMov.innerHTML = `<li class="small">Sem itens sem movimentação neste mês.</li>`; return; }
-  ulSemMov.innerHTML = itens
-    .sort((a,b)=>b.antes-a.antes)
-    .map(r=>`<li><b>${r.n}</b> — mês anterior: ${moeda(r.antes)}</li>`)
-    .join('');
-}
-
-/* ===== modal evolução ===== */
 async function buildYearSeries(emp, year, planName){
-  const now=new Date(); const limitMonth = (year===now.getFullYear())? (now.getMonth()+1) : 12;
+  const now=new Date();
+  const limitMonth = (year===now.getFullYear())? (now.getMonth()+1) : 12;
   const months = Array.from({length:limitMonth}, (_,k)=> `${year}-${String(k+1).padStart(2,'0')}`);
-  const results = await Promise.all(months.map(m=>getEmpresaPeriodo(emp, m)));
-  const serie = months.map((m,idx)=>{
-    const rec = results[idx]; const planos = extractPlanos(rec);
-    const found = planos.find(p=>norm(p.nome)===norm(planName));
-    return found ? Math.abs(parseBR(found.valor)) : 0;
-  });
-  return {labels: months.map(m=>m.split('-').reverse().join('/')), data: serie};
+  const monthsPrevYear = months.map(m => `${year-1}-${m.split('-')[1]}`);
+
+  const [resNow, resPrevYear] = await Promise.all([
+    Promise.all(months.map(m=>getEmpresaPeriodo(emp, m))),
+    Promise.all(monthsPrevYear.map(m=>getEmpresaPeriodo(emp, m)))
+  ]);
+
+  function pick(rec, name){
+    const planos = extractPlanos(rec);
+    const f = planos.find(p=>norm(p.nome)===norm(name));
+    return f ? Math.abs(parseBR(f.valor)) : 0;
+    }
+
+  const valsNow  = months.map((m,i)=> pick(resNow[i], planName));
+  const valsPrev = monthsPrevYear.map((m,i)=> pick(resPrevYear[i], planName));
+
+  return {
+    labels: months.map(m=>m.split('-').reverse().join('/')),
+    valsNow,
+    valsPrev
+  };
 }
-function closeModal(){ const m=document.getElementById('modal'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }
-document.addEventListener('click',(e)=>{ if(e.target.matches('#modal [data-close], #modal .backdrop')) closeModal(); });
+function openModal(){ const m=document.getElementById('modal'); m.style.display='flex'; m.setAttribute('aria-hidden','false'); }
+function closeModal(){ const m=document.getElementById('modal'); m.style.display='none'; m.setAttribute('aria-hidden','true'); if(lineModal){lineModal.destroy(); lineModal=null;} }
+document.addEventListener('click',(e)=>{ if(e.target.matches('[data-close], #modal .backdrop')) closeModal(); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModal(); });
 
 async function openPlanModal(planName){
   const emp = selEmpresa.value;
@@ -317,24 +261,182 @@ async function openPlanModal(planName){
   const year = Number(per.split('-')[0]);
 
   document.getElementById('modal-title').textContent = `Evolução — ${planName} (${year})`;
-  document.getElementById('modal-note').textContent  = 'Valores por mês no ano atual para o plano selecionado.';
+  document.getElementById('modal-note').textContent  = 'Dourado: ano atual • Cinza: mesmo período do ano anterior.';
 
   const serie = await buildYearSeries(emp, year, planName);
-  const ctx = document.getElementById('line-evolucao').getContext('2d');
-  if(lineModal) { lineModal.destroy(); lineModal=null; }
-  lineModal = new Chart(ctx,{
-    type:'line',
-    data:{ labels: serie.labels, datasets:[{ label: planName, data: serie.data, tension:.25 }]},
+  const cvs = document.getElementById('line-evolucao');
+  const ctx = cvs.getContext('2d');
+
+  // degradê dourado
+  const grad = ctx.createLinearGradient(0,0,0,cvs.height);
+  grad.addColorStop(0,'rgba(212,175,55,0.35)');
+  grad.addColorStop(1,'rgba(212,175,55,0.05)');
+
+  const dataValor = {
+    labels: serie.labels,
+    datasets: [
+      {label:`${year} (R$)`, data: serie.valsNow, borderColor:'#d4af37', backgroundColor:grad, fill:true, tension:.25, pointRadius:4, pointHoverRadius:6, borderWidth:2},
+      {label:`${year-1} (R$)`, data: serie.valsPrev, borderColor:'#9ca3af', borderDash:[6,6], pointRadius:3, fill:false, tension:.2},
+      {label:'Média (3m)', data: movingAverage(serie.valsNow,3), borderColor:'#0b1220', borderWidth:1, pointRadius:0, hidden:false, tension:.2}
+    ]
+  };
+  const dataPct = {
+    labels: serie.labels,
+    datasets: [
+      {label:`${year} (% vs mês ant.)`, data: seriesPctFromValues(serie.valsNow), borderColor:'#d4af37', backgroundColor:grad, fill:true, tension:.25, pointRadius:4, pointHoverRadius:6, borderWidth:2},
+      {label:`${year-1} (% vs mês ant.)`, data: seriesPctFromValues(serie.valsPrev), borderColor:'#9ca3af', borderDash:[6,6], pointRadius:3, fill:false, tension:.2},
+      {label:'Média (3m)', data: movingAverage(seriesPctFromValues(serie.valsNow),3), borderColor:'#0b1220', borderWidth:1, pointRadius:0, hidden:false, tension:.2}
+    ]
+  };
+
+  function build(mode='valor', showAvg=true){
+    if(lineModal){ lineModal.destroy(); lineModal=null; }
+    const useData = (mode==='valor') ? dataValor : dataPct;
+    useData.datasets[2].hidden = !showAvg;
+
+    lineModal = new Chart(ctx,{
+      type:'line',
+      data: useData,
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{position:'bottom'},
+          tooltip:{
+            callbacks:{
+              label:(c)=>{
+                const v = c.parsed.y||0;
+                if(mode==='valor'){
+                  const prev = c.dataIndex>0 ? useData.datasets[0].data[c.dataIndex-1] : 0;
+                  const yoy  = (dataValor.datasets[1].data[c.dataIndex]||0);
+                  const diff = prev? ((v/prev-1)*100):0;
+                  const diffY = yoy? ((v/yoy-1)*100):0;
+                  return `${c.dataset.label}: ${moeda(v)}  • Δ M-1 ${pctFmt(diff)} • Δ A/A ${pctFmt(diffY)}`;
+                }else{
+                  return `${c.dataset.label}: ${pctFmt(v)}`;
+                }
+              }
+            }
+          },
+          annotation:{annotations:{}}
+        },
+        scales:{
+          y:{beginAtZero:true, grid:{color:'rgba(0,0,0,.06)'}},
+          x:{grid:{display:false}}
+        }
+      }
+    });
+  }
+
+  // toolbar
+  const radios=[...document.querySelectorAll('input[name="modeLine"]')];
+  const chkAvg=document.getElementById('toggleAvg');
+  radios.forEach(r=>r.onchange=()=>build(r.value, chkAvg.checked));
+  chkAvg.onchange=()=>build(radios.find(r=>r.checked).value, chkAvg.checked);
+  document.getElementById('btnExportPng').onclick=()=> {
+    const a=document.createElement('a');
+    a.download=`evolucao-${planName}-${year}.png`;
+    a.href=document.getElementById('line-evolucao').toDataURL('image/png');
+    a.click();
+  };
+
+  build('valor', true);
+  openModal();
+}
+
+/* ===== BARRAS ===== */
+function renderBar(rows){
+  const labels=rows.map(r=>r.nome);
+  const prev=rows.map(r=>r.antes);
+  const curr=rows.map(r=>r.atual);
+
+  if(barChart) barChart.destroy();
+  const ctx=document.getElementById('barTop').getContext('2d');
+
+  // preenche alternando preto/dourado
+  const black='#111827', gold='#d4af37';
+  const bgPrev = prev.map(()=> 'rgba(17,24,39,.35)');
+  const bgCurr = curr.map((_,i)=> (i%2===0? gold : black));
+  const borderCurr = curr.map((_,i)=> (i%2===0? '#b58e12' : '#000'));
+
+  barChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets:[
+      {label:'Mês anterior', data:prev, backgroundColor:bgPrev, borderColor:'#111827', borderWidth:1},
+      {label:'Mês atual', data:curr, backgroundColor:bgCurr, borderColor:borderCurr, borderWidth:2}
+    ]},
     options:{
       responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> moeda(c.parsed.y||0) } } },
-      scales:{ y:{ beginAtZero:true } }
+      plugins:{legend:{position:'top'}, tooltip:{}},
+      scales:{y:{beginAtZero:true}}
     }
   });
 
-  const modal=document.getElementById('modal');
-  modal.style.display='flex';
-  modal.setAttribute('aria-hidden','false');
+  // clique na barra abre o modal do plano
+  document.getElementById('barTop').onclick=(evt)=>{
+    const points = barChart.getElementsAtEventForMode(evt,'nearest',{intersect:true},true);
+    if(points.length){
+      const idx=points[0].index; const name=labels[idx];
+      openPlanModal(name);
+    }
+  };
+}
+
+/* ===== TABELA / SEM MOVIMENTO ===== */
+function buildRows(mapCurr, mapPrev, mesAtual, mesAnt){
+  const nomes=new Set([...Object.keys(mapCurr),...Object.keys(mapPrev)]);
+  const rows=[];
+  nomes.forEach(nome=>{
+    const atual=mapCurr[nome]||0;
+    const antes=mapPrev[nome]||0;
+    const pct = antes>0 ? (atual/antes*100) : (atual>0?100:0);
+    const falta = Math.max(antes-atual, 0);
+    const excedeu = atual>antes ? -(atual-antes) : 0; // negativo quando passou
+    rows.push({nome, antes, atual, pct, falta, excedeu, mesAnt, mesAtual});
+  });
+  // ordena: vermelhos (>=90), depois laranjas (>=85), depois o resto, todos por gasto atual desc
+  const reds = rows.filter(r=>r.pct>=90).sort((a,b)=>b.atual-a.atual);
+  const ambs = rows.filter(r=>r.pct>=85 && r.pct<90).sort((a,b)=>b.atual-a.atual);
+  const oks  = rows.filter(r=>r.pct<85).sort((a,b)=>b.atual-a.atual);
+  return [...reds, ...ambs, ...oks];
+}
+function renderTable(rows){
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Nada a mostrar para o período.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r=>{
+    const cls = r.pct>=90 ? 'danger' : (r.pct>=85 ? 'warn' : 'ok');
+    const status = r.pct>=90 ? 'Acima de 90%' : (r.pct>=85 ? '85%+' : 'OK');
+    return `<tr data-plan="${encodeURIComponent(r.nome)}" class="row-plan ${cls}">
+      <td style="cursor:pointer;text-decoration:underline">${r.nome}</td>
+      <td>${r.mesAnt}</td>
+      <td class="num">${moeda(r.antes)}</td>
+      <td>${r.mesAtual}</td>
+      <td class="num">${moeda(r.atual)}</td>
+      <td class="num ${cls}">${r.pct.toFixed(1)}%</td>
+      <td class="num">${moeda(r.falta)}</td>
+      <td class="num ${r.excedeu<0?'danger':''}">${moeda(r.excedeu)}</td>
+      <td class="${cls}">${status}</td>
+    </tr>`;
+  }).join('');
+
+  // clique na linha abre o modal (ajuste solicitado)
+  [...document.querySelectorAll('tr.row-plan')].forEach(tr=>{
+    tr.addEventListener('click',()=> openPlanModal(decodeURIComponent(tr.getAttribute('data-plan'))));
+  });
+}
+function renderSemMov(mapCurr, mapPrev, mesAnt){
+  const nomes=new Set([...Object.keys(mapCurr),...Object.keys(mapPrev)]);
+  const itens=[];
+  nomes.forEach(n=>{
+    const atual=mapCurr[n]||0, antes=mapPrev[n]||0;
+    if(atual===0 && antes>0) itens.push({nome:n, antes});
+  });
+  if(!itens.length){ listNoMov.innerHTML='<li class="small">Nenhum plano sem movimentação.</li>'; return; }
+  listNoMov.innerHTML = itens
+    .sort((a,b)=>b.antes-a.antes)
+    .map(i=>`<li><strong>${i.nome}</strong> — mês anterior: <b>${moeda(i.antes)}</b></li>`)
+    .join('');
 }
 
 /* ===== fluxo principal ===== */
@@ -345,15 +447,11 @@ async function run(){
 
   titleTabela.textContent=`Planos — ${per.split('-').reverse().join('/')} vs ${ant.split('-').reverse().join('/')}`;
   tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Carregando…</td></tr>`;
-  ulSemMov.innerHTML='<li class="small">Carregando…</li>';
+  listNoMov.innerHTML='<li class="small">Carregando…</li>';
 
   try{
     const [curr, old] = await Promise.all([ getEmpresaPeriodo(emp, per), getEmpresaPeriodo(emp, ant) ]);
-    if(!curr || !old){
-      tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Sem dados.</td></tr>`;
-      ulSemMov.innerHTML=`<li class="small">Sem dados.</li>`;
-      return;
-    }
+    if(!curr || !old){ tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Sem dados.</td></tr>`; return; }
 
     const planosCurr=extractPlanos(curr);
     const planosPrev=extractPlanos(old);
@@ -366,22 +464,24 @@ async function run(){
     const rows = buildRows(mapCurr, mapPrev, mesAtual, mesAnt);
 
     renderTable(rows);
-    renderBar(rows);
-    renderSemMov(mapCurr, mapPrev);
+    renderSemMov(mapCurr, mapPrev, mesAnt);
+
+    // para barras: top 10 por gasto atual
+    renderBar([...rows].sort((a,b)=>b.atual-a.atual).slice(0,10));
 
   }catch(e){
     console.error(e);
     tbody.innerHTML=`<tr><td colspan="9" class="small" style="padding:12px">Erro ao carregar. Tente novamente.</td></tr>`;
-    ulSemMov.innerHTML=`<li class="small">Erro ao carregar.</li>`;
+    listNoMov.innerHTML='<li class="small">Erro ao carregar.</li>';
   }
 }
 
 /* init */
-document.getElementById('aplicar').addEventListener('click', run);
+btnAplicar.addEventListener('click', run);
 window.addEventListener('DOMContentLoaded', ()=>{
   const d=new Date();
   document.getElementById('periodo').value=d.toISOString().slice(0,7); // padrão: mês atual
-  run();
+  run(); // compara automaticamente com o mês anterior
 });
 </script>
 </body>
