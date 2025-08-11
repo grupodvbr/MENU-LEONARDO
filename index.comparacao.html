@@ -17,7 +17,7 @@
   .wrap{max-width:1200px;margin:0 auto;padding:16px}
   .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 14px}
   select,input[type="month"],button{padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:14px;background:#fff}
-  button{background:var(--primary);color:#fff;border:none;cursor:pointer}
+  button{background:#0ea5e9;color:#fff;border:none;cursor:pointer}
   .grid{display:grid;gap:14px}
   .card{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 8px rgba(0,0,0,.06)}
   .title{font-weight:800;margin:2px 2px 10px}
@@ -246,13 +246,17 @@ function renderTable(rows){
       <td class="${cls}">${status}</td>
     </tr>`;
   }).join('');
-
-  tbody.querySelectorAll('tr[data-plan]').forEach(tr=>{
-    tr.addEventListener('click',()=> openPlanModal(decodeURIComponent(tr.getAttribute('data-plan'))));
-  });
 }
 
-/* ===== gráfico barras ===== */
+/* clique na TABELA (delegação) => abre modal de linhas */
+tbody.addEventListener('click', (e)=>{
+  const tr = e.target.closest('tr[data-plan]');
+  if(!tr) return;
+  const nome = decodeURIComponent(tr.getAttribute('data-plan'));
+  openPlanModal(nome);
+});
+
+/* ===== gráfico barras (preto x dourado) ===== */
 function renderBar(rows){
   const top = rows.slice(0,10);
   const labels = top.map(r=>r.nome);
@@ -263,8 +267,8 @@ function renderBar(rows){
   bar=new Chart(document.getElementById('barTop'),{
     type:'bar',
     data:{labels, datasets:[
-      {label:'Mês anterior', data:prev},
-      {label:'Mês atual',    data:curr}
+      {label:'Mês anterior', data:prev, backgroundColor:'#000000', borderColor:'#000000', borderWidth:1, borderRadius:6},
+      {label:'Mês atual',    data:curr, backgroundColor:'#d4af37', borderColor:'#b8891a', borderWidth:1, borderRadius:6}
     ]},
     options:{
       responsive:true,
@@ -277,21 +281,25 @@ function renderBar(rows){
   });
 }
 
-/* ===== lista sem movimentação (atual==0) com rolagem ===== */
-function renderSemMov(rows){
-  const sem = rows.filter(r=> r.atual===0);
-  if(!sem.length){ ulSemMov.innerHTML = `<li class="small">Sem itens sem movimentação neste mês.</li>`; return; }
-  ulSemMov.innerHTML = sem
+/* ===== lista sem movimentação usa união de planos ===== */
+function renderSemMov(mapCurr, mapPrev){
+  const nomes=new Set([...Object.keys(mapPrev), ...Object.keys(mapCurr)]);
+  const itens=[];
+  nomes.forEach(n=>{
+    const atual=mapCurr[n]||0, antes=mapPrev[n]||0;
+    if(atual===0 && antes>0){ itens.push({n,antes}); }
+  });
+  if(!itens.length){ ulSemMov.innerHTML = `<li class="small">Sem itens sem movimentação neste mês.</li>`; return; }
+  ulSemMov.innerHTML = itens
     .sort((a,b)=>b.antes-a.antes)
-    .map(r=>`<li><b>${r.nome}</b> — mês anterior: ${moeda(r.antes)}</li>`)
+    .map(r=>`<li><b>${r.n}</b> — mês anterior: ${moeda(r.antes)}</li>`)
     .join('');
 }
 
 /* ===== modal evolução ===== */
-function monthLabel(i){ return String(i).padStart(2,'0'); }
 async function buildYearSeries(emp, year, planName){
   const now=new Date(); const limitMonth = (year===now.getFullYear())? (now.getMonth()+1) : 12;
-  const months = Array.from({length:limitMonth}, (_,k)=> `${year}-${monthLabel(k+1)}`);
+  const months = Array.from({length:limitMonth}, (_,k)=> `${year}-${String(k+1).padStart(2,'0')}`);
   const results = await Promise.all(months.map(m=>getEmpresaPeriodo(emp, m)));
   const serie = months.map((m,idx)=>{
     const rec = results[idx]; const planos = extractPlanos(rec);
@@ -359,7 +367,7 @@ async function run(){
 
     renderTable(rows);
     renderBar(rows);
-    renderSemMov(rows);
+    renderSemMov(mapCurr, mapPrev);
 
   }catch(e){
     console.error(e);
@@ -369,10 +377,10 @@ async function run(){
 }
 
 /* init */
-btnAplicar.addEventListener('click', run);
+document.getElementById('aplicar').addEventListener('click', run);
 window.addEventListener('DOMContentLoaded', ()=>{
   const d=new Date();
-  document.getElementById('periodo').value=d.toISOString().slice(0,7);
+  document.getElementById('periodo').value=d.toISOString().slice(0,7); // padrão: mês atual
   run();
 });
 </script>
