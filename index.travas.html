@@ -98,17 +98,17 @@
     </label>
   </div>
 
-    <div id="content" class="section"></div>
-  <!-- Botão para ir para index.comparacao.html -->
+  <div id="content" class="section"></div>
   <div style="margin-top:20px; text-align:center;">
-  <a href="index.comparacao.html" 
-     style="background:#0ea5e9; color:#fff; padding:10px 20px; 
-            border-radius:8px; text-decoration:none; font-weight:600; 
-            display:inline-block;">
-    Análisar planos de contas
+    <a href="index.comparacao.html" 
+       style="background:#0ea5e9; color:#fff; padding:10px 20px; 
+              border-radius:8px; text-decoration:none; font-weight:600; 
+              display:inline-block;">
+      Análisar planos de contas
     </a>
   </div>
 </div> <!-- Fim da .wrap -->
+
 <!-- Modal de Planos -->
 <div id="modal" aria-hidden="true">
   <div class="backdrop" data-close></div>
@@ -180,6 +180,25 @@ function progressCalc(limit, spent, perStr){
   const daily=elapsed>0?spent/elapsed:0, forecast=spent+daily*remain, forecastPct=limit>0?forecast/limit*100:0;
   let status='neutral'; if(cmp<0) status=spent>limit?'bad':'good'; else if(cmp===0) status=forecast>limit?'bad':(pct>=80?'warn':'good'); else status=pct>=80?'warn':'neutral';
   return {pct,available,forecast,forecastPct,status};
+}
+
+/* ===== REGRA DE COR 80% (solicitada) ===== */
+function statusBy80(limit, spent, perStr){
+  const today=new Date();
+  const pd=parseYYYYMM(perStr)||new Date(today.getFullYear(),today.getMonth(),1);
+  const cmp=monthCompare(pd,new Date(today.getFullYear(),today.getMonth(),1)); // -1 passado, 0 atual, 1 futuro
+  const pct = limit>0 ? (spent/limit*100) : 0;
+
+  // >80% -> vermelho
+  // mês fechado (passado) e <80% -> verde
+  // demais -> branco (sem classe)
+  if (cmp < 0) { // mês já fechado
+    if (pct < 80) return 'good';
+    if (pct > 80) return 'bad';
+    return '';
+  } else { // mês corrente/futuro
+    return (pct > 80) ? 'bad' : '';
+  }
 }
 
 /* Fonte 9 total (fallbacks) */
@@ -315,9 +334,7 @@ let cmpChart = null;
 async function openComparativoPlano(planoNome, periodo){
   try{
     const Chart = await ensureChart();
-    const per = /^\d{4}-\d{2}$/.test(periodo||'') ? periodo : (()=>{
-      const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    })();
+    const per = /^\d{4}-\d{2}$/.test(periodo||'') ? periodo : (()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
 
     // Busca dados de todas as empresas em paralelo
     const results = await Promise.allSettled(EMPRESAS.map(emp => getEmpresaPeriodo(emp, per)));
@@ -363,11 +380,7 @@ async function openComparativoPlano(planoNome, periodo){
       type: 'bar',
       data: {
         labels,
-        datasets: [{
-          label: `Valor do plano — ${planoNome}`,
-          data: valores
-          // sem cores específicas (segue padrão)
-        }]
+        datasets: [{ label: `Valor do plano — ${planoNome}`, data: valores }]
       },
       options: {
         responsive: true,
@@ -376,11 +389,7 @@ async function openComparativoPlano(planoNome, periodo){
           legend: { display: true, position: 'bottom' },
           tooltip: {
             callbacks: {
-              label: (ctx)=> {
-                const v = ctx.parsed.y||0;
-                const pct = percents[ctx.dataIndex]||0;
-                return `${moeda(v)} — ${pct.toFixed(1)}%`;
-              }
+              label: (ctx)=> `${moeda(ctx.parsed.y||0)} — ${(percents[ctx.dataIndex]||0).toFixed(1)}%`
             }
           }
         },
@@ -443,6 +452,7 @@ async function run(){
     const emp = empresas[idx];
     const sec = container.querySelector(`section[data-empresa="${emp}"]`);
     if(!sec) return;
+
     if(res.status!=='fulfilled'){
       sec.innerHTML = `
         <div class="title">${emp}</div>
@@ -452,6 +462,7 @@ async function run(){
         </div>`;
       return;
     }
+
     const rec = res.value;
     const periodOk = rec?.matchesPeriod !== false;
 
@@ -476,14 +487,20 @@ async function run(){
     const gTotal=progressCalc(travaTotal, fonte9, periodo);
     const gForn =progressCalc(fornecLim,  fornComp, periodo);
 
+    // Percentuais e classes pela regra 80%
+    const pctTotal = travaTotal>0 ? (fonte9/travaTotal*100) : 0;
+    const pctForn  = fornecLim>0 ? (fornComp/fornecLim*100) : 0;
+    const clsTotal = statusBy80(travaTotal, fonte9, periodo);
+    const clsForn  = statusBy80(fornecLim,  fornComp, periodo);
+
     sec.innerHTML = `
       <div class="title">${emp}</div>
       <div class="kpis">
-        <div class="kpi">
+        <div class="kpi ${clsTotal}">
           <div class="label">Trava Total de Pagamentos</div>
           <div class="value">${moeda(travaTotal)}</div>
           <div class="hint">
-            Gasto geral: <b>${moeda(fonte9)}</b> • ${gTotal.pct.toFixed(1)}%<br/>
+            Gasto geral: <b>${moeda(fonte9)}</b> • ${pctTotal.toFixed(1)}%<br/>
             Valor geral disponível: <b style="color:${gTotal.available<0?'#b91c1c':'inherit'}">${moeda(gTotal.available)}</b>
           </div>
           <div class="progress"><span style="width:${Math.min(Math.max(gTotal.pct,0),100)}%"></span></div>
@@ -491,12 +508,12 @@ async function run(){
           ${!periodOk?`<div class="note">Sem dados para ${periodo}. Última data: ${rec?.dataRef||'—'}.</div>`:''}
         </div>
 
-        <div class="kpi ${gForn.status==='bad'?'bad':gForn.status==='warn'?'warn':(gForn.status==='good'?'good':'')}">
+        <div class="kpi ${clsForn}">
           <button class="btn-link" data-ver-planos>Ver planos</button>
           <div class="label">Trava para fornecedores</div>
           <div class="value">${moeda(fornecLim)}</div>
           <div class="hint">
-            Já comprado em FORNECEDORES: <b>${moeda(fornComp)}</b> • ${gForn.pct.toFixed(1)}%<br/>
+            Já comprado em FORNECEDORES: <b>${moeda(fornComp)}</b> • ${pctForn.toFixed(1)}%<br/>
             Disponível: <b style="color:${gForn.available<0?'#b91c1c':'inherit'}">${moeda(gForn.available)}</b><br/>
             Previsão fim do mês: <b>${moeda(gForn.forecast)}</b> (${gForn.forecastPct.toFixed(1)}%)
           </div>
