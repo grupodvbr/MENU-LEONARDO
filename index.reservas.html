@@ -26,14 +26,15 @@
 
     /* Calendário */
     .cal{padding:14px}
-    .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+    .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; position:sticky; top:0; background:var(--card); z-index:5; padding:8px 6px; border-bottom:1px solid var(--line)}
     .toolbar{display:flex; gap:10px; flex-wrap:wrap}
-    .btn{border:1px dashed var(--line); background:#0000; color:inherit; padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:700}
+    .btn{border:1px dashed var(--line); background:#0000; color:inherit; padding:12px 14px; border-radius:14px; cursor:pointer; font-weight:700; touch-action:manipulation}
     .btn:disabled{opacity:.6; cursor:not-allowed}
     .cal-title{font-weight:800}
     .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
     .cal-dow{font-size:.8rem; color:var(--muted); text-align:center; padding:4px 0}
-    .cal-day{background:transparent; border:1px solid var(--line); border-radius:10px; padding:8px; min-height:84px; position:relative; cursor:pointer}
+    .cal-day{background:transparent; border:1px solid var(--line); border-radius:10px; padding:8px; min-height:92px; position:relative; cursor:pointer; transition:.15s}
+    .cal-day:hover{box-shadow:0 6px 20px rgba(0,0,0,.06)}
     .cal-day.out{opacity:.45}
     .cal-day .num{font-weight:700; font-size:.95rem}
     .cal-day .tags{position:absolute; bottom:8px; left:8px; right:8px; display:flex; gap:6px; flex-wrap:wrap}
@@ -63,7 +64,20 @@
     .res-item .meta{font-size:.86rem; color:var(--muted)}
 
     .toast{position:fixed; inset:auto 16px 16px auto; background:#111827; color:#fff; padding:12px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); display:none; z-index:50}
-    .toast.show{display:block}
+
+    /* Mobile refinements */
+    @media (max-width:720px){
+      .wrap{padding:12px}
+      .cal{padding:10px}
+      .cal-day{min-height:110px; padding:10px; border-radius:14px}
+      .cal-day .num{font-size:1.05rem}
+      .tag{font-size:.78rem}
+      .kpi{padding:14px}
+      .kpi .value{font-size:1.35rem}
+      .sheet{max-height:90vh}
+      .res-item{padding:12px}
+      .res-item .name{font-size:1.02rem}
+    }
   </style>
 </head>
 <body>
@@ -105,7 +119,7 @@
         </div>
         <div class="kpi" style="display:flex; align-items:center; justify-content:space-between; margin-top:12px">
           <div>
-            <div class="label">Total do mês (adiantamento + final pago)</div>
+            <div class="label">Pagamento (total do mês)</div>
             <div class="value" id="kpiTotalMes">R$ 0,00</div>
           </div>
           <button id="refreshBtn" class="btn" style="width:auto">Atualizar</button>
@@ -176,9 +190,9 @@
         const pend = items.filter(r=> (r.status||'Pendente')!=='Concluída').length;
         const done = items.filter(r=> r.status==='Concluída').length;
         cell.innerHTML = `<div class="num">${d.getDate()}</div>
-          <div class="tags">${items.length? `<span class=\"tag t-conf\">${items.length} reserva(s)</span>`:''}
-            ${pend? `<span class=\"tag t-pend\">Pend: ${pend}</span>`:''}
-            ${done? `<span class=\"tag t-done\">Conc: ${done}</span>`:''}
+          <div class="tags">${items.length? `<span class="tag t-conf">${items.length} reserva(s)</span>`:''}
+            ${pend? `<span class="tag t-pend">Pend: ${pend}</span>`:''}
+            ${done? `<span class="tag t-done">Conc: ${done}</span>`:''}
           </div>`;
         cell.addEventListener('click', ()=> openDayModal(d, items));
         calGrid.appendChild(cell);
@@ -199,13 +213,14 @@
       const aReceber = sum(inMonth.filter(r=> (r.status||'Pendente')!=='Concluída'), r=> {
         const estimado = parseBRL(r.valorEstimado||0);
         const ant = parseBRL(r.pagamentoAntecipado||0) + sumExtrasFromRecord(r);
-        const rest = Math.max(estimado - ant, 0);
-        return rest;
+        return Math.max(estimado - ant, 0);
       });
+      const pagamentoTotal = adiantado + finalPago;
+
       $('#kpiAntecipado').textContent = formatBRL(adiantado);
       $('#kpiFinalPago').textContent = formatBRL(finalPago);
       $('#kpiAReceber').textContent = formatBRL(aReceber);
-      $('#kpiTotalMes').textContent = formatBRL(adiantado + finalPago);
+      $('#kpiTotalMes').textContent = formatBRL(pagamentoTotal);
     }
 
     // ===== Modal do dia (somente leitura) =====
@@ -225,13 +240,17 @@
       const hora = new Date(r.datahora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       const status = r.status||'Pendente';
 
-      // anexos em colunas diferentes
+      // anexos
       const anexoKeys = Object.keys(r).filter(k => k.toLowerCase().includes("anexo") && r[k]);
       const anexos = anexoKeys.map((k,i) => `<a href="${r[k]}" target="_blank">📎 Anexo ${i+1}</a>`).join("<br>");
 
       // pagamentos adicionais (qualquer campo que contenha "pagamento" e não seja os 3 principais)
       const pagamentoKeys = Object.keys(r).filter(k=> /pagamento/i.test(k) && !['pagamentoAntecipado','valorFinalPago','valorEstimado'].includes(k));
       const pagamentos = pagamentoKeys.map((k,i)=> `💵 Pagamento ${i+1}: ${formatBRL(parseBRL(r[k]))}`).join('<br>');
+
+      const adiant = parseBRL(r.pagamentoAntecipado||0) + sumExtrasFromRecord(r);
+      const finalp = parseBRL(r.valorFinalPago||0);
+      const total = adiant + finalp;
 
       return `<div class="res-item" data-id="${r.id}">
         <div class="top">
@@ -244,9 +263,13 @@
         <div class="meta"><b>Email:</b> ${r.email||'—'} • <b>Tel:</b> ${r.telefone||'—'}</div>
         <div class="meta"><b>Cardápio:</b> ${r.cardapio||'—'} • <b>Banco:</b> ${r.banco||'—'}</div>
         <div class="meta"><b>Obs:</b> ${r.observacoes||'—'}</div>
-        <div class="meta">Estimado: ${formatBRL(parseBRL(r.valorEstimado||0))} • Adiantamento: ${formatBRL(parseBRL(r.pagamentoAntecipado||0) + sumExtrasFromRecord(r))} • Final pago: ${formatBRL(parseBRL(r.valorFinalPago||0))}</div>
-        ${pagamentos? `<div class=\"meta\">${pagamentos}</div>`:""}
-        ${anexos? `<div class=\"meta\">${anexos}</div>`:""}
+
+        <div class="meta">Estimado: ${formatBRL(parseBRL(r.valorEstimado||0))}</div>
+        <div class="meta"><b>Pagamentos (adiantado):</b> ${formatBRL(adiant)}</div>
+        <div class="meta"><b>Pagamento (total):</b> ${formatBRL(total)}</div>
+
+        ${pagamentos? `<div class="meta">${pagamentos}</div>`:""}
+        ${anexos? `<div class="meta">${anexos}</div>`:""}
       </div>`;
     }
 
