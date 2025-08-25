@@ -26,9 +26,9 @@
 
     /* Calendário */
     .cal{padding:14px}
-    .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+    .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; position:sticky; top:0; background:var(--card); z-index:5; padding:8px 6px; border-bottom:1px solid var(--line)}
     .toolbar{display:flex; gap:10px; flex-wrap:wrap}
-    .btn{border:1px dashed var(--line); background:#0000; color:inherit; padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:700}
+    .btn{border:1px dashed var(--line); background:#0000; color:inherit; padding:12px 14px; border-radius:14px; cursor:pointer; font-weight:700; touch-action:manipulation}
     .btn:disabled{opacity:.6; cursor:not-allowed}
     .cal-title{font-weight:800}
     .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
