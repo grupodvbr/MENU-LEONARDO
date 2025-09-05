@@ -9,6 +9,7 @@
   <style>
     :root{
       --bg:#f7f7f7; --card:#fff; --line:#e5e7eb; --text:#0f172a;
+      --accent:#1e1e2f; --good:#16a34a; --warn:#b45309; --bad:#dc2626;
     }
     *{ box-sizing:border-box }
     html, body{ height:100%; }
@@ -18,13 +19,12 @@
       color: var(--text);
       margin: 0; padding: 0;
       font-size: 14px;
-      overflow-x: hidden; /* nunca corta lateral */
+      overflow-x: hidden;
     }
 
-    /* Header ocupa toda a largura e fica colado no topo */
     header{
       position: sticky; top: 0; z-index: 10;
-      background-color: white;
+      background: #fff;
       padding: 16px 24px;
       display: flex; align-items: center; gap: 16px;
       border-bottom: 1px solid #ccc;
@@ -38,7 +38,6 @@
       flex: 1;
     }
 
-    /* Conteúdo ocupa a tela inteira no desktop */
     .conteudo{
       width: 100%;
       max-width: 100%;
@@ -46,7 +45,6 @@
       margin: 0 auto;
     }
 
-    /* Filtros responsivos */
     .filtros{
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -56,22 +54,19 @@
     }
     .filtros label{ font-weight: bold; font-size: 0.95em; display:block; margin-bottom: 6px; }
     .filtros input, .filtros select{
-      padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; font-size: 0.95em;
-      background: #fff;
+      padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; font-size: 0.95em; background: #fff;
     }
     .filtros button{
-      padding: 10px 16px; border: none; border-radius: 8px; background-color: #1e1e2f; color: white;
+      padding: 10px 16px; border: none; border-radius: 8px; background: var(--accent); color: #fff;
       font-weight: bold; cursor: pointer; font-size: 0.95em; width: 100%;
     }
 
-    /* Grid do painel de empresas (cheio no desktop) */
     #painel{
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
 
-    /* Cartões das empresas */
     .empresa-box{
       background: var(--card);
       border: 1px solid var(--line);
@@ -90,10 +85,18 @@
     .empresa-box ul{ list-style: none; padding-left: 0; margin: 0 }
     .empresa-box li{ margin-bottom: 6px }
 
-    /* Contêiner do gráfico: 280–360px de altura no desktop para não cortar */
     .grafico-desktop{
       margin-top: 12px;
-      height: 300px; /* controlamos a altura e deixamos o canvas ocupar 100% */
+      height: 300px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      cursor: pointer;                 /* <<< clicável */
+      position: relative;
+    }
+    .grafico-desktop::after{
+      content: "Clique para ver a evolução anual";
+      position: absolute; right: 10px; bottom: 8px;
+      font-size: 12px; color: #6b7280;
     }
     .grafico-desktop canvas{
       width: 100% !important;
@@ -101,7 +104,6 @@
       display: block;
     }
 
-    /* Legenda colorida */
     .legend{
       display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;
     }
@@ -112,7 +114,42 @@
       content: ''; width: 10px; height: 10px; border-radius: 50%; background-color: currentColor; display: inline-block;
     }
 
-    /* Responsividade */
+    /* Modal anual */
+    .modal{
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.6);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal.open{ display: flex; }
+    .modal-card{
+      width: min(1100px, 96vw);
+      background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      padding: 18px;
+      max-height: 92vh; overflow: auto;
+    }
+    .modal-header{
+      display:flex; align-items:center; gap:12px; margin-bottom:10px;
+    }
+    .modal-header h3{ margin:0; font-size:1.1rem }
+    .close-x{ margin-left:auto; cursor:pointer; font-weight:bold; font-size:20px; line-height:1; color:#374151 }
+    .kpi-row{
+      display:grid; gap:10px; grid-template-columns: repeat(3, minmax(0,1fr));
+      margin:10px 0 14px;
+    }
+    .kpi-badge{
+      border:1px solid var(--line); border-radius:12px; padding:12px; background:#fafafa;
+    }
+    .kpi-badge h4{ margin:0 0 6px; font-size:.9rem; color:#374151 }
+    .kpi-badge p{ margin:0; font-size:1.15rem; font-weight:800 }
+    .kpi-badge small{ display:block; color:#6b7280; margin-top:2px }
+    .kpi-bonus { border-left:6px solid #f59e0b; }     /* Bonificação destaque âmbar */
+    .kpi-socio { border-left:6px solid #3b82f6; }     /* Consumo Sócio azul */
+    .kpi-desp  { border-left:6px solid #ef4444; }     /* Desperdício vermelho */
+
+    #graficoAnualWrap{ height: 380px; border:1px solid var(--line); border-radius:12px; padding:10px }
+    #graficoAnual{ width:100% !important; height:100% !important; }
+
     @media (max-width: 1200px){
       .filtros{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
       #painel{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -123,6 +160,8 @@
       #painel{ grid-template-columns: 1fr; }
       .conteudo{ padding: 16px 14px 24px; }
       .grafico-desktop{ height: 240px; }
+      .kpi-row{ grid-template-columns: 1fr; }
+      #graficoAnualWrap{ height: 320px; }
     }
   </style>
 </head>
@@ -154,6 +193,36 @@
   <div id="painel"></div>
 </div>
 
+<!-- Modal Evolução Anual -->
+<div class="modal" id="modalAnual">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="tituloAnual">Evolução Anual</h3>
+      <span class="close-x" id="fecharModal">&times;</span>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-badge kpi-bonus">
+        <h4>Bonificação</h4>
+        <p id="kpiBonusAno">R$ 0,00</p>
+        <small id="kpiBonusMes">Mês atual: R$ 0,00</small>
+      </div>
+      <div class="kpi-badge kpi-socio">
+        <h4>Consumo Sócio</h4>
+        <p id="kpiSocioAno">R$ 0,00</p>
+        <small id="kpiSocioMes">Mês atual: R$ 0,00</small>
+      </div>
+      <div class="kpi-badge kpi-desp">
+        <h4>Desperdício</h4>
+        <p id="kpiDespAno">R$ 0,00</p>
+        <small id="kpiDespMes">Mês atual: R$ 0,00</small>
+      </div>
+    </div>
+    <div id="graficoAnualWrap">
+      <canvas id="graficoAnual"></canvas>
+    </div>
+  </div>
+</div>
+
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
 const emojis = {
@@ -164,15 +233,25 @@ const emojis = {
   "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂"
 };
 let dados = [];
+let graficoAnualRef = null;
+
+/* Helpers */
+const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const normalize = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
 
 window.onload = () => {
   const hoje = new Date();
-  const ontem = new Date(hoje);
-  ontem.setDate(hoje.getDate() - 1);
+  const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
   document.getElementById("dataInicio").value = dataFormatada;
   document.getElementById("dataFim").value = dataFormatada;
   carregarDados();
+
+  document.getElementById('fecharModal').addEventListener('click', fecharModal);
+  document.getElementById('modalAnual').addEventListener('click', (e)=>{
+    if (e.target.id === 'modalAnual') fecharModal();
+  });
 };
 
 async function carregarDados() {
@@ -209,8 +288,9 @@ function aplicarFiltro() {
     const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
     const agrupado = {};
     dadosEmpresa.forEach(item => {
-      const categoria = item.Categoria.toUpperCase();
-      agrupado[categoria] = (agrupado[categoria] || 0) + parseFloat(item.Valor);
+      const categoria = normalize(item.Categoria);
+      const valor = parseFloat(item.Valor) || 0;
+      agrupado[categoria] = (agrupado[categoria] || 0) + valor;
     });
 
     const total = Object.values(agrupado).reduce((a, b) => a + b, 0);
@@ -220,11 +300,12 @@ function aplicarFiltro() {
     const conteudo = document.createElement("div");
     conteudo.className = "empresa-conteudo";
 
-    let html = `<h2>${emp.toUpperCase()} — R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h2><ul>`;
+    let html = `<h2>${emp.toUpperCase()} — R$ ${BRL(total)}</h2><ul>`;
     for (const cat in agrupado) {
-      const emoji = emojis[cat] || "📌";
-      const valor = agrupado[cat].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-      html += `<li>${emoji} ${cat}: R$ ${valor}</li>`;
+      const keyOriginal = Object.keys(emojis).find(k => normalize(k) === cat) || cat;
+      const emoji = emojis[keyOriginal] || "📌";
+      const valor = BRL(agrupado[cat]);
+      html += `<li>${emoji} ${keyOriginal}: R$ ${valor}</li>`;
     }
     html += `</ul>`;
     conteudo.innerHTML = html;
@@ -236,12 +317,12 @@ function aplicarFiltro() {
 
     const legend = document.createElement("div");
     legend.className = "legend";
-
     Object.keys(agrupado).forEach((cat, i) => {
       const cor = `hsl(${i * 35}, 70%, 60%)`;
       const item = document.createElement("span");
       item.style.color = cor;
-      item.innerHTML = `${cat}`;
+      const nomeExib = Object.keys(emojis).find(k => normalize(k) === cat) || cat;
+      item.innerHTML = `${nomeExib}`;
       legend.appendChild(item);
     });
 
@@ -251,13 +332,16 @@ function aplicarFiltro() {
     painel.appendChild(box);
 
     desenharGrafico(canvas, agrupado);
+
+    /* >>> Clique abre modal com evolução anual do ano vigente para esta empresa */
+    canvasContainer.addEventListener('click', () => abrirEvolucaoAnual(emp));
   });
 
-  if (empresas.length === 0) painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado para os filtros selecionados.</p>";
+  if (empresas.length === 0)
+    painel.innerHTML = "<p style='text-align:center'>Nenhum dado encontrado para os filtros selecionados.</p>";
 }
 
 function desenharGrafico(canvas, agrupado) {
-  // Desktop/tablet: mostramos gráfico na altura do container sem cortar
   const categorias = Object.keys(agrupado);
   const valores = Object.values(agrupado);
   const cores = categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`);
@@ -265,24 +349,101 @@ function desenharGrafico(canvas, agrupado) {
   new Chart(canvas.getContext("2d"), {
     type: 'bar',
     data: {
-      labels: categorias.map(() => ''), // eixo X sem rótulos pra não “cortar”
+      labels: categorias.map(() => ''),
       datasets: [{ data: valores, backgroundColor: cores }]
     },
     options: {
-      maintainAspectRatio: false, // importante para ocupar 100% da altura do container
+      maintainAspectRatio: false,
       responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: 'Distribuição por Categoria' }
-      },
-      scales: {
-        x: { ticks: { display: false }, grid: { display: false } },
-        y: { beginAtZero: true }
-      }
+      plugins: { legend: { display: false }, title: { display: true, text: 'Distribuição por Categoria' } },
+      scales: { x: { ticks: { display: false }, grid: { display: false } }, y: { beginAtZero: true } }
     }
   });
 }
 
+/* ===== Modal / Evolução do Ano Vigente ===== */
+function abrirEvolucaoAnual(empresa){
+  const ano = new Date().getFullYear();
+  const mesAtualIdx = new Date().getMonth(); // 0-11
+
+  // filtra por empresa e ano vigente
+  const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
+
+  // soma por mês (total vendido no mês = soma de Valor em todas categorias)
+  const porMes = Array(12).fill(0);
+  recs.forEach(r=>{
+    const valor = parseFloat(r.Valor) || 0;
+    const m = parseInt(String(r.Data).split('-')[1], 10) - 1;
+    if (m>=0 && m<12) porMes[m] += valor;
+  });
+
+  // Destaques: Bonificação, Consumo Sócio, Desperdício
+  const isBonus = c => normalize(c) === 'BONIFICACAO';
+  const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
+  const isDesp  = c => normalize(c) === 'DESPERDICIO';
+
+  let bonusAno=0, socioAno=0, despAno=0;
+  let bonusMes=0, socioMes=0, despMes=0;
+
+  recs.forEach(r=>{
+    const v = parseFloat(r.Valor) || 0;
+    const cat = normalize(r.Categoria);
+    const m = parseInt(String(r.Data).split('-')[1], 10) - 1;
+
+    if (isBonus(cat)) { bonusAno += v; if (m===mesAtualIdx) bonusMes += v; }
+    if (isSocio(cat)) { socioAno += v; if (m===mesAtualIdx)  socioMes += v; }
+    if (isDesp(cat))  { despAno  += v; if (m===mesAtualIdx)  despMes  += v; }
+  });
+
+  // Preenche cabeçalho & KPIs
+  document.getElementById('tituloAnual').textContent = `Evolução Anual — ${empresa} (${ano})`;
+  document.getElementById('kpiBonusAno').textContent = `R$ ${BRL(bonusAno)}`;
+  document.getElementById('kpiBonusMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(bonusMes)}`;
+  document.getElementById('kpiSocioAno').textContent = `R$ ${BRL(socioAno)}`;
+  document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
+  document.getElementById('kpiDespAno').textContent  = `R$ ${BRL(despAno)}`;
+  document.getElementById('kpiDespMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(despMes)}`;
+
+  // Desenha/atualiza gráfico
+  const ctx = document.getElementById('graficoAnual').getContext('2d');
+  if (graficoAnualRef) graficoAnualRef.destroy();
+  graficoAnualRef = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [{
+        label: 'Total vendido por mês',
+        data: porMes,
+        backgroundColor: MONTHS.map((_,i)=> i===mesAtualIdx ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)'),
+        borderColor: '#2563eb',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        title: { display:true, text:`Total vendido por mês — ${empresa}` },
+        tooltip: {
+          callbacks:{
+            label: ctx => 'R$ ' + (Number(ctx.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})
+          }
+        }
+      },
+      scales: { y: { beginAtZero:true } }
+    }
+  });
+
+  // Abre modal
+  document.getElementById('modalAnual').classList.add('open');
+}
+
+function fecharModal(){
+  document.getElementById('modalAnual').classList.remove('open');
+  if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
+}
+
+/* ===== Exportar / Whats ===== */
 function exportarPDF() {
   const boxes = document.querySelectorAll(".empresa-box");
   if (!boxes.length) return alert("Nada para exportar.");
