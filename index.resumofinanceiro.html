@@ -7,111 +7,122 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 0;
-      font-size: 14px;
+    :root{
+      --bg:#f7f7f7; --card:#fff; --line:#e5e7eb; --text:#0f172a;
     }
-    header {
+    *{ box-sizing:border-box }
+    html, body{ height:100%; }
+    body{
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0; padding: 0;
+      font-size: 14px;
+      overflow-x: hidden; /* nunca corta lateral */
+    }
+
+    /* Header ocupa toda a largura e fica colado no topo */
+    header{
+      position: sticky; top: 0; z-index: 10;
       background-color: white;
-      padding: 20px;
-      display: flex;
-      align-items: center;
+      padding: 16px 24px;
+      display: flex; align-items: center; gap: 16px;
       border-bottom: 1px solid #ccc;
     }
-    header img {
-      height: 60px;
-      margin-right: 20px;
-    }
-    header h1 {
-      margin: 0 auto;
-      font-size: 1.6em;
+    header img{ height: 56px; max-width: 100%; }
+    header h1{
+      margin: 0;
+      font-size: clamp(1.2rem, 1vw + 1rem, 1.8rem);
       font-weight: bold;
       text-align: center;
       flex: 1;
     }
-    .conteudo {
-      padding: 20px;
-      max-width: 1200px;
-      margin: auto;
+
+    /* Conteúdo ocupa a tela inteira no desktop */
+    .conteudo{
+      width: 100%;
+      max-width: 100%;
+      padding: 20px 24px 32px;
+      margin: 0 auto;
     }
-    .filtros {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+
+    /* Filtros responsivos */
+    .filtros{
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
       margin-bottom: 20px;
       align-items: end;
     }
-    .filtros label {
-      font-weight: bold;
+    .filtros label{ font-weight: bold; font-size: 0.95em; display:block; margin-bottom: 6px; }
+    .filtros input, .filtros select{
+      padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; font-size: 0.95em;
+      background: #fff;
+    }
+    .filtros button{
+      padding: 10px 16px; border: none; border-radius: 8px; background-color: #1e1e2f; color: white;
+      font-weight: bold; cursor: pointer; font-size: 0.95em; width: 100%;
+    }
+
+    /* Grid do painel de empresas (cheio no desktop) */
+    #painel{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    /* Cartões das empresas */
+    .empresa-box{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
       font-size: 0.95em;
+      overflow: hidden;
     }
-    .filtros input,
-    .filtros select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      width: 100%;
-      font-size: 0.95em;
-    }
-    .filtros > div {
-      flex: 1 1 200px;
-    }
-    .filtros button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background-color: #1e1e2f;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95em;
-    }
-    .empresa-box {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-      font-size: 0.95em;
-    }
-    .empresa-box h2 {
+    .empresa-box h2{
       margin: 0 0 10px;
-      font-size: 1.2em;
+      font-size: clamp(1.05rem, .7vw + 1rem, 1.25rem);
       color: #2c3e50;
+      word-break: break-word; overflow-wrap: anywhere;
     }
-    .empresa-box ul {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
+    .empresa-box ul{ list-style: none; padding-left: 0; margin: 0 }
+    .empresa-box li{ margin-bottom: 6px }
+
+    /* Contêiner do gráfico: 280–360px de altura no desktop para não cortar */
+    .grafico-desktop{
+      margin-top: 12px;
+      height: 300px; /* controlamos a altura e deixamos o canvas ocupar 100% */
     }
-    .empresa-box li {
-      margin-bottom: 4px;
+    .grafico-desktop canvas{
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
-    .grafico-desktop {
-      margin-top: 20px;
+
+    /* Legenda colorida */
+    .legend{
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;
     }
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
+    .legend span{
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.85em; white-space: nowrap;
     }
-    .legend span {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.85em;
+    .legend span::before{
+      content: ''; width: 10px; height: 10px; border-radius: 50%; background-color: currentColor; display: inline-block;
     }
-    .legend span::before {
-      content: '';
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background-color: currentColor;
+
+    /* Responsividade */
+    @media (max-width: 1200px){
+      .filtros{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #painel{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grafico-desktop{ height: 280px; }
+    }
+    @media (max-width: 768px){
+      .filtros{ grid-template-columns: 1fr; }
+      #painel{ grid-template-columns: 1fr; }
+      .conteudo{ padding: 16px 14px 24px; }
+      .grafico-desktop{ height: 240px; }
     }
   </style>
 </head>
@@ -123,9 +134,18 @@
 
 <div class="conteudo">
   <div class="filtros">
-    <div><label for="dataInicio">Data Início</label><input type="date" id="dataInicio" /></div>
-    <div><label for="dataFim">Data Fim</label><input type="date" id="dataFim" /></div>
-    <div><label for="empresaFiltro">Empresa</label><select id="empresaFiltro"><option value="">Todas</option></select></div>
+    <div>
+      <label for="dataInicio">Data Início</label>
+      <input type="date" id="dataInicio" />
+    </div>
+    <div>
+      <label for="dataFim">Data Fim</label>
+      <input type="date" id="dataFim" />
+    </div>
+    <div>
+      <label for="empresaFiltro">Empresa</label>
+      <select id="empresaFiltro"><option value="">Todas</option></select>
+    </div>
     <div><button onclick="aplicarFiltro()">Filtrar</button></div>
     <div><button onclick="exportarPDF()">📄 Exportar PDF</button></div>
     <div><button id="enviarWhatsapp">📲 Enviar pelo WhatsApp</button></div>
@@ -146,7 +166,7 @@ const emojis = {
 let dados = [];
 
 window.onload = () => {
-  const hoje = new Date(); // usa a data real do navegador
+  const hoje = new Date();
   const ontem = new Date(hoje);
   ontem.setDate(hoje.getDate() - 1);
   const dataFormatada = ontem.toISOString().split('T')[0];
@@ -154,7 +174,6 @@ window.onload = () => {
   document.getElementById("dataFim").value = dataFormatada;
   carregarDados();
 };
-
 
 async function carregarDados() {
   const resposta = await fetch(url);
@@ -238,7 +257,7 @@ function aplicarFiltro() {
 }
 
 function desenharGrafico(canvas, agrupado) {
-  if (window.innerWidth < 768) return;
+  // Desktop/tablet: mostramos gráfico na altura do container sem cortar
   const categorias = Object.keys(agrupado);
   const valores = Object.values(agrupado);
   const cores = categorias.map((_, i) => `hsl(${i * 35}, 70%, 60%)`);
@@ -246,23 +265,18 @@ function desenharGrafico(canvas, agrupado) {
   new Chart(canvas.getContext("2d"), {
     type: 'bar',
     data: {
-      labels: categorias.map(() => ''), // Remove nomes do eixo X
-      datasets: [{
-        data: valores,
-        backgroundColor: cores
-      }]
+      labels: categorias.map(() => ''), // eixo X sem rótulos pra não “cortar”
+      datasets: [{ data: valores, backgroundColor: cores }]
     },
     options: {
+      maintainAspectRatio: false, // importante para ocupar 100% da altura do container
+      responsive: true,
       plugins: {
         legend: { display: false },
         title: { display: true, text: 'Distribuição por Categoria' }
       },
-      responsive: true,
       scales: {
-        x: {
-          ticks: { display: false },
-          grid: { display: false }
-        },
+        x: { ticks: { display: false }, grid: { display: false } },
         y: { beginAtZero: true }
       }
     }
@@ -275,7 +289,7 @@ function exportarPDF() {
 
   boxes.forEach((box, index) => {
     const wrapper = document.createElement("div");
-    wrapper.style.width = "1000px";
+    wrapper.style.width = Math.min(window.innerWidth, 1200) + "px";
     wrapper.style.padding = "40px";
     wrapper.style.background = "#fff";
     wrapper.style.boxSizing = "border-box";
@@ -301,10 +315,10 @@ function exportarPDF() {
 
     const opt = {
       margin: 0,
-      filename: `relatorio-villa-gourmet-${index + 1}.pdf`,
+      filename: `relatorio-entradas-${index + 1}.pdf`,
       image: { type: 'jpeg', quality: 1 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'px', format: [1000, 700], orientation: 'landscape' }
+      jsPDF: { unit: 'px', format: [Math.min(window.innerWidth, 1200), 800], orientation: 'landscape' }
     };
 
     html2pdf().from(wrapper).set(opt).save();
