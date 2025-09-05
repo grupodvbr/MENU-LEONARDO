@@ -145,7 +145,7 @@
     .kpi-badge small{ display:block; color:#6b7280; margin-top:2px }
     .kpi-bonus { border-left:6px solid #f59e0b; }
     .kpi-socio { border-left:6px solid #3b82f6; }
-    .kpi-desp  { border-left:6px solid #ef4444; }
+    .kpi-erro  { border-left:6px solid #ef4444; }
 
     #graficoAnualWrap{ height: 380px; border:1px solid var(--line); border-radius:12px; padding:10px }
     #graficoAnual{ width:100% !important; height:100% !important; }
@@ -211,10 +211,10 @@
         <p id="kpiSocioAno">R$ 0,00</p>
         <small id="kpiSocioMes">Mês atual: R$ 0,00</small>
       </div>
-      <div class="kpi-badge kpi-desp">
-        <h4>Prejuízo</h4>
-        <p id="kpiDespAno">R$ 0,00</p>
-        <small id="kpiDespMes">Mês atual: R$ 0,00</small>
+      <div class="kpi-badge kpi-erro">
+        <h4>Erro de garçons</h4>
+        <p id="kpiErroAno">R$ 0,00</p>
+        <small id="kpiErroMes">Mês atual: R$ 0,00</small>
       </div>
     </div>
     <div id="graficoAnualWrap">
@@ -225,20 +225,32 @@
 
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
+
+// Dicionário de emojis (mantém ambos para compatibilidade, mas exibimos "Erro de garçons")
 const emojis = {
   "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
   "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
   "CONSUMO INTERNO": "👔", "BOLETO": "📃", "MARKETING": "📣", "CONSUMO SÓCIO": "👔",
   "CATÁLOGO DELIVERY": "🛒", "IFOOD": "🍱", "DELIVERY MUCH": "🍔",
-  "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂",
-  "PREJUÍZO": "💸"
+  "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🧯", "OUTROS": "🗂",
+  "PREJUÍZO": "🧯", "DESPERDÍCIO": "🧯", "DESPERDICIO": "🧯"
 };
+
 let dados = [];
 let graficoAnualRef = null;
 
 const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const normalize = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+
+// Nome exibido para categorias (unifica PREJUÍZO/DESPERDÍCIO em "ERROS DE GARÇONS")
+function displayName(catNorm){
+  if (catNorm === 'PREJUIZO' || catNorm === 'DESPERDICIO') return 'ERROS DE GARÇONS';
+  if (catNorm === 'CONSUMO SOCIO') return 'CONSUMO SÓCIO';
+  if (catNorm === 'CREDITO') return 'CRÉDITO';
+  if (catNorm === 'DEBITO') return 'DÉBITO';
+  return Object.keys(emojis).find(k => normalize(k) === catNorm) || catNorm;
+}
 
 window.onload = () => {
   const hoje = new Date();
@@ -288,9 +300,11 @@ function aplicarFiltro() {
     const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
     const agrupado = {};
     dadosEmpresa.forEach(item => {
-      const categoria = normalize(item.Categoria);
+      // Normaliza e mapeia PREJUÍZO/DESPERDÍCIO -> ERROS DE GARÇONS
+      let cat = normalize(item.Categoria);
+      if (cat === 'PREJUIZO' || cat === 'DESPERDICIO') cat = 'ERROS DE GARCONS';
       const valor = parseFloat(item.Valor) || 0;
-      agrupado[categoria] = (agrupado[categoria] || 0) + valor;
+      agrupado[cat] = (agrupado[cat] || 0) + valor;
     });
 
     const total = Object.values(agrupado).reduce((a, b) => a + b, 0);
@@ -301,11 +315,11 @@ function aplicarFiltro() {
     conteudo.className = "empresa-conteudo";
 
     let html = `<h2>${emp.toUpperCase()} — R$ ${BRL(total)}</h2><ul>`;
-    for (const cat in agrupado) {
-      const keyOriginal = Object.keys(emojis).find(k => normalize(k) === cat) || cat;
-      const emoji = emojis[keyOriginal] || "📌";
-      const valor = BRL(agrupado[cat]);
-      html += `<li>${emoji} ${keyOriginal}: R$ ${valor}</li>`;
+    for (const catNorm in agrupado) {
+      const nomeExib = displayName(catNorm);
+      const emoji = emojis[nomeExib] || "📌";
+      const valor = BRL(agrupado[catNorm]);
+      html += `<li>${emoji} ${nomeExib}: R$ ${valor}</li>`;
     }
     html += `</ul>`;
     conteudo.innerHTML = html;
@@ -317,12 +331,11 @@ function aplicarFiltro() {
 
     const legend = document.createElement("div");
     legend.className = "legend";
-    Object.keys(agrupado).forEach((cat, i) => {
+    Object.keys(agrupado).forEach((catNorm, i) => {
       const cor = `hsl(${i * 35}, 70%, 60%)`;
       const item = document.createElement("span");
       item.style.color = cor;
-      const nomeExib = Object.keys(emojis).find(k => normalize(k) === cat) || cat;
-      item.innerHTML = `${nomeExib}`;
+      item.innerHTML = displayName(catNorm);
       legend.appendChild(item);
     });
 
@@ -364,10 +377,10 @@ function abrirEvolucaoAnual(empresa){
   const ano = new Date().getFullYear();
   const mesAtualIdx = new Date().getMonth(); // 0-11
 
-  // filtra por empresa e ano vigente (YYYY-MM-DD)
+  // filtra por empresa e ano vigente
   const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
 
-  // soma por mês (total no mês = soma de Valor em todas categorias)
+  // soma total por mês (independente de categoria)
   const porMes = Array(12).fill(0);
   recs.forEach(r=>{
     const valor = parseFloat(r.Valor) || 0;
@@ -375,13 +388,13 @@ function abrirEvolucaoAnual(empresa){
     if (m>=0 && m<12) porMes[m] += valor;
   });
 
-  // Destaques (compatível com "DESPERDICIO")
+  // Destaques: Bonificação, Consumo Sócio, Erro de garçons (aceitando PREJUÍZO/DESPERDÍCIO como erro)
   const isBonus = c => normalize(c) === 'BONIFICACAO';
   const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
-  const isPrej  = c => normalize(c) === 'PREJUIZO' || normalize(c) === 'DESPERDICIO';
+  const isErro  = c => normalize(c) === 'ERROS DE GARCONS' || normalize(c) === 'PREJUIZO' || normalize(c) === 'DESPERDICIO';
 
-  let bonusAno=0, socioAno=0, prejAno=0;
-  let bonusMes=0, socioMes=0, prejMes=0;
+  let bonusAno=0, socioAno=0, erroAno=0;
+  let bonusMes=0, socioMes=0, erroMes=0;
 
   recs.forEach(r=>{
     const v = parseFloat(r.Valor) || 0;
@@ -390,7 +403,7 @@ function abrirEvolucaoAnual(empresa){
 
     if (isBonus(cat)) { bonusAno += v; if (m===mesAtualIdx) bonusMes += v; }
     if (isSocio(cat)) { socioAno += v; if (m===mesAtualIdx)  socioMes += v; }
-    if (isPrej(cat))  { prejAno  += v; if (m===mesAtualIdx)  prejMes  += v; }
+    if (isErro(cat))  { erroAno  += v; if (m===mesAtualIdx)  erroMes  += v; }
   });
 
   // Preenche cabeçalho & KPIs
@@ -399,10 +412,10 @@ function abrirEvolucaoAnual(empresa){
   document.getElementById('kpiBonusMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(bonusMes)}`;
   document.getElementById('kpiSocioAno').textContent = `R$ ${BRL(socioAno)}`;
   document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
-  document.getElementById('kpiDespAno').textContent  = `R$ ${BRL(prejAno)}`;
-  document.getElementById('kpiDespMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(prejMes)}`;
+  document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
+  document.getElementById('kpiErroMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(erroMes)}`;
 
-  // Desenha/atualiza gráfico anual
+  // Gráfico anual
   const ctx = document.getElementById('graficoAnual').getContext('2d');
   if (graficoAnualRef) graficoAnualRef.destroy();
   graficoAnualRef = new Chart(ctx, {
