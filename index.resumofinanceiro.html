@@ -90,7 +90,7 @@
       height: 300px;
       border: 1px dashed var(--line);
       border-radius: 10px;
-      cursor: pointer;                 /* <<< clicável */
+      cursor: pointer;
       position: relative;
     }
     .grafico-desktop::after{
@@ -143,9 +143,9 @@
     .kpi-badge h4{ margin:0 0 6px; font-size:.9rem; color:#374151 }
     .kpi-badge p{ margin:0; font-size:1.15rem; font-weight:800 }
     .kpi-badge small{ display:block; color:#6b7280; margin-top:2px }
-    .kpi-bonus { border-left:6px solid #f59e0b; }     /* Bonificação destaque âmbar */
-    .kpi-socio { border-left:6px solid #3b82f6; }     /* Consumo Sócio azul */
-    .kpi-desp  { border-left:6px solid #ef4444; }     /* Desperdício vermelho */
+    .kpi-bonus { border-left:6px solid #f59e0b; }
+    .kpi-socio { border-left:6px solid #3b82f6; }
+    .kpi-desp  { border-left:6px solid #ef4444; }
 
     #graficoAnualWrap{ height: 380px; border:1px solid var(--line); border-radius:12px; padding:10px }
     #graficoAnual{ width:100% !important; height:100% !important; }
@@ -212,7 +212,7 @@
         <small id="kpiSocioMes">Mês atual: R$ 0,00</small>
       </div>
       <div class="kpi-badge kpi-desp">
-        <h4>Desperdício</h4>
+        <h4>Prejuízo</h4>
         <p id="kpiDespAno">R$ 0,00</p>
         <small id="kpiDespMes">Mês atual: R$ 0,00</small>
       </div>
@@ -230,12 +230,12 @@ const emojis = {
   "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
   "CONSUMO INTERNO": "👔", "BOLETO": "📃", "MARKETING": "📣", "CONSUMO SÓCIO": "👔",
   "CATÁLOGO DELIVERY": "🛒", "IFOOD": "🍱", "DELIVERY MUCH": "🍔",
-  "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂"
+  "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🏛️", "OUTROS": "🗂",
+  "PREJUÍZO": "💸"
 };
 let dados = [];
 let graficoAnualRef = null;
 
-/* Helpers */
 const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const normalize = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
@@ -332,8 +332,6 @@ function aplicarFiltro() {
     painel.appendChild(box);
 
     desenharGrafico(canvas, agrupado);
-
-    /* >>> Clique abre modal com evolução anual do ano vigente para esta empresa */
     canvasContainer.addEventListener('click', () => abrirEvolucaoAnual(emp));
   });
 
@@ -361,15 +359,15 @@ function desenharGrafico(canvas, agrupado) {
   });
 }
 
-/* ===== Modal / Evolução do Ano Vigente ===== */
+/* ===== Evolução do Ano Vigente (Modal) ===== */
 function abrirEvolucaoAnual(empresa){
   const ano = new Date().getFullYear();
   const mesAtualIdx = new Date().getMonth(); // 0-11
 
-  // filtra por empresa e ano vigente
+  // filtra por empresa e ano vigente (YYYY-MM-DD)
   const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
 
-  // soma por mês (total vendido no mês = soma de Valor em todas categorias)
+  // soma por mês (total no mês = soma de Valor em todas categorias)
   const porMes = Array(12).fill(0);
   recs.forEach(r=>{
     const valor = parseFloat(r.Valor) || 0;
@@ -377,13 +375,13 @@ function abrirEvolucaoAnual(empresa){
     if (m>=0 && m<12) porMes[m] += valor;
   });
 
-  // Destaques: Bonificação, Consumo Sócio, Desperdício
+  // Destaques (compatível com "DESPERDICIO")
   const isBonus = c => normalize(c) === 'BONIFICACAO';
   const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
-  const isDesp  = c => normalize(c) === 'DESPERDICIO';
+  const isPrej  = c => normalize(c) === 'PREJUIZO' || normalize(c) === 'DESPERDICIO';
 
-  let bonusAno=0, socioAno=0, despAno=0;
-  let bonusMes=0, socioMes=0, despMes=0;
+  let bonusAno=0, socioAno=0, prejAno=0;
+  let bonusMes=0, socioMes=0, prejMes=0;
 
   recs.forEach(r=>{
     const v = parseFloat(r.Valor) || 0;
@@ -392,7 +390,7 @@ function abrirEvolucaoAnual(empresa){
 
     if (isBonus(cat)) { bonusAno += v; if (m===mesAtualIdx) bonusMes += v; }
     if (isSocio(cat)) { socioAno += v; if (m===mesAtualIdx)  socioMes += v; }
-    if (isDesp(cat))  { despAno  += v; if (m===mesAtualIdx)  despMes  += v; }
+    if (isPrej(cat))  { prejAno  += v; if (m===mesAtualIdx)  prejMes  += v; }
   });
 
   // Preenche cabeçalho & KPIs
@@ -401,10 +399,10 @@ function abrirEvolucaoAnual(empresa){
   document.getElementById('kpiBonusMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(bonusMes)}`;
   document.getElementById('kpiSocioAno').textContent = `R$ ${BRL(socioAno)}`;
   document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
-  document.getElementById('kpiDespAno').textContent  = `R$ ${BRL(despAno)}`;
-  document.getElementById('kpiDespMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(despMes)}`;
+  document.getElementById('kpiDespAno').textContent  = `R$ ${BRL(prejAno)}`;
+  document.getElementById('kpiDespMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(prejMes)}`;
 
-  // Desenha/atualiza gráfico
+  // Desenha/atualiza gráfico anual
   const ctx = document.getElementById('graficoAnual').getContext('2d');
   if (graficoAnualRef) graficoAnualRef.destroy();
   graficoAnualRef = new Chart(ctx, {
@@ -414,7 +412,7 @@ function abrirEvolucaoAnual(empresa){
       datasets: [{
         label: 'Total vendido por mês',
         data: porMes,
-        backgroundColor: MONTHS.map((_,i)=> i===mesAtualIdx ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)'),
+        backgroundColor: MONTHS.map((_,i)=> i===mesAtualIdx ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
         borderColor: '#2563eb',
         borderWidth: 1
       }]
@@ -434,7 +432,6 @@ function abrirEvolucaoAnual(empresa){
     }
   });
 
-  // Abre modal
   document.getElementById('modalAnual').classList.add('open');
 }
 
@@ -443,7 +440,7 @@ function fecharModal(){
   if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
 }
 
-/* ===== Exportar / Whats ===== */
+/* ===== Exportar PDF ===== */
 function exportarPDF() {
   const boxes = document.querySelectorAll(".empresa-box");
   if (!boxes.length) return alert("Nada para exportar.");
@@ -486,6 +483,7 @@ function exportarPDF() {
   });
 }
 
+/* ===== WhatsApp ===== */
 document.getElementById("enviarWhatsapp").addEventListener("click", () => {
   const dataInicio = document.getElementById("dataInicio").value;
   const dataFim = document.getElementById("dataFim").value;
