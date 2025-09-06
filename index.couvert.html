@@ -10,26 +10,38 @@
   :root{
     --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
     --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
-    --brand:#0b1220; --accent:#1f2937;
-    --blue:#2563eb; --blue-100:#dbeafe; --blue-600:#2563eb;
+    --brand:#0b1220;
+    --blue:#2563eb; --blue-100:#dbeafe;
   }
-  *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word;}
+  *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
+
+  /* Cabeçalho */
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
-  .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:1600px}
+
+  /* Container cheio – desktop largura total */
+  .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
+
+  /* Grid principal */
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
+
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:var(--muted)}
+
   .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
   .kpi .val{font-size:24px;font-weight:800}
+
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800;touch-action:manipulation}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
+
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
   .table tr.clickable{cursor:pointer}
+  .table-wrap{width:100%;overflow:auto} /* rolagem horizontal no mobile quando precisar */
+
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
@@ -56,7 +68,7 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
-  /* popover base */
+  /* popover base (calendário) */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
 
@@ -87,30 +99,16 @@
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
            font-size:18px;font-weight:800;color:var(--brand);z-index:100}
 
-  /* Desktop */
-  @media (min-width: 1024px){
-    .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
-    .kpi-card{grid-column:span 4 / span 4}
-  }
-
-  /* Mobile-friendly */
+  /* Mobile: 1 coluna e espaçamento confortável */
   @media(max-width:760px){
-    header{padding:12px 14px}
-    header h1{font-size:16px}
-    .wrap{padding:0 10px;margin:10px auto}
+    .wrap{padding:0 12px}
+    .grid.cols-3{grid-template-columns:1fr}
+    .kpi-card{grid-column:auto}
     .card{padding:12px;border-radius:14px}
     .kpi .val{font-size:22px}
     .chips{gap:8px}
     .chip{padding:8px 10px;font-size:14px}
-    .table,.table thead{display:none}
-    #tblPagamentos tbody,#tblApagar tbody{display:grid;gap:8px}
-    #tblPagamentos tbody tr,#tblApagar tbody tr{
-      display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);
-      border-radius:12px;padding:10px;background:#fff
-    }
-    .pill-supplier{font-weight:700}
-    .pill-sub{font-size:12px;color:#64748b}
-    .val-right{font-weight:800}
+    .table th,.table td{padding:10px 8px}
   }
 </style>
 </head>
@@ -123,8 +121,8 @@
   <!-- FILTROS -->
   <div class="card">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <button class="btn range-btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
-      <button class="btn range-btn" id="btnAR">ABC: <span id="lblAR"></span></button>
+      <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
+      <button class="btn" id="btnAR">ABC: <span id="lblAR"></span></button>
     </div>
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
@@ -155,10 +153,12 @@
         <details class="paylist" id="dlstApagar">
           <summary>A pagar (<span id="qtApagar">0</span>)</summary>
           <div style="padding:0 10px 10px 10px">
-            <table class="smalltable" id="tblApagar">
-              <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
-              <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="smalltable" id="tblApagar">
+                <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
             <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
           </div>
         </details>
@@ -173,19 +173,23 @@
   <!-- Resumo por Empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
-    <table class="table" id="tblResumoEmp">
-      <thead><tr><th>Empresa</th><th>Arrecadação</th><th>Pagamentos</th><th>Resultado</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table" id="tblResumoEmp">
+        <thead><tr><th>Empresa</th><th>Arrecadação</th><th>Pagamentos</th><th>Resultado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Detalhes pagos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
-    <table class="table" id="tblPagamentos">
-      <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table" id="tblPagamentos">
+        <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
   </div>
 </div>
@@ -214,14 +218,12 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN
 /*** STATE ***/
 const ANO = 2025;
 
-/* === Remapeia o nome que vem do ABC para o mesmo nome usado nos pagamentos ===
-   Regra: o primeiro termo encontrado (lowercase “includes”) vence. Edite à vontade. */
+/* Normalização de nomes do ABC -> nomes dos pagamentos */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
   {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
-  // fallback geral para “villa” (caso a planilha do ABC não diferencie)
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
@@ -232,8 +234,8 @@ let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
 // ranges atuais (Date)
-let pIni=null,pFim=null; // pagamentos (liquidação e vencimento para "a pagar")
-let aIni=null,aFim=null; // ABC (arrecadação)
+let pIni=null,pFim=null; // pagamentos
+let aIni=null,aFim=null; // ABC
 
 /*** HELPERS ***/
 const $ = s=>document.querySelector(s);
@@ -268,7 +270,6 @@ function remapEmpresaABC(raw){
   for (const rule of EMPRESA_REMAP){
     if (rule.match.every(m => s.includes(m))) return rule.to;
   }
-  // se não bater nenhuma regra, usa o texto sem o prefixo “ABC DE VENDAS …”
   return String(raw||"").replace(/^ABC\s+DE\s+VENDAS\s+/i,"").trim() || "";
 }
 
@@ -283,12 +284,11 @@ async function fetchPagamentos(){
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
     data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
-    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),      // Valor Bruto
+    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
 }
-
 async function fetchABC(){
   const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -300,8 +300,8 @@ async function fetchABC(){
       return d.getFullYear()===ANO && containsCouvert(o);
     })
     .map(o=>{
-      const empRaw = o.empresa || o.EMPRESA || "";  // vem como “ABC DE VENDAS …”
-      const emp    = remapEmpresaABC(empRaw);       // normaliza para o mesmo nome dos pagamentos
+      const empRaw = o.empresa || o.EMPRESA || "";
+      const emp    = remapEmpresaABC(empRaw);
       return {
         data: o.data || o.DATA,
         empresa: emp,
@@ -317,8 +317,7 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  // seleção padrão = Todas
-  empresasSelecionadas = new Set(empresas);
+  empresasSelecionadas = new Set(empresas); // padrão: Todas
 }
 function sumArrecadacaoEmpresa(emp){
   return abcAll
@@ -330,14 +329,13 @@ function sumArrecadacaoEmpresa(emp){
 }
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  // "Todas"
   const cTodas=document.createElement("span");
   const allActive=(empresasSelecionadas.size===empresas.length);
   cTodas.className="chip"+(allActive?" active":"");
   cTodas.textContent="Todas";
   cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
   host.appendChild(cTodas);
-  // individuais (single select)
+
   empresas.forEach(e=>{
     const c=document.createElement("span");
     const isActive=(empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
@@ -402,21 +400,18 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // pagos (tem liquidação dentro do range de Pagamentos)
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
-  // a pagar (sem liquidação, vencimento dentro do range de Pagamentos)
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (arrecadação dentro do range ABC)
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
@@ -455,32 +450,16 @@ function aplicar(){
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
-  if (matchMedia("(max-width: 760px)").matches){
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.className="clickable";
-      tr.innerHTML=`
-        <td style="display:none"></td><td style="display:none"></td><td style="display:none"></td><td style="display:none"></td>
-        <div class="info">
-          <div class="pill-supplier">${p.fornecedor||"-"}</div>
-          <div class="pill-sub">${p.empresa||"-"} • ${p.data_pagamento||"-"}</div>
-        </div>
-        <div class="val-right">${brl(p.valor||0)}</div>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
-  } else {
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.className="clickable";
-      tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
-                    <td>${p.empresa||"-"}</td>
-                    <td>${p.fornecedor||"-"}</td>
-                    <td>${brl(p.valor||0)}</td>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
-  }
+  pagos.forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.className="clickable";
+    tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
+                  <td>${p.empresa||"-"}</td>
+                  <td>${p.fornecedor||"-"}</td>
+                  <td>${brl(p.valor||0)}</td>`;
+    tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
+    tb.appendChild(tr);
+  });
 
   // Resumo por empresa
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
@@ -510,7 +489,6 @@ function aplicar(){
     rb.appendChild(tr);
   });
 
-  // labels de range
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
@@ -572,7 +550,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO (sempre dentro da tela) ***/
+/*** POPOVER POSICIONAMENTO ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -623,8 +601,7 @@ function placePopover(pop, anchor){
 
     try{
       await fetchABC();
-      coletarEmpresas();           // agora que o ABC vem com empresa normalizada, atualiza a lista
-      renderChips(); aplicar();
+      coletarEmpresas(); renderChips(); aplicar();
       $("#empLoadMsg").style.display="none";
     }catch(e){
       console.error(e);
