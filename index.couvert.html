@@ -61,7 +61,6 @@
 
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
-
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
@@ -192,13 +191,10 @@
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
-/* Web App que devolve SOMENTE os totais da COLUNA G (linhas “Total por Data”):
-   [{ empresa, data, total_dia }] */
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGECsmogfVGt9DTOVF1zpiZh2QCIZuuvqssD25UN-dpGm2YL7s/exec";
 
 /*** STATE ***/
 const ANO = 2025;
-
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
@@ -416,14 +412,13 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (total por DIA dentro do período + empresas filtradas)
+  // ABC
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Agrupa por data e soma o total_dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -431,15 +426,12 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
-  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
 
-  // Resultado
   const resultado  = totalArr - somaTotal;
 
-  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
@@ -506,10 +498,9 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** Aplicar filtros (botão + calendário) ***/
+/*** Aplicar filtros ***/
 async function applyFilters(){
-  document.getElementById('popPR').style.display = 'none';
-  document.getElementById('popAR').style.display = 'none';
+  hideAllPopovers();
   try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -554,7 +545,11 @@ function buildRangeCalendar(container, state, onApply, onCancel){
       const el=document.createElement("div"); el.className="day"; el.textContent=d;
       if(isSameDay(date,state.start)||isSameDay(date,state.end)) el.classList.add('sel');
       else if(inSelRange(date)) el.classList.add('range');
-      el.onclick=()=>{ if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } } drawGrid(); };
+      el.onclick=()=>{ 
+        if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } 
+        else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } } 
+        drawGrid(); 
+      };
       grid.appendChild(el);
     }
   }
@@ -562,25 +557,20 @@ function buildRangeCalendar(container, state, onApply, onCancel){
 
   const foot=document.createElement("div"); foot.className="cal-foot cal foot";
   const cancel=document.createElement("button"); cancel.className="btn"; cancel.textContent="Cancelar";
-  const apply=document.createElement("button"); 
-apply.className="btn dark"; 
-apply.textContent="Aplicar";
-cancel.onclick=onCancel;
-apply.onclick=()=>{ 
-  if(state.start && !state.end){
-    state.end = state.start;   // <<< aqui o truque
-  }
-  if(state.start && state.end) onApply(state.start, state.end); 
-};
-foot.appendChild(cancel); 
-foot.appendChild(apply);
-
+  const apply=document.createElement("button"); apply.className="btn dark"; apply.textContent="Aplicar";
+  cancel.onclick=onCancel;
+  apply.onclick=()=>{ 
+    if(state.start && !state.end){ state.end = state.start; }   // 1 dia = intervalo de 1 dia
+    if(state.start && state.end) onApply(state.start, state.end); 
+  };
+  foot.appendChild(cancel); foot.appendChild(apply);
+  cal.appendChild(foot);
 
   container.appendChild(cal);
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO ***/
+/*** POPOVER POSICIONAMENTO E CONTROLE ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -602,6 +592,11 @@ function placePopover(pop, anchor){
   pop.style.top  = top  + 'px';
 }
 
+function hideAllPopovers(){
+  $("#popPR").style.display = 'none';
+  $("#popAR").style.display = 'none';
+}
+
 /*** INIT ***/
 (async function init(){
   const now=new Date();
@@ -614,26 +609,42 @@ function placePopover(pop, anchor){
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{ prState.anchor=$("#btnPR"); prPop.innerHTML="";
+  const openPR = ()=>{
+    // abre PR e fecha AR se estiver aberto
+    if (prPop.style.display==='block'){ hideAllPopovers(); return; }
+    hideAllPopovers();
+    prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
       $("#lblPR").textContent=fmtRange(pIni,pFim);
       applyFilters();
-    }, ()=> prPop.style.display="none");
+    }, hideAllPopovers);
     placePopover(prPop, $("#btnPR"));
   };
 
-  const openAR = ()=>{ arState.anchor=$("#btnAR"); arPop.innerHTML="";
+  const openAR = ()=>{
+    // abre AR e fecha PR se estiver aberto
+    if (arPop.style.display==='block'){ hideAllPopovers(); return; }
+    hideAllPopovers();
+    arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
       $("#lblAR").textContent=fmtRange(aIni,aFim);
       applyFilters();
-    }, ()=> arPop.style.display="none");
+    }, hideAllPopovers);
     placePopover(arPop, $("#btnAR"));
   };
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
+
+  // fecha calendários clicando fora ou com ESC
+  document.addEventListener('click', (e)=>{
+    const insidePR = $("#popPR").contains(e.target) || $("#btnPR").contains(e.target);
+    const insideAR = $("#popAR").contains(e.target) || $("#btnAR").contains(e.target);
+    if (!insidePR && !insideAR) hideAllPopovers();
+  });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hideAllPopovers(); });
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
