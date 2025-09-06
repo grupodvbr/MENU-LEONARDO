@@ -65,7 +65,7 @@
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
-  .cal .dow{font-size:12px;color:var(--muted);text-align:center}
+  .cal .dow{font-size:12px;color:#64748b;text-align:center}
   .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
   .cal .day:hover{background:#f1f5f9}
   .cal .day.out{opacity:.35}
@@ -111,7 +111,7 @@
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
       <div id="chipsEmpresas" class="chips"></div>
-      <div id="empLoadMsg" class="muted" style="display:none">Carregando arrecadação (ABC)…</div>
+      <div id="empLoadMsg" class="muted" style="display:none">Carregando arrecadação (ABC) em segundo plano…</div>
     </div>
   </div>
 
@@ -197,13 +197,13 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGEC
 /*** STATE ***/
 const ANO = 2025;
 
-/* nomes canônicos usados no painel */
-const CANON = {
-  MERCATTO: "MERCATTO DELÍCIA",
-  DELICIA: "DELICIA GOURMET",
-  VILLA_LEM: "VILLA GOURMET LEM",
-  VILLA_BAR: "VILLA GOURMET BARREIRAS",
-};
+const EMPRESA_REMAP = [
+  {match:["mercatto"], to:"MERCATTO DELÍCIA"},
+  {match:["delicia"],  to:"DELICIA GOURMET"},
+  {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
+  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
+  {match:["villa"], to:"VILLA GOURMET LEM"},
+];
 
 let pagamentosAll = [];
 let abcAll = [];
@@ -220,6 +220,7 @@ const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
 function parseISO(d){return new Date(d+"T00:00:00");}
+function addDays(date, n){ return new Date(date.getFullYear(), date.getMonth(), date.getDate()+n); }
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
@@ -235,9 +236,10 @@ function toISODate(s){
     dt = new Date(s.getFullYear(), s.getMonth(), s.getDate());
   } else {
     const str = String(s).trim();
-    const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (m){ dt = new Date(+m[3], +m[2]-1, +m[1]); }
-    else {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)){
+      const [d,m,y] = str.split("/").map(Number);
+      dt = new Date(y, m-1, d);
+    } else {
       const d = new Date(str);
       if (!isNaN(d)) dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
@@ -250,33 +252,24 @@ function fmtRange(a,b){
   const f = d => new Date(d).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
-
-/* normaliza string para comparar sem acentos */
-function norm(s){
-  return String(s||"").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+function pickNumber(obj, keys){
+  for(const k of keys){
+    if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]);
+  }
+  return 0;
 }
-
-/* mapeia o texto vindo do ABC para os nomes canônicos */
 function remapEmpresaABCfromObj(o){
   const candidates = [
     o.empresa, o.EMPRESA, o.Empresa,
     o.sheet, o.SHEET, o.aba, o.ABA, o.planilha, o.PLANILHA, o.origem, o.ORIGEM
-  ].filter(Boolean);
+  ].filter(Boolean).map(s=>String(s).toLowerCase());
 
-  const all = norm(candidates.join(" "));
-  if (all.includes("mercatto")) return CANON.MERCATTO;
-  if (all.includes("delicia") || all.includes("delicia gourmet")) return CANON.DELICIA;
-  if (all.includes("villa") && all.includes("barreiras")) return CANON.VILLA_BAR;
-  if (all.includes("villa") && (all.includes("lem") || all.includes("luis eduardo"))) return CANON.VILLA_LEM;
-
-  // fallback: tenta a primeira palavra útil
-  const plain = norm(candidates[0]||"");
-  if (plain.includes("mercatto")) return CANON.MERCATTO;
-  if (plain.includes("delicia"))  return CANON.DELICIA;
-  if (plain.includes("barreiras"))return CANON.VILLA_BAR;
-  if (plain.includes("villa") || plain.includes("lem")) return CANON.VILLA_LEM;
-
-  return (o.empresa||o.EMPRESA||o.Empresa||"").trim(); // último recurso
+  const full = candidates.join(" ");
+  for(const rule of EMPRESA_REMAP){
+    if(rule.match.every(m => full.includes(m))) return rule.to;
+  }
+  const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
+  return plain || (o.empresa||o.EMPRESA||"");
 }
 
 /*** FETCH ***/
@@ -296,9 +289,14 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”) */
+/* ABC: totais da COLUNA G (linhas “Total por Data”)
+   >>> IMPORTANTE: o WebApp parece tratar a data inicial como EXCLUSIVA.
+   Para garantir que o dia 1º entre, pedimos ini - 1 dia no servidor
+   e depois filtramos no cliente com limites INCLUSIVOS. */
 async function fetchABC(ini, fim){
-  const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
+  const qIni = ini ? addDays(ini, -1) : null;   // <- ajuste para não perder o 1º dia
+  const qFim = fim ? new Date(fim) : null;
+  const qs = (qIni && qFim) ? `?ini=${toISODate(qIni)}&fim=${toISODate(qFim)}` : "";
   let r = await fetch(ABC_URL + qs);
   if(!r.ok && qs){ r = await fetch(ABC_URL); }
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -309,7 +307,7 @@ async function fetchABC(ini, fim){
     .map(o=>{
       const emp = remapEmpresaABCfromObj(o);
       const dataIso = toISODate(o.data || o.DATA || o.Data || "");
-      const faturamento = cleanNumber(o.total_dia ?? o.TOTAL_DIA ?? o.total ?? o.TOTAL ?? 0);
+      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
       return { data: dataIso, empresa: emp, faturamento };
     })
     .filter(x=>{
@@ -422,14 +420,14 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC
+  // ABC (total por DIA dentro do período + empresas filtradas)
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Agrupa por data
+  // Agrupa por data e soma o total_dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -437,23 +435,24 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
-  // Totais pagamentos
+  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
 
+  // Resultado
   const resultado  = totalArr - somaTotal;
 
   // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
-  $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada…";
+  $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
   $("#kPago").textContent        = brl(somaPago);
   $("#kApagar").textContent      = brl(somaApagar);
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar
+  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -470,7 +469,7 @@ function aplicar(){
 
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  $("#msgEmpty").style.display = pagos.length? "none":"block";
+  if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
   pagos.forEach(p=>{
     const tr=document.createElement("tr");
     tr.className="clickable";
@@ -511,7 +510,7 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** APLICAR FILTROS (refetch ABC e redesenhar) ***/
+/*** Aplicar filtros (calendário) ***/
 async function applyFilters(){
   $("#popPR").style.display = 'none';
   $("#popAR").style.display = 'none';
@@ -529,8 +528,8 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   const next = document.createElement("button"); next.className="btn"; next.textContent="›";
   const title = document.createElement("div"); title.style.fontWeight="800";
   const updTitle=()=>title.textContent = state.cursor.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
-  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
+  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); };
+  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); };
   head.appendChild(prev); head.appendChild(title); head.appendChild(next);
   cal.appendChild(head);
 
@@ -559,10 +558,10 @@ function buildRangeCalendar(container, state, onApply, onCancel){
       const el=document.createElement("div"); el.className="day"; el.textContent=d;
       if(isSameDay(date,state.start)||isSameDay(date,state.end)) el.classList.add('sel');
       else if(inSelRange(date)) el.classList.add('range');
-      el.onclick=()=>{ 
-        if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } 
+      el.onclick=()=>{
+        if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; }
         else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } }
-        drawGrid(); 
+        drawGrid();
       };
       grid.appendChild(el);
     }
@@ -575,7 +574,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   cancel.onclick=onCancel;
   apply.onclick=()=>{ 
     if(state.start && !state.end){ state.end = state.start; } // 1 dia
-    if(state.start && state.end) onApply(state.start, state.end); 
+    if(state.start && state.end) onApply(state.start, state.end);
   };
   foot.appendChild(cancel); foot.appendChild(apply);
   cal.appendChild(foot);
@@ -584,7 +583,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO + FECHAMENTO EXTERNO ***/
+/*** POPOVER POSICIONAMENTO E FECHAMENTO ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -606,12 +605,14 @@ function placePopover(pop, anchor){
   pop.style.top  = top  + 'px';
 }
 
-// fecha só ao clicar fora, aplicar ou cancelar
-document.addEventListener('mousedown', (e)=>{
-  const inside = e.target.closest('#popPR, #btnPR, #popAR, #btnAR');
-  if(!inside){
-    $("#popPR").style.display='none';
-    $("#popAR").style.display='none';
+// fecha ao clicar fora
+document.addEventListener('click', (e)=>{
+  const pr=$("#popPR"), ar=$("#popAR");
+  const bpr=$("#btnPR"), bar=$("#btnAR");
+  const clickInside = (el)=> el && el.contains(e.target);
+  if( (pr.style.display==='block' || ar.style.display==='block') &&
+      !clickInside(pr) && !clickInside(ar) && !clickInside(bpr) && !clickInside(bar) ){
+    pr.style.display='none'; ar.style.display='none';
   }
 });
 
@@ -627,24 +628,21 @@ document.addEventListener('mousedown', (e)=>{
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{ prState.anchor=$("#btnPR"); prPop.innerHTML="";
+  const openPR = ()=>{ $("#popAR").style.display='none'; prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
       $("#lblPR").textContent=fmtRange(pIni,pFim);
       applyFilters();
-    }, ()=> { prPop.style.display="none"; });
-    // abrir um fecha o outro
-    $("#popAR").style.display='none';
+    }, ()=> prPop.style.display="none");
     placePopover(prPop, $("#btnPR"));
   };
 
-  const openAR = ()=>{ arState.anchor=$("#btnAR"); arPop.innerHTML="";
+  const openAR = ()=>{ $("#popPR").style.display='none'; arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
       $("#lblAR").textContent=fmtRange(aIni,aFim);
       applyFilters();
-    }, ()=> { arPop.style.display="none"; });
-    $("#popPR").style.display='none';
+    }, ()=> arPop.style.display="none");
     placePopover(arPop, $("#btnAR"));
   };
 
