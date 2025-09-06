@@ -298,34 +298,34 @@ async function fetchPagamentos(){
 }
 
 async function fetchABC(){
-  const r=await fetch(ABC_URL);
+  const r = await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
-  const arr=await r.json();
+  const arr = await r.json(); // espera array de objetos: {empresa, data, produto, total_dia}
 
   abcAll = arr
-    .filter(o=>{
-      const d = new Date(o.data || o.DATA || o.Data || "");
-      if(isNaN(d)) return false;
-      const nomeProduto = o.produto || o.PRODUTO || o.Produto || "";
-      return d.getFullYear()===ANO && produtoContaParaArrecadacao(nomeProduto);
-    })
-    .map(o=>{
-      const emp = remapEmpresaABCfromObj(o);
+    .map(o => {
+      const emp  = remapEmpresaABCfromObj(o);               // mantém seu remapeamento
+      const data = o.data || o.DATA || o.Data || "";
+      // PRIORIDADE: total_dia (do seu script), depois outras variantes
       const faturamento = pickNumber(o, [
+        "total_dia", "TOTAL_DIA", "total", "TOTAL",
         "faturamento","FATURAMENTO","Faturamento",
         "venda_liquida","Venda_Liquida","Venda Líquida","VENDA_LIQUIDA",
         "valor","VALOR"
       ]);
-      return {
-        data: o.data || o.DATA || o.Data || "",
-        empresa: emp,
-        faturamento,
-        produto: o.produto || o.PRODUTO || o.Produto || ""
-      };
+      const produto = o.produto || o.PRODUTO || o.Produto || "";
+      return { data, empresa: emp, faturamento, produto };
+    })
+    .filter(x => {
+      // mantém os filtros de ano e, se quiser, pelos produtos definidos em PRODUTOS_ARRECADACAO
+      const dOk = !isNaN(new Date(x.data)) && new Date(x.data).getFullYear() === ANO;
+      const pOk = PRODUTOS_ARRECADACAO.length ? produtoContaParaArrecadacao(x.produto) : true;
+      return dOk && pOk;
     });
 
   abcLoaded = true;
 }
+
 
 /*** EMPRESAS / CHIPS ***/
 function coletarEmpresas(){
