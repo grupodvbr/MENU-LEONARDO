@@ -10,27 +10,22 @@
   :root{
     --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
     --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
-    --brand:#0b1220;
-    --blue:#2563eb; --blue-100:#dbeafe;
+    --brand:#0b1220; --blue:#2563eb; --blue-100:#dbeafe;
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
 
-  /* Cabeçalho */
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
 
-  /* Container cheio – desktop largura total */
   .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
 
-  /* Grid principal */
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
 
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:var(--muted)}
-
   .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
   .kpi .val{font-size:24px;font-weight:800}
 
@@ -40,13 +35,12 @@
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
   .table tr.clickable{cursor:pointer}
-  .table-wrap{width:100%;overflow:auto} /* rolagem horizontal no mobile quando precisar */
+  .table-wrap{width:100%;overflow:auto}
 
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
 
-  /* chips empresas - single select */
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;
         font-weight:800;display:inline-flex;gap:10px;align-items:center;touch-action:manipulation}
@@ -55,12 +49,10 @@
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   .chip.active .amt{color:#fff}
 
-  /* KPIs Pagamentos – breakdown */
   .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
   .pill .tag{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
 
-  /* details list “A pagar” */
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
@@ -68,11 +60,9 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
-  /* popover base (calendário) */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
 
-  /* calendário */
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
@@ -85,7 +75,6 @@
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
 
-  /* Modal bottom sheet */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);
          box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
@@ -95,11 +84,9 @@
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
 
-  /* Loading */
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
-           font-size:18px;font-weight:800;color:var(--brand);z-index:100}
+           font-size:18px;font-weight:800;color:#0b1220;z-index:100}
 
-  /* Mobile: 1 coluna e espaçamento confortável */
   @media(max-width:760px){
     .wrap{padding:0 12px}
     .grid.cols-3{grid-template-columns:1fr}
@@ -118,7 +105,6 @@
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- FILTROS -->
   <div class="card">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
@@ -131,7 +117,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
   <div class="grid cols-3">
     <div class="card kpi kpi-card">
       <div>
@@ -170,7 +155,6 @@
     </div>
   </div>
 
-  <!-- Resumo por Empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
     <div class="table-wrap">
@@ -181,7 +165,6 @@
     </div>
   </div>
 
-  <!-- Detalhes pagos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <div class="table-wrap">
@@ -194,7 +177,6 @@
   </div>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
@@ -206,7 +188,6 @@
   </div>
 </div>
 
-<!-- Popovers dos calendários -->
 <div class="popover" id="popPR"></div>
 <div class="popover" id="popAR"></div>
 
@@ -218,12 +199,13 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN
 /*** STATE ***/
 const ANO = 2025;
 
-/* Normalização de nomes do ABC -> nomes dos pagamentos */
+/* Remapeia textos diversos do ABC para os nomes de empresa usados na planilha de pagamentos */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
   {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
+  // fallback “villa” simples → LEM (se precisar, troque aqui)
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
@@ -233,7 +215,7 @@ let empresas = [];
 let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
-// ranges atuais (Date)
+// ranges (Date)
 let pIni=null,pFim=null; // pagamentos
 let aIni=null,aFim=null; // ABC
 
@@ -243,20 +225,14 @@ function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',cur
 function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
+
+/* inclui qualquer “couvert” (sem acento/caixa), EXCETO “couvert do villa” e “couvert delicia” */
 function containsCouvert(item){
-  // pega o nome do produto (com ou sem caixa/acentos)
   const raw = String(item.produto || item.PRODUTO || "");
-  const p = raw
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // remove acentos
-    .toLowerCase();
-
-  // precisa conter "couvert"
-  if (!p.includes("couvert")) return false;
-
-  // excluir variações do Villa e do Delícia
+  const p = raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(!p.includes("couvert")) return false;
   const isVilla   = p.includes("couvert do villa") || (p.includes("couvert") && p.includes("villa"));
   const isDelicia = p.includes("couvert delicia")  || (p.includes("couvert") && p.includes("delicia"));
-
   return !(isVilla || isDelicia);
 }
 
@@ -276,12 +252,29 @@ function fmtRange(a,b){
   const f = d => new Date(d).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
-function remapEmpresaABC(raw){
-  const s = String(raw||"").toLowerCase();
-  for (const rule of EMPRESA_REMAP){
-    if (rule.match.every(m => s.includes(m))) return rule.to;
+
+/* pega número do primeiro campo que existir */
+function pickNumber(obj, keys){
+  for(const k of keys){
+    if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]);
   }
-  return String(raw||"").replace(/^ABC\s+DE\s+VENDAS\s+/i,"").trim() || "";
+  return 0;
+}
+
+/* detecta empresa a partir de vários campos possíveis do ABC e remapeia */
+function remapEmpresaABCfromObj(o){
+  const candidates = [
+    o.empresa, o.EMPRESA, o.Empresa,
+    o.sheet, o.SHEET, o.aba, o.ABA, o.planilha, o.PLANILHA, o.origem, o.ORIGEM
+  ].filter(Boolean).map(s=>String(s).toLowerCase());
+
+  const full = candidates.join(" ");
+  for(const rule of EMPRESA_REMAP){
+    if(rule.match.every(m => full.includes(m))) return rule.to;
+  }
+  // também remove prefixos "ABC DE VENDAS ..."
+  const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
+  return plain || (o.empresa||o.EMPRESA||"");
 }
 
 /*** FETCH ***/
@@ -295,31 +288,39 @@ async function fetchPagamentos(){
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
     data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
+    // Valor Bruto (pedido anterior)
     valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
 }
+
 async function fetchABC(){
   const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
   const arr=await r.json();
+
   abcAll = arr
     .filter(o=>{
-      const d = new Date(o.data || o.DATA || "");
+      const d = new Date(o.data || o.DATA || o.Data || "");
       if(isNaN(d)) return false;
       return d.getFullYear()===ANO && containsCouvert(o);
     })
     .map(o=>{
-      const empRaw = o.empresa || o.EMPRESA || "";
-      const emp    = remapEmpresaABC(empRaw);
+      const emp = remapEmpresaABCfromObj(o);
+      const faturamento = pickNumber(o, [
+        "faturamento","FATURAMENTO","Faturamento",
+        "venda_liquida","Venda_Liquida","Venda Líquida","VENDA_LIQUIDA",
+        "valor","VALOR"
+      ]);
       return {
-        data: o.data || o.DATA,
+        data: o.data || o.DATA || o.Data || "",
         empresa: emp,
-        faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
-        produto: o.produto || o.PRODUTO || ""
+        faturamento,
+        produto: o.produto || o.PRODUTO || o.Produto || ""
       };
     });
+
   abcLoaded = true;
 }
 
@@ -344,7 +345,7 @@ function renderChips(){
   const allActive=(empresasSelecionadas.size===empresas.length);
   cTodas.className="chip"+(allActive?" active":"");
   cTodas.textContent="Todas";
-  cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
+  cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
   host.appendChild(cTodas);
 
   empresas.forEach(e=>{
@@ -358,7 +359,7 @@ function renderChips(){
   });
 }
 
-/*** MODAL – histórico do fornecedor ***/
+/*** MODAL ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
@@ -406,7 +407,7 @@ async function openHistoricoFornecedor(fornecedor){
   }
 }
 
-/*** RENDER PRINCIPAL ***/
+/*** RENDER ***/
 function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
@@ -443,7 +444,6 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -458,7 +458,6 @@ function aplicar(){
       tbA.appendChild(tr);
     });
 
-  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
   pagos.forEach(p=>{
@@ -472,7 +471,6 @@ function aplicar(){
     tb.appendChild(tr);
   });
 
-  // Resumo por empresa
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
     const pPago = pagamentosAll.filter(p=>{
@@ -535,8 +533,9 @@ function buildRangeCalendar(container, state, onApply, onCancel){
     grid.querySelectorAll('.day').forEach(n=>n.remove());
     const y=state.cursor.getFullYear(), m=state.cursor.getMonth();
     const first=new Date(y,m,1);
-    const startDay=(first.getDay()+6)%7; // segunda=0
+    const startDay=(first.getDay()+6)%7;
     const daysInMonth=new Date(y,m+1,0).getDate();
+
     for(let i=0;i<startDay;i++){ const x=document.createElement("div"); x.className="day out"; grid.appendChild(x); }
     for(let d=1; d<=daysInMonth; d++){
       const date=new Date(y,m,d);
@@ -549,7 +548,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   }
   cal.appendChild(grid);
 
-  const foot=document.createElement("div"); foot.className="foot";
+  const foot=document.createElement("div"); foot.className="cal-foot cal foot";
   const cancel=document.createElement("button"); cancel.className="btn"; cancel.textContent="Cancelar";
   const apply=document.createElement("button"); apply.className="btn dark"; apply.textContent="Aplicar";
   cancel.onclick=onCancel;
@@ -600,7 +599,6 @@ function placePopover(pop, anchor){
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
-
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 
