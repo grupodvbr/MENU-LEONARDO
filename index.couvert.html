@@ -28,7 +28,7 @@
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
 
-  /* chips de empresa (agora single-select com valor) */
+  /* chips de empresa (single-select + valor) */
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.9}
@@ -57,6 +57,14 @@
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
 
+  /* Range popover */
+  .range{display:flex;gap:12px;flex-wrap:wrap}
+  .range .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:800}
+  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;z-index:60;display:none}
+  .popover .row{display:flex;gap:8px;align-items:center}
+  .popover .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  .popover input[type="date"]{padding:6px;border:1px solid var(--line);border-radius:8px}
+
   /* Mobile cards */
   @media(max-width:768px){
     .table, .table thead{display:none}
@@ -75,22 +83,36 @@
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- Filtros separados -->
+  <!-- Filtros: agora 1 controle (range) para cada fonte -->
   <div class="card">
-    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:end">
-      <div>
-        <div style="font-weight:800;margin-bottom:4px">Pagamentos</div>
-        <label>Início: <input type="date" id="fPIni"></label>
-        <label style="margin-left:8px">Fim: <input type="date" id="fPFim"></label>
+    <div class="range">
+      <div style="position:relative">
+        <div class="range-btn" id="btnPR">Pagamentos: <span id="lblPR"></span></div>
+        <div class="popover" id="popPR">
+          <div class="row">
+            <label>De: <input type="date" id="pStart"></label>
+            <label>Até: <input type="date" id="pEnd"></label>
+          </div>
+          <div class="actions">
+            <button class="btn" id="prCancel">Cancelar</button>
+            <button class="btn" id="prApply">Aplicar</button>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <div style="font-weight:800;margin-bottom:4px">ABC (Arrecadação)</div>
-        <label>Início: <input type="date" id="fAIni"></label>
-        <label style="margin-left:8px">Fim: <input type="date" id="fAFim"></label>
+      <div style="position:relative">
+        <div class="range-btn" id="btnAR">ABC: <span id="lblAR"></span></div>
+        <div class="popover" id="popAR">
+          <div class="row">
+            <label>De: <input type="date" id="aStart"></label>
+            <label>Até: <input type="date" id="aEnd"></label>
+          </div>
+          <div class="actions">
+            <button class="btn" id="arCancel">Cancelar</button>
+            <button class="btn" id="arApply">Aplicar</button>
+          </div>
+        </div>
       </div>
-
-      <button class="btn" id="btnAplicar">Aplicar filtros</button>
     </div>
 
     <div style="margin-top:10px">
@@ -120,14 +142,11 @@
           <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
         </div>
 
-        <!-- Lista A Pagar no mesmo card -->
         <details class="paylist" id="dlstApagar">
           <summary>A pagar (<span id="qtApagar">0</span>)</summary>
           <div style="padding:0 10px 10px 10px">
             <table class="smalltable" id="tblApagar">
-              <thead>
-                <tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr>
-              </thead>
+              <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
               <tbody></tbody>
             </table>
             <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
@@ -141,7 +160,7 @@
     </div>
   </div>
 
-  <!-- Resumo por empresa -->
+  <!-- Resumo por Empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
     <table class="table" id="tblResumoEmp">
@@ -150,7 +169,7 @@
     </table>
   </div>
 
-  <!-- Detalhes pagtos -->
+  <!-- Detalhes -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
@@ -161,7 +180,7 @@
   </div>
 </div>
 
-<!-- MODAL bottom sheet -->
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
@@ -174,21 +193,25 @@
 </div>
 
 <script>
-/* === URLs (as suas) === */
+/*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbyUvPTmmfLpAWIA9-zW6i6rYwkTQq7LED8gjdx205twpJv1zCKiyhByjXM7sJ-zIue-hQ/exec";
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec";
 
-/* === STATE === */
+/*** STATE ***/
 const ANO = 2025;
 const DEFAULT_EMPRESA = "mercatto";
 
 let pagamentosAll = [];
 let abcAll = [];
 let empresas = [];
-let empresasSelecionadas = new Set(); // manter Set, mas agora tratamos como single-select
+let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
-/* === HELPERS === */
+// ranges atuais
+let pIni=null,pFim=null; // pagamentos
+let aIni=null,aFim=null; // ABC
+
+/*** HELPERS ***/
 const $ = (q)=>document.querySelector(q);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function parseISO(d){return new Date(d+"T00:00:00");}
@@ -212,8 +235,12 @@ function isoFromStr(s){
   if(isNaN(d)) return String(s).slice(0,10);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
 }
+function fmtRange(a,b){
+  const f = d => new Date(d).toLocaleDateString('pt-BR');
+  return `${f(a)} → ${f(b)}`;
+}
 
-/* === FETCHERS === */
+/*** FETCH ***/
 async function fetchPagamentos(){
   const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
   if(!r.ok) throw new Error("Pagamentos HTTP "+r.status);
@@ -225,7 +252,7 @@ async function fetchPagamentos(){
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
     data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
-    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0), // **Valor Bruto**
+    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0), // Valor Bruto
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
@@ -241,34 +268,26 @@ async function fetchABC(){
     return d.getFullYear()===ANO && containsCouvert(o);
   }).map(o=>({
     data: o.data || o.DATA,
-    empresa: o.empresa || o.EMPRESA || "",  // pode estar vazio no seu ABC
+    empresa: o.empresa || o.EMPRESA || "",
     faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
     produto: o.produto || o.PRODUTO || ""
   }));
   abcLoaded = true;
 }
 
-/* === EMPRESAS / CHIPS === */
+/*** EMPRESAS + CHIPS ***/
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  // seleção padrão: Mercatto, senão primeira
   empresasSelecionadas.clear();
   const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
-  if(merc) empresasSelecionadas.add(merc);
-  else if (empresas[0]) empresasSelecionadas.add(empresas[0]);
+  empresasSelecionadas.add(merc || empresas[0] || "Todas");
 }
 
 function sumArrecadacaoEmpresa(emp){
-  // usa intervalo atual do ABC
-  const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
-  const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
-
-  // se o ABC não tiver empresa, não dá pra segregar: retorna null para mostrar "—"
   const hasEmpresa = abcAll.some(x=>x.empresa);
   if(!hasEmpresa) return null;
-
   return abcAll
     .filter(x=>{
       const d=new Date(x.data);
@@ -279,43 +298,29 @@ function sumArrecadacaoEmpresa(emp){
 
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  // "Todas"
   const all=document.createElement("span");
   const allActive = (empresasSelecionadas.size===empresas.length);
   all.className="chip"+(allActive?" active":"");
-  all.innerHTML=`<span>Todas</span>`;
-  all.onclick=()=>{
-    empresasSelecionadas=new Set(empresas); renderChips(); aplicar();
-  };
+  all.textContent="Todas";
+  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
   host.appendChild(all);
 
-  // chips individuais (single-select)
-  const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
-  const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
   empresas.forEach(e=>{
     const c=document.createElement("span");
     const isActive=empresasSelecionadas.has(e) && empresasSelecionadas.size===1;
     c.className="chip"+(isActive?" active":"");
-
-    let amt = sumArrecadacaoEmpresa(e);
-    // se não dá pra segregar por empresa no ABC, mostra "—"
-    const amtHtml = (amt===null) ? "<span class='dash'>—</span>" : `<span class="amt">${brl(amt)}</span>`;
-    c.innerHTML = `<span>${e}</span>${amtHtml}`;
-
-    c.onclick=()=>{
-      // single-select: deixa somente essa empresa selecionada
-      empresasSelecionadas = new Set([e]);
-      renderChips(); aplicar();
-    };
+    const amt = sumArrecadacaoEmpresa(e);
+    c.innerHTML = `<span>${e}</span>${amt===null? "<span class='dash'>—</span>":"<span class='amt'>"+brl(amt)+"</span>"}`;
+    c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
     host.appendChild(c);
   });
 }
 
-/* === MODAL === */
+/*** MODAL ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 
-/* === HISTÓRICO (somente fornecedor clicado) === */
+/*** HISTÓRICO (fornecedor selecionado) ***/
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
   $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
@@ -340,7 +345,7 @@ async function openHistoricoFornecedor(fornecedor){
 
     const total = arr.reduce((s,x)=>s+x.valor,0);
 
-    const body = `
+    $("#mBody").innerHTML = `
       <div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
       <table class="table" style="width:100%">
         <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
@@ -354,22 +359,15 @@ async function openHistoricoFornecedor(fornecedor){
               <td style="text-align:right">${brl(x.valor)}</td>
             </tr>`).join("")}
         </tbody>
-      </table>
-    `;
-    $("#mBody").innerHTML = body;
+      </table>`;
   }catch(e){
     $("#mBody").innerHTML = `<div class="muted">Não foi possível carregar o histórico agora.</div>`;
     console.error(e);
   }
 }
 
-/* === RENDER PRINCIPAL === */
+/*** RENDER PRINCIPAL ***/
 function aplicar(){
-  const pIni = $("#fPIni").value ? new Date($("#fPIni").value) : null;
-  const pFim = $("#fPFim").value ? new Date($("#fPFim").value) : null;
-  const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
-  const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
-
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
@@ -390,7 +388,7 @@ function aplicar(){
   // ABC
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
-    const okEmp = x.empresa ? filtroEmp(x.empresa) : true; // se ABC não tem empresa, considera toda a arrecadação
+    const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
@@ -411,22 +409,17 @@ function aplicar(){
   // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
-  if(abertos.length===0){
-    $("#msgApagar").style.display="block";
-  } else {
-    $("#msgApagar").style.display="none";
-    abertos
-      .sort((x,y)=> new Date(x.vencimento) - new Date(y.vencimento))
-      .forEach(p=>{
-        const tr=document.createElement("tr");
-        tr.innerHTML = `
-          <td>${p.vencimento||"-"}</td>
-          <td>${p.empresa||"-"}</td>
-          <td>${p.fornecedor||"-"}</td>
-          <td style="text-align:right">${brl(p.valor||0)}</td>`;
-        tbA.appendChild(tr);
-      });
-  }
+  $("#msgApagar").style.display = abertos.length? "none":"block";
+  abertos.sort((x,y)=> new Date(x.vencimento) - new Date(y.vencimento))
+    .forEach(p=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.vencimento||"-"}</td>
+        <td>${p.empresa||"-"}</td>
+        <td>${p.fornecedor||"-"}</td>
+        <td style="text-align:right">${brl(p.valor||0)}</td>`;
+      tbA.appendChild(tr);
+    });
 
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
@@ -453,8 +446,8 @@ function aplicar(){
                     <td>${p.empresa||"-"}</td>
                     <td>${p.fornecedor||"-"}</td>
                     <td>${brl(p.valor||0)}</td>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
+    tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
+    tb.appendChild(tr);
     });
   }
 
@@ -485,25 +478,68 @@ function aplicar(){
                   <td><span class="badge ${tR>=0?"lucr":"prej"}">${abcLoaded? brl(tR) : "⏳"}</span></td>`;
     rb.appendChild(tr);
   });
+
+  // Atualiza os labels dos range buttons
+  $("#lblPR").textContent = fmtRange(pIni,pFim);
+  $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/* === INIT === */
-document.getElementById("btnAplicar").onclick=()=>{ renderChips(); aplicar(); };
-// quando mudar o range do ABC, atualiza os chips (valor por empresa) e os KPIs
-["fAIni","fAFim"].forEach(id=>{
-  document.getElementById(id).addEventListener("change", ()=>{ renderChips(); aplicar(); });
-});
+/*** RANGE POPOVERS (um controle por calendário) ***/
+function setupRange(btnId, popId, startId, endId, onApply){
+  const btn=$(btnId), pop=$(popId), start=$(startId), end=$(endId);
+  const close=()=>pop.style.display="none";
+  btn.addEventListener('click', ()=>{
+    // posiciona popover perto do botão
+    const r = btn.getBoundingClientRect();
+    pop.style.display='block';
+    pop.style.top = (r.bottom + window.scrollY + 6)+'px';
+    pop.style.left= (r.left   + window.scrollX)+'px';
+  });
+  pop.addEventListener('click', e=>e.stopPropagation());
+  document.addEventListener('click', e=>{
+    if(!pop.contains(e.target) && !btn.contains(e.target)) close();
+  });
+  return {
+    setRange:(ini,fim)=>{ start.value = ini; end.value = fim; },
+    read:()=>({ini:start.value, fim:end.value}),
+    close,
+    onApply
+  };
+}
 
+/*** INIT ***/
 (async function init(){
   const now=new Date();
+  const ini=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  const fim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
 
-  // mês atual para ambos
-  const pIni=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
-  const pFim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
-  const aIni=pIni, aFim=pFim;
+  // ranges padrão
+  pIni=new Date(ini); pFim=new Date(fim);
+  aIni=new Date(ini); aFim=new Date(fim);
 
-  $("#fPIni").value=pIni; $("#fPFim").value=pFim;
-  $("#fAIni").value=aIni; $("#fAFim").value=aFim;
+  // popovers
+  const pr = setupRange("#btnPR","#popPR","#pStart","#pEnd", ()=>{
+    const {ini:si,fim:sf} = pr.read();
+    if(si && sf){ pIni=new Date(si); pFim=new Date(sf); aplicar(); }
+    pr.close();
+  });
+  const ar = setupRange("#btnAR","#popAR","#aStart","#aEnd", ()=>{
+    const {ini:si,fim:sf} = ar.read();
+    if(si && sf){ aIni=new Date(si); aFim=new Date(sf); renderChips(); aplicar(); }
+    ar.close();
+  });
+
+  // preenche e labels
+  pr.setRange(ini,fim);
+  ar.setRange(ini,fim);
+  $("#lblPR").textContent = fmtRange(pIni,pFim);
+  $("#lblAR").textContent = fmtRange(aIni,aFim);
+
+  // botões aplicar/cancelar
+  $("#prApply").onclick = pr.onApply;
+  $("#arApply").onclick = ar.onApply;
+  $("#prCancel").onclick = pr.close;
+  $("#arCancel").onclick = ar.close;
 
   try{
     await fetchPagamentos();
@@ -517,7 +553,7 @@ document.getElementById("btnAplicar").onclick=()=>{ renderChips(); aplicar(); };
     try{
       await fetchABC();
       $("#empLoadMsg").style.display="none";
-      renderChips(); // agora já conseguimos mostrar os valores por empresa nos chips
+      renderChips();
       aplicar();
     }catch(e){
       console.error(e);
