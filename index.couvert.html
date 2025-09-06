@@ -500,7 +500,7 @@ function aplicar(){
 
 /*** Aplicar filtros ***/
 async function applyFilters(){
-  hideAllPopovers();
+  hideAllPopovers();                 // fecha só ao aplicar
   try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -591,7 +591,6 @@ function placePopover(pop, anchor){
   pop.style.left = left + 'px';
   pop.style.top  = top  + 'px';
 }
-
 function hideAllPopovers(){
   $("#popPR").style.display = 'none';
   $("#popAR").style.display = 'none';
@@ -609,10 +608,8 @@ function hideAllPopovers(){
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{
-    // abre PR e fecha AR se estiver aberto
-    if (prPop.style.display==='block'){ hideAllPopovers(); return; }
-    hideAllPopovers();
+  const openPR = ()=>{                   // **não fecha ao clicar no mesmo botão**
+    hideAllPopovers();                   // fecha apenas o OUTRO calendário
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
@@ -622,10 +619,8 @@ function hideAllPopovers(){
     placePopover(prPop, $("#btnPR"));
   };
 
-  const openAR = ()=>{
-    // abre AR e fecha PR se estiver aberto
-    if (arPop.style.display==='block'){ hideAllPopovers(); return; }
-    hideAllPopovers();
+  const openAR = ()=>{                   // **não fecha ao clicar no mesmo botão**
+    hideAllPopovers();                   // fecha apenas o OUTRO calendário
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
@@ -638,7 +633,7 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
-  // fecha calendários clicando fora ou com ESC
+  // fecha ao clicar fora ou com ESC
   document.addEventListener('click', (e)=>{
     const insidePR = $("#popPR").contains(e.target) || $("#btnPR").contains(e.target);
     const insideAR = $("#popAR").contains(e.target) || $("#btnAR").contains(e.target);
