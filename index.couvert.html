@@ -26,9 +26,15 @@
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:600;margin-right:8px;margin-top:6px;display:inline-block}
-  .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+
+  /* chips de empresa (agora single-select com valor) */
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
+  .chip .amt{font-weight:800;color:#0b1220;opacity:.9}
+  .chip .dash{color:#94a3b8}
+  .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
+  .chip.active .amt{color:#fff}
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
 
   /* blocos dentro do card de pagamentos */
@@ -47,7 +53,7 @@
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
   .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
   .sheet header h3{margin:0;font-size:16px;font-weight:800}
-  .sheet header small{color:var(--muted)}
+  .sheet header small{color:#64748b}
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
 
@@ -58,7 +64,7 @@
     #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
     #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:6px}
     .pill-supplier{font-weight:700}
-    .pill-sub{font-size:12px;color:var(--muted)}
+    .pill-sub{font-size:12px;color:#64748b}
     .val-right{font-weight:800}
   }
 </style>
@@ -89,7 +95,7 @@
 
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
-      <div id="chipsEmpresas"></div>
+      <div id="chipsEmpresas" class="chips"></div>
       <div id="empLoadMsg" class="muted" style="display:none">Carregando arrecadação (ABC) em segundo plano…</div>
     </div>
   </div>
@@ -179,7 +185,7 @@ const DEFAULT_EMPRESA = "mercatto";
 let pagamentosAll = [];
 let abcAll = [];
 let empresas = [];
-let empresasSelecionadas = new Set();
+let empresasSelecionadas = new Set(); // manter Set, mas agora tratamos como single-select
 let abcLoaded = false;
 
 /* === HELPERS === */
@@ -208,7 +214,6 @@ function isoFromStr(s){
 }
 
 /* === FETCHERS === */
-// Pega registros e NORMALIZA para usar SEMPRE Valor Bruto
 async function fetchPagamentos(){
   const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
   if(!r.ok) throw new Error("Pagamentos HTTP "+r.status);
@@ -236,7 +241,7 @@ async function fetchABC(){
     return d.getFullYear()===ANO && containsCouvert(o);
   }).map(o=>({
     data: o.data || o.DATA,
-    empresa: o.empresa || o.EMPRESA || "",
+    empresa: o.empresa || o.EMPRESA || "",  // pode estar vazio no seu ABC
     faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
     produto: o.produto || o.PRODUTO || ""
   }));
@@ -248,25 +253,58 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
+  // seleção padrão: Mercatto, senão primeira
   empresasSelecionadas.clear();
   const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
-  if(merc) empresasSelecionadas.add(merc); else empresas.forEach(e=>empresasSelecionadas.add(e));
+  if(merc) empresasSelecionadas.add(merc);
+  else if (empresas[0]) empresasSelecionadas.add(empresas[0]);
 }
+
+function sumArrecadacaoEmpresa(emp){
+  // usa intervalo atual do ABC
+  const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
+  const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
+
+  // se o ABC não tiver empresa, não dá pra segregar: retorna null para mostrar "—"
+  const hasEmpresa = abcAll.some(x=>x.empresa);
+  if(!hasEmpresa) return null;
+
+  return abcAll
+    .filter(x=>{
+      const d=new Date(x.data);
+      return x.empresa===emp && inRange(d,aIni,aFim);
+    })
+    .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+}
+
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
+  // "Todas"
   const all=document.createElement("span");
-  all.className="chip"+(empresasSelecionadas.size===empresas.length?" active":"");
-  all.textContent="Todas";
-  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
+  const allActive = (empresasSelecionadas.size===empresas.length);
+  all.className="chip"+(allActive?" active":"");
+  all.innerHTML=`<span>Todas</span>`;
+  all.onclick=()=>{
+    empresasSelecionadas=new Set(empresas); renderChips(); aplicar();
+  };
   host.appendChild(all);
 
+  // chips individuais (single-select)
+  const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
+  const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
   empresas.forEach(e=>{
     const c=document.createElement("span");
-    c.className="chip"+(empresasSelecionadas.has(e)?" active":"");
-    c.textContent=e;
+    const isActive=empresasSelecionadas.has(e) && empresasSelecionadas.size===1;
+    c.className="chip"+(isActive?" active":"");
+
+    let amt = sumArrecadacaoEmpresa(e);
+    // se não dá pra segregar por empresa no ABC, mostra "—"
+    const amtHtml = (amt===null) ? "<span class='dash'>—</span>" : `<span class="amt">${brl(amt)}</span>`;
+    c.innerHTML = `<span>${e}</span>${amtHtml}`;
+
     c.onclick=()=>{
-      if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e); else empresasSelecionadas.add(e);
-      if(empresasSelecionadas.size===0) empresas.forEach(x=>empresasSelecionadas.add(x));
+      // single-select: deixa somente essa empresa selecionada
+      empresasSelecionadas = new Set([e]);
       renderChips(); aplicar();
     };
     host.appendChild(c);
@@ -277,7 +315,7 @@ function renderChips(){
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 
-/* === HISTÓRICO (somente do fornecedor clicado) === */
+/* === HISTÓRICO (somente fornecedor clicado) === */
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
   $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
@@ -289,8 +327,7 @@ async function openHistoricoFornecedor(fornecedor){
     if(!r.ok) throw new Error("HTTP "+r.status);
     const js = await r.json();
 
-    const arrBase = (js.registros || []);
-    const arr = arrBase.filter(p => {
+    const arr = (js.registros || []).filter(p => {
       const f = (p.fornecedor || p["Cliente / Fornecedor"] || "").trim();
       return f === fornecedor;
     }).map(p=>({
@@ -328,43 +365,41 @@ async function openHistoricoFornecedor(fornecedor){
 
 /* === RENDER PRINCIPAL === */
 function aplicar(){
-  // Intervalos separados
   const pIni = $("#fPIni").value ? new Date($("#fPIni").value) : null;
   const pFim = $("#fPFim").value ? new Date($("#fPFim").value) : null;
   const aIni = $("#fAIni").value ? new Date($("#fAIni").value) : null;
   const aFim = $("#fAFim").value ? new Date($("#fAFim").value) : null;
 
-  const filtroEmp = (empresa)=> (empresasSelecionadas.has(empresa) || (empresasSelecionadas.size===empresas.length));
+  const allSelected = (empresasSelecionadas.size===empresas.length);
+  const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // PAGOS: data_pagamento dentro do intervalo de pagamentos
+  // pagos
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
-  // A PAGAR: sem data_pagamento, usa VENCIMENTO no intervalo de pagamentos
+  // a pagar (sem liquidação; usa vencimento)
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC: usa intervalo próprio (aIni/aFim)
+  // ABC
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
-    const okEmp = x.empresa ? filtroEmp(x.empresa) : filtroEmp((empresas[0]||""));
+    const okEmp = x.empresa ? filtroEmp(x.empresa) : true; // se ABC não tem empresa, considera toda a arrecadação
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Somatórios (sempre Valor Bruto)
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
   const totalArr   = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
   const resultado  = totalArr - somaTotal;
 
-  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent    = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
@@ -373,7 +408,7 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A PAGAR (lista no card)
+  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   if(abertos.length===0){
@@ -393,7 +428,7 @@ function aplicar(){
       });
   }
 
-  // Detalhes (somente pagos, usando intervalo de pagamentos)
+  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
   if (matchMedia("(max-width: 768px)").matches){
@@ -423,10 +458,9 @@ function aplicar(){
     });
   }
 
-  // Resumo por empresa (ABC com range ABC e Pagamentos com range Pagamentos)
+  // Resumo por empresa
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
-    // pagamentos por empresa dentro do range de pagamentos
     const pPago = pagamentosAll.filter(p=>{
       const d= p.data_pagamento ? parseISO(p.data_pagamento) : null;
       return p.empresa===emp && d && inRange(d,pIni,pFim);
@@ -435,7 +469,6 @@ function aplicar(){
       const d= !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
       return p.empresa===emp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
     });
-    // arrecadação por empresa dentro do range do ABC
     const aEmp = abcAll.filter(x=>{
       const d=new Date(x.data);
       return (x.empresa? x.empresa===emp : true) && inRange(d,aIni,aFim);
@@ -455,12 +488,16 @@ function aplicar(){
 }
 
 /* === INIT === */
-document.getElementById("btnAplicar").onclick=aplicar;
+document.getElementById("btnAplicar").onclick=()=>{ renderChips(); aplicar(); };
+// quando mudar o range do ABC, atualiza os chips (valor por empresa) e os KPIs
+["fAIni","fAFim"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", ()=>{ renderChips(); aplicar(); });
+});
 
 (async function init(){
   const now=new Date();
 
-  // Defaults: mês atual para ambos os grupos (pode ajustar como preferir)
+  // mês atual para ambos
   const pIni=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
   const pFim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
   const aIni=pIni, aFim=pFim;
@@ -470,7 +507,8 @@ document.getElementById("btnAplicar").onclick=aplicar;
 
   try{
     await fetchPagamentos();
-    coletarEmpresas(); renderChips();
+    coletarEmpresas();
+    renderChips();
     aplicar();
     $("#loading").style.display="none";
     $("#empLoadMsg").style.display="block";
@@ -479,6 +517,7 @@ document.getElementById("btnAplicar").onclick=aplicar;
     try{
       await fetchABC();
       $("#empLoadMsg").style.display="none";
+      renderChips(); // agora já conseguimos mostrar os valores por empresa nos chips
       aplicar();
     }catch(e){
       console.error(e);
