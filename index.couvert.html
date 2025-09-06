@@ -1,5 +1,5 @@
 
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
@@ -7,11 +7,8 @@
 <title>Painel • Couvert Mercatto 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-    --green:#16a34a; --red:#ef4444; --accent:#2563eb; --radius:16px;
-    --shadow:0 14px 34px rgba(2,6,23,.08);
-  }
+  :root{ --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
+         --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08); }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
   header{background:#0b1220;color:#fff;padding:14px 20px;display:flex;align-items:center}
@@ -30,16 +27,10 @@
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
-  .btn.primary{background:var(--accent);color:#fff;border-color:#var(--accent)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:600}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
-  /* overlay de carregando */
-  #loading{
-    position:fixed;inset:0;background:rgba(255,255,255,0.85);
-    display:flex;align-items:center;justify-content:center;
-    font-size:18px;font-weight:800;color:#0b1220;z-index:100;
-  }
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
   @media(max-width:768px){
     .table, .table thead{display:none}
     .table tr{display:block;margin-bottom:10px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff}
@@ -54,7 +45,6 @@
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- filtros -->
   <div class="card">
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
       <div><label>Data início: <input type="date" id="fDataIni"></label></div>
@@ -68,7 +58,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
   <div class="grid cols-3">
     <div class="card kpi">
       <div>
@@ -78,20 +67,13 @@
       </div>
     </div>
     <div class="card kpi">
-      <div>
-        <h3>Pagamentos</h3>
-        <div class="val" id="kPagamentos">R$ 0,00</div>
-      </div>
+      <div><h3>Pagamentos</h3><div class="val" id="kPagamentos">R$ 0,00</div></div>
     </div>
     <div class="card kpi">
-      <div>
-        <h3>Resultado</h3>
-        <div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div>
-      </div>
+      <div><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
     </div>
   </div>
 
-  <!-- resumo por empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
     <table class="table" id="tblResumoEmp">
@@ -100,7 +82,6 @@
     </table>
   </div>
 
-  <!-- lista de pagamentos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
@@ -112,222 +93,203 @@
 </div>
 
 <script>
-/*** CONFIG – SUBSTITUA PELAS SUAS URLs ***/
+/* === URLs reais === */
 const SHEET_API = "https://script.google.com/macros/s/AKfycbyUvPTmmfLpAWIA9-zW6i6rYwkTQq7LED8gjdx205twpJv1zCKiyhByjXM7sJ-zIue-hQ/exec";   // <-- coloque aqui seu GAS de pagamentos
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec"; // <-- coloque aqui seu script do ABC de vendas
 
-/*** STATE ***/
+/* === STATE === */
 const ANO = 2025;
-const DEFAULT_EMPRESA = "mercatto"; // padrão (case-insensitive)
+const DEFAULT_EMPRESA = "mercatto";
 
-let pagamentosAll = [];   // [{empresa, fornecedor, data_pagamento, valor, ...}]
-let abcAll = [];          // [{data, empresa?, produto, faturamento, ...}]
-let empresas = [];        // nomes únicos
-let empresasSelecionadas = new Set(); // chips ativos
-let rangeAtual = {ini: null, fim: null};
-
+let pagamentosAll = [];
+let abcAll = [];
+let empresas = [];
+let empresasSelecionadas = new Set();
+let rangeAtual = {ini:null, fim:null};
 let abcLoaded = false;
-let pagsLoaded = false;
 
-/*** HELPERS ***/
+/* === HELPERS === */
 const $ = (q)=>document.querySelector(q);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
+function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function containsCouvert(item){
-  const p=(item.produto||"").toLowerCase();
+  const p=String(item.produto||"").toLowerCase();
   if(!p.includes("couvert")) return false;
   const ex=["couvert do villa","couvert delicia","couvert mercatto"];
   return !ex.some(x=>p.includes(x));
 }
-function uniq(arr){return [...new Set(arr)].filter(Boolean).sort();}
-
-/*** UTILS ***/
-function withTimeout(promise, ms, label){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), ms);
-  return Promise.race([
-    promise(ctrl.signal),
-    new Promise((_,rej)=>setTimeout(()=>rej(new Error(label+" demorou demais")), ms+10))
-  ]).finally(()=>clearTimeout(t));
+function cleanNumber(v){
+  if(v==null || v==="") return 0;
+  if(typeof v==="number") return v;
+  const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
+  return parseFloat(s)||0;
+}
+function fromLiquiToISO(s){
+  // recebe "2025-09-01T03:00:00.000Z" ou "2025-09-01" e devolve "yyyy-mm-dd"
+  if(!s) return "";
+  const d = new Date(s);
+  if(isNaN(d)) return String(s).slice(0,10);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
 }
 
-/*** FETCHERS (não bloqueiam a UI) ***/
-async function fetchPagamentos(signal){
-  const url = `${SHEET_API}?action=listAno&ano=${ANO}`;
-  const r = await fetch(url, {signal});
+/* === FETCHERS === */
+async function fetchPagamentos(){
+  const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
   if(!r.ok) throw new Error("Pagamentos HTTP "+r.status);
-  const js = await r.json();
-  pagamentosAll = js;
-  pagsLoaded = true;
+  const js=await r.json();
+  const list = Array.isArray(js) ? js : (js.registros || []);
+  // normaliza campos usados no front
+  pagamentosAll = list.map(p=>({
+    empresa: p.empresa || p.Empresa || "",
+    fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
+    data_pagamento: p.data_pagamento || fromLiquiToISO(p.Liquidação || p.Liquidacao || p.liquidacao),
+    valor: cleanNumber(p.valor ?? p["Valor Líquido"] ?? p["Valor Bruto"] ?? 0),
+    meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
+    historico: p.historico || p["Histórico"] || ""
+  }));
 }
-async function fetchABC(signal){
-  const r = await fetch(ABC_URL, {signal});
+
+async function fetchABC(){
+  const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
-  const arr = await r.json();
+  const arr=await r.json();
+  // mantém só 2025 + couvert (exceto villa/delicia/mercatto)
   abcAll = arr.filter(o=>{
     const d = new Date(o.data || o.DATA || "");
+    if(isNaN(d)) return false;
     return d.getFullYear()===ANO && containsCouvert(o);
-  });
+  }).map(o=>({
+    data: o.data || o.DATA,
+    empresa: o.empresa || o.EMPRESA || "",   // se existir
+    faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
+    produto: o.produto || o.PRODUTO || ""
+  }));
   abcLoaded = true;
 }
 
-/*** EMPRESAS ***/
+/* === EMPRESAS / CHIPS === */
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  // Seleciona "Mercatto" por padrão (case-insensitive); se não existir, seleciona todas
-  const temMercatto = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
   empresasSelecionadas.clear();
-  if (temMercatto) {
-    empresasSelecionadas.add(temMercatto);
-  } else {
-    empresas.forEach(e=>empresasSelecionadas.add(e));
-  }
+  const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
+  if(merc) empresasSelecionadas.add(merc); else empresas.forEach(e=>empresasSelecionadas.add(e));
 }
-function renderChipsEmpresas(){
+function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  // chip "Todas"
-  const all = document.createElement("div");
-  all.className = "chip"+(empresasSelecionadas.size===empresas.length?" active":"");
-  all.textContent = "Todas";
-  all.onclick=()=>{
-    empresasSelecionadas.clear();
-    empresas.forEach(e=>empresasSelecionadas.add(e));
-    renderChipsEmpresas(); aplicarFiltros();
-  };
+  const all=document.createElement("div");
+  all.className="chip"+(empresasSelecionadas.size===empresas.length?" active":"");
+  all.textContent="Todas";
+  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
   host.appendChild(all);
-  // chips individuais
   empresas.forEach(e=>{
     const c=document.createElement("div");
     c.className="chip"+(empresasSelecionadas.has(e)?" active":"");
     c.textContent=e;
     c.onclick=()=>{
-      if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e);
-      else empresasSelecionadas.add(e);
+      if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e); else empresasSelecionadas.add(e);
       if(empresasSelecionadas.size===0) empresas.forEach(x=>empresasSelecionadas.add(x));
-      renderChipsEmpresas(); aplicarFiltros();
+      renderChips(); aplicar();
     };
     host.appendChild(c);
   });
 }
 
-/*** RENDER ***/
-function aplicarFiltros(){
-  const a = rangeAtual.ini ? new Date(rangeAtual.ini) : null;
-  const b = rangeAtual.fim ? new Date(rangeAtual.fim) : null;
-  const emps = empresasSelecionadas;
+/* === RENDER === */
+function aplicar(){
+  const a = $("#fDataIni").value ? new Date($("#fDataIni").value) : null;
+  const b = $("#fDataFim").value ? new Date($("#fDataFim").value) : null;
 
-  // pagamentos
   const pags = pagamentosAll.filter(p=>{
-    const okEmp = emps.has(p.empresa) || (emps.size===empresas.length);
+    const okEmp = empresasSelecionadas.has(p.empresa) || (empresasSelecionadas.size===empresas.length);
     const d = parseISO(p.data_pagamento);
     return okEmp && inRange(d,a,b);
   });
-
-  // arrecadação (ABC pode não ter empresa)
   const arrs = abcAll.filter(x=>{
-    const d = new Date(x.data||x.DATA);
-    const okEmp = x.empresa ? (emps.has(x.empresa) || (emps.size===empresas.length)) : true;
+    const d = new Date(x.data);
+    const okEmp = x.empresa ? (empresasSelecionadas.has(x.empresa) || (empresasSelecionadas.size===empresas.length)) : true;
     return okEmp && inRange(d,a,b);
   });
 
-  const totalPag = pags.reduce((s,p)=>s+(Number(p.valor)||0),0);
-  const totalArr = arrs.reduce((s,x)=>s+(Number(x.faturamento||x.FATURAMENTO||0)),0);
-  const res = totalArr - totalPag;
+  const totalPag = pags.reduce((s,p)=>s+cleanNumber(p.valor),0);
+  const totalArr = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+  const res = totalArr-totalPag;
 
   $("#kPagamentos").textContent = brl(totalPag);
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
   $("#kResultado").innerHTML = `${brl(res)} <span class="badge ${res>=0?"lucr":"prej"}">${res>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  renderPagamentos(pags);
-  renderResumoEmpresas(a,b);
-}
-function renderPagamentos(lista){
+  // tabela pagamentos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  if(lista.length===0){ $("#msgEmpty").style.display="block"; return; }
-  $("#msgEmpty").style.display="none";
-  lista.forEach(p=>{
+  if(pags.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
+  pags.forEach(p=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td data-label="Data">${p.data_pagamento}</td>
-      <td data-label="Empresa">${p.empresa||"-"}</td>
-      <td data-label="Fornecedor">${p.fornecedor||"-"}</td>
-      <td data-label="Valor">${brl(p.valor||0)}</td>`;
+    tr.innerHTML=`<td data-label="Data">${p.data_pagamento||"-"}</td>
+                  <td data-label="Empresa">${p.empresa||"-"}</td>
+                  <td data-label="Fornecedor">${p.fornecedor||"-"}</td>
+                  <td data-label="Valor">${brl(p.valor||0)}</td>`;
     tb.appendChild(tr);
   });
-}
-function renderResumoEmpresas(a,b){
-  const tb=$("#tblResumoEmp tbody"); tb.innerHTML="";
+
+  // resumo por empresa
+  const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
-    const pags = pagamentosAll.filter(p=>{
+    const pEmp = pagamentosAll.filter(p=>{
       const d=parseISO(p.data_pagamento);
       return p.empresa===emp && inRange(d,a,b);
     });
-    const arrs = abcAll.filter(x=>{
-      const d=new Date(x.data||x.DATA);
+    const aEmp = abcAll.filter(x=>{
+      const d=new Date(x.data);
       return (x.empresa? x.empresa===emp : true) && inRange(d,a,b);
     });
-    const tPag = pags.reduce((s,p)=>s+(Number(p.valor)||0),0);
-    const tArr = arrs.reduce((s,x)=>s+(Number(x.faturamento||x.FATURAMENTO||0)),0);
-    const tRes = tArr - tPag;
-
+    const tP = pEmp.reduce((s,p)=>s+cleanNumber(p.valor),0);
+    const tA = aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+    const tR = tA - tP;
     const tr=document.createElement("tr");
-    tr.innerHTML = `<td>${emp}</td>
-      <td>${abcLoaded? brl(tArr) : "⏳"}</td>
-      <td>${brl(tPag)}</td>
-      <td><span class="badge ${tRes>=0?"lucr":"prej"}">${abcLoaded? brl(tRes) : "⏳"}</span></td>`;
-    tb.appendChild(tr);
+    tr.innerHTML=`<td>${emp}</td>
+                  <td>${abcLoaded? brl(tA) : "⏳"}</td>
+                  <td>${brl(tP)}</td>
+                  <td><span class="badge ${tR>=0?"lucr":"prej"}">${abcLoaded? brl(tR) : "⏳"}</span></td>`;
+    rb.appendChild(tr);
   });
 }
 
-/*** AÇÕES ***/
-$("#btnAplicar").onclick = ()=>{
-  rangeAtual.ini = $("#fDataIni").value || null;
-  rangeAtual.fim = $("#fDataFim").value || null;
-  aplicarFiltros();
-};
+/* === INIT === */
+document.getElementById("btnAplicar").onclick=aplicar;
 
-/*** INIT – abre rápido, carrega o resto em 2º plano ***/
-async function init(){
-  // datas padrão: mês atual
+(async function init(){
+  // datas padrão (mês atual)
   const now=new Date();
-  const ini = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-  const fim = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
-  $("#fDataIni").value = ini; $("#fDataFim").value = fim;
-  rangeAtual = {ini, fim};
+  const ini=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  const fim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
+  $("#fDataIni").value=ini; $("#fDataFim").value=fim;
 
-  // 1) Pagamentos primeiro (rápido) -> já renderiza Mercatto
-  try {
-    await withTimeout(fetchPagamentos, 8000, "Pagamentos");
-  } catch (e) {
-    console.error(e); alert("Erro ao carregar pagamentos: "+e.message);
-  }
-  // empresas + chips (padrão Mercatto)
-  coletarEmpresas();
-  renderChipsEmpresas();
+  try{
+    await fetchPagamentos();          // rápido
+    coletarEmpresas(); renderChips(); // define padrão Mercatto
+    aplicar();                        // já mostra algo
+    $("#loading").style.display="none";
+    $("#empLoadMsg").style.display="block";
 
-  // aplica filtros com dados que temos (sem ABC ainda)
-  aplicarFiltros();
-
-  // some o overlay cedo; o ABC continua carregando
-  $("#loading").style.display="none";
-  $("#empLoadMsg").style.display="block"; // avisa que segue carregando
-
-  // 2) ABC em segundo plano (pode demorar)
-  try {
-    await withTimeout(fetchABC, 20000, "Arrecadação (ABC)");
-    $("#empLoadMsg").style.display="none";
-    // re-render com arrecadação real
-    aplicarFiltros();
-  } catch (e) {
+    // ABC em segundo plano
+    try{
+      await fetchABC();
+      $("#empLoadMsg").style.display="none";
+      aplicar(); // atualiza KPIs com arrecadação real
+    }catch(e){
+      console.error(e);
+      $("#abcStatus").textContent="Não foi possível carregar o ABC agora.";
+    }
+  }catch(e){
     console.error(e);
-    $("#abcStatus").textContent = "Não foi possível carregar o ABC agora.";
-    // segue funcionando só com pagamentos
+    alert("Erro ao carregar pagamentos: "+e.message);
+    $("#loading").style.display="none";
   }
-}
-init();
+})();
 </script>
 </body>
 </html>
