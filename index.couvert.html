@@ -244,11 +244,22 @@ function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function containsCouvert(item){
-  const p=String(item.produto||"").toLowerCase();
-  if(!p.includes("couvert")) return false;
-  const ex=["couvert do villa","couvert delicia","couvert mercatto"];
-  return !ex.some(x=>p.includes(x));
+  // pega o nome do produto (com ou sem caixa/acentos)
+  const raw = String(item.produto || item.PRODUTO || "");
+  const p = raw
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // remove acentos
+    .toLowerCase();
+
+  // precisa conter "couvert"
+  if (!p.includes("couvert")) return false;
+
+  // excluir variações do Villa e do Delícia
+  const isVilla   = p.includes("couvert do villa") || (p.includes("couvert") && p.includes("villa"));
+  const isDelicia = p.includes("couvert delicia")  || (p.includes("couvert") && p.includes("delicia"));
+
+  return !(isVilla || isDelicia);
 }
+
 function cleanNumber(v){
   if(v==null||v==="") return 0;
   if(typeof v==="number") return v;
