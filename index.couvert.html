@@ -194,25 +194,19 @@
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
+/* Web App que devolve [{empresa, data, total_dia}] */
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbzso5Grl_9appm-2SH_OW01WndJDAg6Et_z4nqunOJmXwlMpxtecNg_zoiKxAUtMbKK/exec";
-
-/*** CONFIG – produtos que entram/saem da Arrecadação ***/
-const PRODUTOS_ARRECADACAO = [ "COUVERT ARTISTICO", "COUVERT ARTISTICO SEXTA", "COUVERT QUINTA", "ENTRADA COUVERT JOGO R$100,00"
-];
-const PRODUTOS_EXCLUIR = [
-  "couvert delicia"
-];
 
 /*** STATE ***/
 const ANO = 2025;
 
-/* Remapeia textos diversos do ABC para os nomes de empresa usados na planilha de pagamentos */
+/* Remapeia textos do ABC para os nomes usados nos pagamentos */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
   {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
-  {match:["villa"], to:"VILLA GOURMET LEM"},
+  {match:["villa"], to:"VILLA GOURMET LEM"}, // fallback
 ];
 
 let pagamentosAll = [];
@@ -237,35 +231,33 @@ function cleanNumber(v){
   const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
   return parseFloat(s)||0;
 }
-function isoFromStr(s){
+/* aceita yyyy-mm-dd | Date | dd/mm/yyyy */
+function toISODate(s){
   if(!s) return "";
-  const d = new Date(s);
-  if(isNaN(d)) return String(s).slice(0,10);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+  if (s instanceof Date && !isNaN(s)) {
+    return new Date(s.getFullYear(), s.getMonth(), s.getDate()).toISOString().slice(0,10);
+  }
+  const str = String(s).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)){
+    const [d,m,y] = str.split("/").map(Number);
+    const dt = new Date(y, m-1, d);
+    return isNaN(dt)? "" : dt.toISOString().slice(0,10);
+  }
+  const d = new Date(str);
+  if (!isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+  return "";
 }
+function isoFromStr(s){ return toISODate(s); }
 function fmtRange(a,b){
   const f = d => new Date(d).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
-/* normaliza string para comparação */
-function _norm(s){
-  return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
-}
-/* Decide se o produto entra na Arrecadação conforme as listas de config */
-function produtoContaParaArrecadacao(nome){
-  const p = _norm(nome);
-  if(!p) return false;
-  if (PRODUTOS_EXCLUIR.some(x => p.includes(_norm(x)))) return false;
-  return PRODUTOS_ARRECADACAO.length>0 && PRODUTOS_ARRECADACAO.some(x => p.includes(_norm(x)));
-}
-/* pega número do primeiro campo que existir */
 function pickNumber(obj, keys){
   for(const k of keys){
     if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]);
   }
   return 0;
 }
-/* detecta empresa a partir de vários campos possíveis do ABC e remapeia */
 function remapEmpresaABCfromObj(o){
   const candidates = [
     o.empresa, o.EMPRESA, o.Empresa,
@@ -298,34 +290,25 @@ async function fetchPagamentos(){
 }
 
 async function fetchABC(){
-  const r = await fetch(ABC_URL);
+  const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
-  const arr = await r.json(); // espera array de objetos: {empresa, data, produto, total_dia}
+  const arr=await r.json(); // [{empresa,data,total_dia}]
 
   abcAll = arr
-    .map(o => {
-      const emp  = remapEmpresaABCfromObj(o);               // mantém seu remapeamento
-      const data = o.data || o.DATA || o.Data || "";
-      // PRIORIDADE: total_dia (do seu script), depois outras variantes
-      const faturamento = pickNumber(o, [
-        "total_dia", "TOTAL_DIA", "total", "TOTAL",
-        "faturamento","FATURAMENTO","Faturamento",
-        "venda_liquida","Venda_Liquida","Venda Líquida","VENDA_LIQUIDA",
-        "valor","VALOR"
-      ]);
-      const produto = o.produto || o.PRODUTO || o.Produto || "";
-      return { data, empresa: emp, faturamento, produto };
+    .map(o=>{
+      const emp = remapEmpresaABCfromObj(o);
+      const dataIso = toISODate(o.data || o.DATA || o.Data || "");
+      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
+      return { data: dataIso, empresa: emp, faturamento };
     })
-    .filter(x => {
-      // mantém os filtros de ano e, se quiser, pelos produtos definidos em PRODUTOS_ARRECADACAO
-      const dOk = !isNaN(new Date(x.data)) && new Date(x.data).getFullYear() === ANO;
-      const pOk = PRODUTOS_ARRECADACAO.length ? produtoContaParaArrecadacao(x.produto) : true;
-      return dOk && pOk;
+    .filter(x=>{
+      if(!x.data) return false;
+      const d = new Date(x.data);
+      return d.getFullYear() === ANO;
     });
 
   abcLoaded = true;
 }
-
 
 /*** EMPRESAS / CHIPS ***/
 function coletarEmpresas(){
@@ -362,7 +345,7 @@ function renderChips(){
   });
 }
 
-/*** MODAL ***/
+/*** MODAL (histórico) ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
