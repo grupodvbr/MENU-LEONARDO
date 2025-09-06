@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Painel • Couvert Mercatto 2025</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -14,390 +13,136 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
-  header{
-    background:#111827;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px;
-    position:sticky;top:0;z-index:20
-  }
-  header h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.3px}
-  .wrap{max-width:1200px;margin:18px auto;padding:0 16px}
-  .grid{display:grid;gap:14px}
-  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .card{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:16px
-  }
-  .kpi{display:flex;align-items:center;justify-content:space-between}
-  .kpi h3{margin:0 0 6px 0;font-size:14px;color:var(--muted);font-weight:600}
-  .kpi .val{font-size:24px;font-weight:800}
-  .pos{color:var(--green)} .neg{color:var(--red)}
-  .table{width:100%;border-collapse:collapse;font-size:14px}
-  .table th,.table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
-  .table th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  header{background:#111827;color:#fff;padding:14px 20px;display:flex;align-items:center}
+  header h1{font-size:16px;margin:0;font-weight:800}
+  .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:100%}
+  .grid{display:grid;gap:12px}
+  .grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+  .kpi h3{margin:0 0 4px;font-size:13px;color:var(--muted)}
+  .kpi .val{font-size:20px;font-weight:800}
+  .table{width:100%;border-collapse:collapse;font-size:13px}
+  .table th,.table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+  .table th{font-size:11px;color:var(--muted);text-transform:uppercase}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-  .btn{
-    appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;
-    cursor:pointer;font-weight:700
-  }
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .pill{display:flex;gap:8px}
+  .pill{display:flex;gap:6px;flex-wrap:wrap}
   .pill .btn.active{background:#111827;color:#fff;border-color:#111827}
-  /* floating menu */
-  .fab{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;border-radius:999px;
-    width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:22px;
-    cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.25);z-index:30}
-  .drawer{
-    position:fixed;right:18px;bottom:86px;width:320px;background:#fff;border:1px solid var(--line);
-    border-radius:18px;box-shadow:var(--shadow);padding:16px;display:none;z-index:30
-  }
-  .drawer h4{margin:0 0 10px 0}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:10px;cursor:pointer;background:#fff}
-  .chip.active{background:#111827;color:#fff;border-color:#111827}
-  .list{display:flex;flex-direction:column;gap:10px}
-  .click{cursor:pointer}
   /* modal */
-  .modal{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;z-index:40}
-  .modal .box{background:#fff;border-radius:18px;max-width:900px;width:96%;padding:14px;border:1px solid var(--line)}
-  .modal h3{margin:0 0 6px 0}
-  .muted{color:var(--muted)}
-  .scroll{max-height:60vh;overflow:auto;padding-right:6px}
-  @media(max-width:920px){.grid.cols-3{grid-template-columns:1fr}}
+  .modal{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal .box{background:#fff;border-radius:14px;max-width:900px;width:94%;padding:14px}
+  .modal h3{margin:0 0 4px}
+  .scroll{max-height:70vh;overflow:auto}
+  /* responsividade */
+  @media(max-width:768px){
+    .table, .table thead{display:none}
+    .table tr{display:block;margin-bottom:10px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff}
+    .table td{display:block;border:0;padding:4px 6px;font-size:13px}
+    .table td::before{content:attr(data-label) ": ";font-weight:600;color:var(--muted)}
+  }
+  @media(min-width:1024px){
+    .wrap{padding:0 24px}
+    header h1{font-size:20px}
+    .kpi .val{font-size:26px}
+    .table th,.table td{padding:10px 12px}
+  }
 </style>
 </head>
 <body>
-  <header>
-    <h1>Couvert • Painel de Arrecadação x Pagamentos</h1>
-  </header>
+<header><h1>Painel de Arrecadação x Pagamentos</h1></header>
 
-  <div class="wrap">
-    <!-- filtros rápidos -->
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div class="pill" id="periodPill">
-          <button class="btn active" data-period="semana">Semana</button>
-          <button class="btn" data-period="mes">Mês</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <strong>Empresas:</strong>
-          <div id="chipsEmpresas" class="chips"></div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" id="btnRecarregar">Recarregar</button>
-          <button class="btn primary" id="btnAbrirResumo">Abrir Resumo por Mês</button>
-        </div>
-      </div>
+<div class="wrap">
+  <!-- filtros -->
+  <div class="card">
+    <div class="pill" id="periodPill">
+      <button class="btn active" data-period="semana">Semana</button>
+      <button class="btn" data-period="mes">Mês</button>
     </div>
-
-    <!-- KPIs -->
-    <div class="grid cols-3">
-      <div class="card">
-        <div class="kpi">
-          <div>
-            <h3>Arrecadação (Couvert)</h3>
-            <div class="val" id="kArrecadacao">R$ 0,00</div>
-          </div>
-          <div class="muted" id="tagPeriodoA"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="kpi">
-          <div>
-            <h3>Pagamentos</h3>
-            <div class="val" id="kPagamentos">R$ 0,00</div>
-          </div>
-          <div class="muted" id="tagPeriodoP"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="kpi">
-          <div>
-            <h3>Resultado</h3>
-            <div class="val" id="kResultado">R$ 0,00</div>
-          </div>
-          <div id="badgeResult" class="badge lucr">LUCRO</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- tabela mês a mês -->
-    <div class="card">
-      <h3 style="margin:0 0 12px 0">Couvert Mercatto 2025</h3>
-      <table class="table" id="tblMeses">
-        <thead>
-          <tr>
-            <th>Mês</th><th>Arrecadação</th><th>Pagamento</th><th>Lucro / Prejuízo</th>
-          </tr>
-        </thead>
-        <tbody><!-- preenchido via JS --></tbody>
-      </table>
-      <p class="muted" style="margin-top:8px">Clique em um <strong>mês</strong> para ver os pagamentos. Clique em um <strong>pagamento</strong> para ver o histórico do fornecedor no ano.</p>
+    <div style="margin:8px 0">
+      <label>Data início: <input type="date" id="fDataIni"></label>
+      <label>Data fim: <input type="date" id="fDataFim"></label>
+      <button class="btn primary" onclick="filtrarPorData()">Aplicar</button>
     </div>
   </div>
 
-  <!-- FAB + Drawer -->
-  <div class="fab" id="fab">☰</div>
-  <div class="drawer" id="drawer">
-    <h4>Menu Rápido</h4>
-    <div style="margin-bottom:10px">
-      <div class="pill">
-        <button class="btn active" data-period="semana">Semana</button>
-        <button class="btn" data-period="mes">Mês</button>
-      </div>
-    </div>
-    <div>
-      <strong>Empresas</strong>
-      <div id="chipsEmpresasDrawer" class="chips" style="margin-top:6px"></div>
-    </div>
+  <!-- KPIs -->
+  <div class="grid cols-3">
+    <div class="card"><h3>Arrecadação</h3><div class="val" id="kArrecadacao">R$ 0,00</div></div>
+    <div class="card"><h3>Pagamentos</h3><div class="val" id="kPagamentos">R$ 0,00</div></div>
+    <div class="card"><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
   </div>
 
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="box">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <h3 id="modalTitle">Detalhes</h3>
-          <div class="muted" id="modalSub"></div>
-        </div>
-        <button class="btn" onclick="closeModal()">Fechar</button>
-      </div>
-      <div class="scroll" id="modalBody"></div>
-    </div>
+  <!-- tabela -->
+  <div class="card">
+    <h3>Pagamentos</h3>
+    <table class="table" id="tblMeses">
+      <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="modalTitle">Detalhes</h3>
+    <div class="scroll" id="modalBody"></div>
+    <button class="btn" onclick="closeModal()">Fechar</button>
+  </div>
+</div>
 
 <script>
-/*** CONFIG ***/
-const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec"; // retorna JSON array (print 2)
-const SHEET_API = "https://script.google.com/macros/s/AKfycbzd0Fenj9212CE4twk03qvVt3CCLlyN9QeUf0mpErGIrKnZBNudW-g7GRlI79M0M7rxBg/exec"; // WebApp GAS (seção 3)
-const ANO = 2025;
+const SHEET_API="SUA_URL_DO_GAS"; 
+const ANO=2025;
+let pagamentosAll=[];
 
-/*** STATE ***/
-let empresasDisponiveis = [];     // do GAS
-let empresasSelecionadas = new Set(); // chips
-let periodSel = "semana";         // semana | mes
-let dadosABC = [];                // itens do ABC (acumulado do ano)
-let pagamentosAll = [];           // títulos pagos do ano
+function brl(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function parseISO(d){return new Date(d+"T00:00:00");}
 
-/*** HELPERS ***/
-const $$ = sel => document.querySelector(sel);
-function brl(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function parseISO(d){ return new Date(d+"T00:00:00"); }
-function ym(dt){ return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`; }
-function monthName(i){ return ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][i]; }
-function firstDayOfISOWeek(dt){
-  const d = new Date(dt); const day = (d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d;
-}
-function lastDayOfISOWeek(dt){ const f = firstDayOfISOWeek(dt); const l = new Date(f); l.setDate(l.getDate()+6); return l; }
-function inRange(d, a, b){ return d>=a && d<=b; }
-function containsCouvert(item){
-  const p = String(item.produto||item.PRODUTO||"").toLowerCase();
-  if(!p.includes("couvert")) return false;
-  const ex = ["couvert do villa","couvert delicia","couvert mercatto"];
-  return !ex.some(x=>p.includes(x));
-}
-
-/*** UI: chips empresas ***/
-function renderEmpresasChips(){
-  const host1 = $("#chipsEmpresas"); const host2 = $("#chipsEmpresasDrawer");
-  host1.innerHTML = ""; host2.innerHTML = "";
-  empresasDisponiveis.forEach(e=>{
-    const a=document.createElement("div"); a.className="chip"+(empresasSelecionadas.has(e)?" active":"");
-    a.textContent=e; a.onclick=()=>toggleEmpresa(e); host1.appendChild(a);
-    const b=a.cloneNode(true); b.onclick=()=>toggleEmpresa(e); host2.appendChild(b);
-  });
-}
-function toggleEmpresa(e){
-  if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e); else empresasSelecionadas.add(e);
-  renderEmpresasChips();
-  computeAndRender();
-}
-
-/*** UI: período ***/
-function setPeriod(p){
-  periodSel = p;
-  [...document.querySelectorAll('#periodPill .btn')].forEach(b=>b.classList.toggle('active', b.dataset.period===p));
-  [...document.querySelectorAll('#drawer .btn')].forEach(b=>b.classList.toggle('active', b.dataset.period===p));
-  computeAndRender();
-}
-
-/*** Drawer & Modal ***/
-$("#fab").onclick=()=>{$("#drawer").style.display = ($("#drawer").style.display==="block"?"none":"block");}
-document.addEventListener("click",e=>{
-  if(!e.target.closest("#drawer") && !e.target.closest("#fab")) $("#drawer").style.display="none";
-});
-function openModal(title, sub, bodyHTML){
-  $("#modalTitle").textContent=title; $("#modalSub").textContent=sub||""; $("#modalBody").innerHTML=bodyHTML||"";
-  $("#modal").style.display="flex";
-}
-function closeModal(){ $("#modal").style.display="none"; }
-
-/*** DATA LOADERS ***/
-async function loadEmpresas(){
-  const url = `${SHEET_API}?action=empresas&ano=${ANO}`;
-  const r = await fetch(url); const js = await r.json();
-  empresasDisponiveis = js.empresas || [];
-  if(empresasDisponiveis.length && empresasSelecionadas.size===0){
-    empresasDisponiveis.forEach(e=>empresasSelecionadas.add(e)); // seleciona todas no primeiro load
-  }
-  renderEmpresasChips();
-}
 async function loadPagamentos(){
-  const url = `${SHEET_API}?action=listAno&ano=${ANO}`;
-  const r = await fetch(url); pagamentosAll = await r.json(); // array
+  const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
+  pagamentosAll=await r.json();
+  renderTabela(pagamentosAll);
 }
-async function loadABC(){
-  const r = await fetch(ABC_URL);
-  const arr = await r.json();
-  // mantemos apenas itens de 2025 com "couvert" (exceções):
-  dadosABC = arr.filter(o=>{
-    const d = new Date(o.data || o.DATA || ""); if(!(d instanceof Date) || isNaN(d)) return false;
-    return d.getFullYear()===ANO && containsCouvert(o);
+function renderTabela(lista){
+  const tb=document.querySelector("#tblMeses tbody"); tb.innerHTML="";
+  lista.forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td data-label="Data">${p.data_pagamento}</td>
+      <td data-label="Empresa">${p.empresa}</td>
+      <td data-label="Fornecedor">${p.fornecedor}</td>
+      <td data-label="Valor">${brl(p.valor)}</td>`;
+    tr.onclick=()=>openModalDetalhe(p);
+    tb.appendChild(tr);
   });
 }
-
-/*** COMPUTE ***/
-function sumArrecadacao(rangeStart, rangeEnd){
-  // soma faturamento dos itens que pertençam às empresas selecionadas (se existir chave empresa)
-  return dadosABC.reduce((acc,o)=>{
-    const d = new Date(o.data || o.DATA);
-    if(!inRange(d, rangeStart, rangeEnd)) return acc;
-    if(empresasSelecionadas.size && o.empresa){
-      if(!empresasSelecionadas.has(String(o.empresa))) return acc;
-    }
-    const fat = Number(o.faturamento || o.FATURAMENTO || o.valor || 0);
-    return acc + (isFinite(fat)? fat : 0);
-  },0);
+function openModalDetalhe(p){
+  const html=`<p><b>Empresa:</b> ${p.empresa}</p>
+    <p><b>Fornecedor:</b> ${p.fornecedor}</p>
+    <p><b>Histórico:</b> ${p.historico||"-"}</p>
+    <p><b>Meio:</b> ${p.meio_pagamento||"-"}</p>
+    <p><b>Valor:</b> ${brl(p.valor)}</p>`;
+  document.querySelector("#modalBody").innerHTML=html;
+  document.querySelector("#modal").style.display="flex";
 }
-function sumPagamentos(rangeStart, rangeEnd){
-  return pagamentosAll.reduce((acc,p)=>{
-    const d = parseISO(p.data_pagamento);
-    if(!inRange(d, rangeStart, rangeEnd)) return acc;
-    if(empresasSelecionadas.size && p.empresa){
-      if(!empresasSelecionadas.has(String(p.empresa))) return acc;
-    }
-    const v = Number(p.valor||0);
-    return acc + (isFinite(v)? v : 0);
-  },0);
-}
+function closeModal(){document.querySelector("#modal").style.display="none";}
 
-/*** RENDER KPIs + Tabela mês a mês ***/
-function computeAndRender(){
-  const now = new Date();
-  const start = (periodSel==="semana")? firstDayOfISOWeek(now) : new Date(now.getFullYear(), now.getMonth(), 1);
-  const end   = (periodSel==="semana")? lastDayOfISOWeek(now)  : new Date(now.getFullYear(), now.getMonth()+1, 0);
-
-  const ar = sumArrecadacao(start,end);
-  const pg = sumPagamentos(start,end);
-  const rs = ar - pg;
-
-  $("#kArrecadacao").textContent = brl(ar);
-  $("#kPagamentos").textContent  = brl(pg);
-  $("#kResultado").textContent   = brl(rs);
-  $("#badgeResult").textContent  = rs>=0? "LUCRO":"PREJUÍZO";
-  $("#badgeResult").className    = "badge " + (rs>=0? "lucr":"prej");
-  $("#tagPeriodoA").textContent  = (periodSel==="semana")? "Semana atual":"Mês atual";
-  $("#tagPeriodoP").textContent  = (periodSel==="semana")? "Semana atual":"Mês atual";
-
-  renderTabelaMeses();
-}
-
-function renderTabelaMeses(){
-  const tbody = $("#tblMeses tbody"); tbody.innerHTML = "";
-  for(let m=0;m<12;m++){
-    const a = new Date(ANO, m, 1), b = new Date(ANO, m+1, 0);
-    const arr = sumArrecadacao(a,b);
-    const pag = sumPagamentos(a,b);
-    const res = arr - pag;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="click" data-mm="${m}"><strong>${monthName(m)}</strong></td>
-      <td style="color:#065f46;font-weight:700">${brl(arr)}</td>
-      <td style="color:#991b1b;font-weight:700">${brl(pag)}</td>
-      <td><span class="badge ${res>=0?"lucr":"prej"}">${res>=0?"LUCRO":"PREJUÍZO"}</span></td>
-    `;
-    // clique no mês para abrir lista de pagamentos
-    tr.querySelector("td").onclick = ()=>openPagamentosMes(m);
-    tbody.appendChild(tr);
-  }
-}
-
-/*** Detalhes: lista de pagamentos do mês ***/
-function openPagamentosMes(m){
-  const ini = new Date(ANO, m, 1), fim = new Date(ANO, m+1, 0);
-  const list = pagamentosAll
-    .filter(p=>{
-      const d = parseISO(p.data_pagamento);
-      const inPeriod = inRange(d, ini, fim);
-      const okEmp = empresasSelecionadas.size ? empresasSelecionadas.has(String(p.empresa)) : true;
-      return inPeriod && okEmp;
-    })
-    .sort((a,b)=> a.fornecedor.localeCompare(b.fornecedor));
-
-  const html = `
-    <table class="table">
-      <thead><tr>
-        <th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Meio</th><th>Histórico</th><th>Valor</th>
-      </tr></thead>
-      <tbody>
-        ${list.map(p=>`
-          <tr class="click" onclick='openHistoricoFornecedor(${JSON.stringify(p.fornecedor)})'>
-            <td>${p.data_pagamento}</td>
-            <td>${p.empresa||"-"}</td>
-            <td>${p.fornecedor}</td>
-            <td>${p.meio_pagamento||"-"}</td>
-            <td>${p.historico||"-"}</td>
-            <td style="text-align:right">${brl(Number(p.valor||0))}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-    <p class="muted">Clique em um pagamento para ver o histórico do fornecedor em ${ANO}.</p>
-  `;
-  openModal(`Pagamentos de ${monthName(m)}`, Array.from(empresasSelecionadas).join(", "), html);
-}
-
-/*** Detalhes: histórico do fornecedor ***/
-async function openHistoricoFornecedor(fornecedor){
-  const url = `${SHEET_API}?action=histFornecedor&ano=${ANO}&fornecedor=${encodeURIComponent(fornecedor)}`;
-  const r = await fetch(url); const arr = await r.json();
-  const total = arr.reduce((s,p)=>s+(Number(p.valor)||0),0);
-  const html = `
-    <div style="margin:6px 0"><strong>Fornecedor:</strong> ${fornecedor}</div>
-    <div class="muted" style="margin-bottom:8px">Total no ano: <strong>${brl(total)}</strong></div>
-    <table class="table">
-      <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
-      <tbody>
-        ${arr.map(p=>`
-          <tr>
-            <td>${p.data_pagamento}</td>
-            <td>${p.empresa||"-"}</td>
-            <td>${p.meio_pagamento||"-"}</td>
-            <td>${p.historico||"-"}</td>
-            <td style="text-align:right">${brl(Number(p.valor||0))}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-  openModal("Histórico do Fornecedor", `${ANO}`, html);
-}
-
-/*** INIT ***/
-async function boot(){
-  // listeners período
-  document.querySelectorAll('#periodPill .btn, #drawer .btn').forEach(b=>{
-    b.onclick=()=>setPeriod(b.dataset.period);
+function filtrarPorData(){
+  const ini=document.querySelector("#fDataIni").value;
+  const fim=document.querySelector("#fDataFim").value;
+  if(!ini||!fim) return alert("Selecione as duas datas");
+  const a=new Date(ini), b=new Date(fim);
+  const f=pagamentosAll.filter(p=>{
+    const d=parseISO(p.data_pagamento);
+    return d>=a && d<=b;
   });
-  $("#btnRecarregar").onclick=()=>initData();
-  $("#btnAbrirResumo").onclick=()=>openPagamentosMes((new Date()).getMonth());
-  await initData();
+  renderTabela(f);
 }
-async function initData(){
-  await Promise.all([loadEmpresas(), loadPagamentos(), loadABC()]);
-  computeAndRender();
-}
-boot();
+
+loadPagamentos();
 </script>
 </body>
 </html>
