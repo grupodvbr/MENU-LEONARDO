@@ -12,23 +12,22 @@
     --brand:#0b1220; --blue:#2563eb; --blue-100:#dbeafe;
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
-  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
+  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#0f172a}
 
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
 
   .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
-
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-  .muted{color:var(--muted)}
-  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+  .muted{color:#64748b}
+  .kpi h3{margin:0 0 4px;font-size:14px;color:#64748b}
   .kpi .val{font-size:24px;font-weight:800}
 
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800;touch-action:manipulation}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
 
   .table{width:100%;border-collapse:collapse;font-size:13px}
@@ -41,8 +40,7 @@
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
 
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;
-        font-weight:800;display:inline-flex;gap:10px;align-items:center;touch-action:manipulation}
+  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
   .chip .dash{color:#94a3b8}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
@@ -50,7 +48,7 @@
 
   .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
-  .pill .tag{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+  .pill .tag{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
 
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
@@ -59,27 +57,22 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
+  /* POPOVER + OVERLAY */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
+  .overlay{position:fixed;inset:0;background:transparent;display:none;z-index:55}
+
+  /* CALENDÁRIO */
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
-  .cal .dow{font-size:12px;color:var(--muted);text-align:center}
+  .cal .dow{font-size:12px;color:#64748b;text-align:center}
   .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
   .cal .day:hover{background:#f1f5f9}
   .cal .day.out{opacity:.35}
   .cal .day.sel{background:var(--blue);color:#fff}
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
-
-  .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
-  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);
-         box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
-  .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .sheet header h3{margin:0;font-size:16px;font-weight:800}
-  .sheet header small{color:#64748b}
-  .sheet .content{overflow:auto;padding:10px 12px}
-  .sheet .close{position:absolute;right:12px;top:10px}
 
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
            font-size:18px;font-weight:800;color:#0b1220;z-index:100}
@@ -185,6 +178,10 @@
   </div>
 </div>
 
+<!-- overlay para clique-fora -->
+<div class="overlay" id="overlay"></div>
+
+<!-- popovers dos calendários -->
 <div class="popover" id="popPR"></div>
 <div class="popover" id="popAR"></div>
 
@@ -399,7 +396,6 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // PAGAMENTOS
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
@@ -412,7 +408,6 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
@@ -440,7 +435,7 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar (lista)
+  // A pagar
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -570,9 +565,10 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO E CONTROLE ***/
+/*** POPOVER + OVERLAY ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
+  $("#overlay").style.display = 'block';
   const r = anchor.getBoundingClientRect();
   const PAD = 8;
   const w = Math.min(window.innerWidth * 0.94, 360);
@@ -594,6 +590,7 @@ function placePopover(pop, anchor){
 function hideAllPopovers(){
   $("#popPR").style.display = 'none';
   $("#popAR").style.display = 'none';
+  $("#overlay").style.display = 'none';
 }
 
 /*** INIT ***/
@@ -608,8 +605,8 @@ function hideAllPopovers(){
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{                   // **não fecha ao clicar no mesmo botão**
-    hideAllPopovers();                   // fecha apenas o OUTRO calendário
+  const openPR = ()=>{
+    $("#popAR").style.display = 'none';         // fecha só o outro
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
@@ -619,8 +616,8 @@ function hideAllPopovers(){
     placePopover(prPop, $("#btnPR"));
   };
 
-  const openAR = ()=>{                   // **não fecha ao clicar no mesmo botão**
-    hideAllPopovers();                   // fecha apenas o OUTRO calendário
+  const openAR = ()=>{
+    $("#popPR").style.display = 'none';         // fecha só o outro
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
@@ -633,13 +630,9 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
-  // fecha ao clicar fora ou com ESC
-  document.addEventListener('click', (e)=>{
-    const insidePR = $("#popPR").contains(e.target) || $("#btnPR").contains(e.target);
-    const insideAR = $("#popAR").contains(e.target) || $("#btnAR").contains(e.target);
-    if (!insidePR && !insideAR) hideAllPopovers();
-  });
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hideAllPopovers(); });
+  // clicar fora (overlay) e ESC
+  $("#overlay").onclick = hideAllPopovers;
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
