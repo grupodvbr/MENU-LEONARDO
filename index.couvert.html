@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -31,28 +32,29 @@
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .pill{display:flex;gap:6px;flex-wrap:wrap}
   .pill .btn.active{background:#111827;color:#fff;border-color:#111827}
+  /* overlay de carregando */
+  #loading{
+    position:fixed;inset:0;background:rgba(255,255,255,0.8);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:700;color:#111827;z-index:100;
+  }
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;z-index:50}
   .modal .box{background:#fff;border-radius:14px;max-width:900px;width:94%;padding:14px}
   .modal h3{margin:0 0 4px}
   .scroll{max-height:70vh;overflow:auto}
-  /* responsividade */
   @media(max-width:768px){
     .table, .table thead{display:none}
     .table tr{display:block;margin-bottom:10px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff}
     .table td{display:block;border:0;padding:4px 6px;font-size:13px}
     .table td::before{content:attr(data-label) ": ";font-weight:600;color:var(--muted)}
   }
-  @media(min-width:1024px){
-    .wrap{padding:0 24px}
-    header h1{font-size:20px}
-    .kpi .val{font-size:26px}
-    .table th,.table td{padding:10px 12px}
-  }
 </style>
 </head>
 <body>
 <header><h1>Painel de Arrecadação x Pagamentos</h1></header>
+
+<div id="loading">⏳ Carregando dados...</div>
 
 <div class="wrap">
   <!-- filtros -->
@@ -82,6 +84,7 @@
       <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
       <tbody></tbody>
     </table>
+    <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período.</div>
   </div>
 </div>
 
@@ -95,7 +98,6 @@
 </div>
 
 <script>
-/*** CONFIG ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbzd0Fenj9212CE4twk03qvVt3CCLlyN9QeUf0mpErGIrKnZBNudW-g7GRlI79M0M7rxBg/exec";   // <-- coloque aqui seu GAS de pagamentos
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec"; // <-- coloque aqui seu script do ABC de vendas
 const ANO = 2025;
@@ -103,7 +105,6 @@ const ANO = 2025;
 let pagamentosAll = [];
 let dadosABC = [];
 
-/*** HELPERS ***/
 function brl(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return d>=a && d<=b;}
@@ -114,23 +115,40 @@ function containsCouvert(item){
   return !ex.some(x=>p.includes(x));
 }
 
-/*** LOADERS ***/
+/*** LOADERS COM ERRO ***/
 async function loadPagamentos(){
-  const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
-  pagamentosAll=await r.json();
+  try{
+    const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
+    if(!r.ok) throw new Error("Erro HTTP: "+r.status);
+    pagamentosAll=await r.json();
+  }catch(e){
+    alert("Erro ao carregar pagamentos: "+e.message);
+    pagamentosAll=[];
+  }
 }
 async function loadABC(){
-  const r=await fetch(ABC_URL);
-  const arr=await r.json();
-  dadosABC=arr.filter(o=>{
-    const d=new Date(o.data);
-    return d.getFullYear()===ANO && containsCouvert(o);
-  });
+  try{
+    const r=await fetch(ABC_URL);
+    if(!r.ok) throw new Error("Erro HTTP: "+r.status);
+    const arr=await r.json();
+    dadosABC=arr.filter(o=>{
+      const d=new Date(o.data);
+      return d.getFullYear()===ANO && containsCouvert(o);
+    });
+  }catch(e){
+    alert("Erro ao carregar ABC: "+e.message);
+    dadosABC=[];
+  }
 }
 
 /*** RENDER ***/
 function renderTabela(lista){
   const tb=document.querySelector("#tblPagamentos tbody"); tb.innerHTML="";
+  if(lista.length===0){
+    document.querySelector("#msgEmpty").style.display="block";
+    return;
+  }
+  document.querySelector("#msgEmpty").style.display="none";
   lista.forEach(p=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td data-label="Data">${p.data_pagamento}</td>
@@ -182,7 +200,9 @@ function filtrarPorData(){
 
 /*** INIT ***/
 async function init(){
+  document.querySelector("#loading").style.display="flex";
   await Promise.all([loadPagamentos(), loadABC()]);
+  document.querySelector("#loading").style.display="none";
 }
 init();
 </script>
