@@ -35,7 +35,7 @@
   /* MODAL bottom sheet */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
-  .sheet header{background:#fff;color:var(--text);padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
+  .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
   .sheet header h3{margin:0;font-size:16px;font-weight:800}
   .sheet header small{color:var(--muted)}
   .sheet .content{overflow:auto;padding:10px 12px}
@@ -54,6 +54,11 @@
     .val-right{font-weight:800}
     .chev{font-size:20px;color:#94a3b8;margin-left:8px}
   }
+
+  /* seção a pagar */
+  .apagar-wrap{margin-top:14px}
+  .apagar-head{display:flex;align-items:center;gap:8px}
+  .apagar-badge{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}
 </style>
 </head>
 <body>
@@ -92,10 +97,22 @@
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
-      <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+      <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
       <tbody></tbody>
     </table>
     <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
+
+    <!-- A PAGAR -->
+    <div class="apagar-wrap" id="apagarWrap" style="display:none">
+      <div class="apagar-head">
+        <h3 style="margin:0">A pagar (sem liquidação)</h3>
+        <span id="apagarInfo" class="apagar-badge"></span>
+      </div>
+      <table class="table" id="tblAPagar">
+        <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -144,14 +161,14 @@ function cleanNumber(v){
   const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
   return parseFloat(s)||0;
 }
-function fromLiquiToISO(s){
+function isoFromStr(s){
   if(!s) return "";
-  const d = new Date(s);
+  const d=new Date(s);
   if(isNaN(d)) return String(s).slice(0,10);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
 }
 const monthPt=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-function ymKey(s){const d=new Date(s); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;}
+function ymKey(s){ const d=new Date(s); if(isNaN(d)) return null; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;}
 function ymLabel(k){const [y,m]=k.split("-"); return `${monthPt[Number(m)-1]}/${y}`;}
 
 /* === FETCHERS === */
@@ -160,10 +177,12 @@ async function fetchPagamentos(){
   if(!r.ok) throw new Error("Pagamentos HTTP "+r.status);
   const js=await r.json();
   const list = Array.isArray(js) ? js : (js.registros || []);
+  // Normaliza e inclui VENCIMENTO (passa a ser a data de referência para exibir/filtrar)
   pagamentosAll = list.map(p=>({
     empresa: p.empresa || p.Empresa || "",
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
-    data_pagamento: p.data_pagamento || fromLiquiToISO(p.Liquidação || p.Liquidacao || p.liquidacao),
+    vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
+    data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao), // pode ser vazio
     valor: cleanNumber(p.valor ?? p["Valor Líquido"] ?? p["Valor Bruto"] ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
@@ -219,10 +238,11 @@ function renderChips(){
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 
-/* === HISTÓRICO DO FORNECEDOR (filtrado pela empresa clicada) === */
+/* === HISTÓRICO DO FORNECEDOR === */
 async function openHistoricoFornecedor(fornecedor, empresaCtx){
-  $("#mTitle").textContent = fornecedor;
-  $("#mSub").textContent = `Histórico de pagamentos em ${ANO} • ${empresaCtx}`;
+  const fornecedorKey = String(fornecedor||"").trim().toLowerCase();
+  $("#mTitle").textContent = fornecedor || "-";
+  $("#mSub").textContent = `Histórico de pagamentos em ${ANO}${empresaCtx? " • "+empresaCtx : ""}`;
   $("#mBody").innerHTML = `<div class="muted" style="padding:8px 2px">⏳ Carregando histórico…</div>`;
   openModal();
   try{
@@ -230,31 +250,42 @@ async function openHistoricoFornecedor(fornecedor, empresaCtx){
     const r = await fetch(url);
     if(!r.ok) throw new Error("HTTP "+r.status);
     const js = await r.json();
-    // normaliza e filtra pela empresa clicada
+
     let arr = (js.registros || []).map(p=>({
-      data: p.data_pagamento || p.Liquidação || "",
+      data: isoFromStr(p.Liquidação || p.data_pagamento || ""), // histórico mostra liquidação se houver
       empresa: p.empresa || p.Empresa || "",
+      fornecedor: (p.fornecedor || p["Cliente / Fornecedor"] || "").toString(),
       valor: cleanNumber(p.valor ?? p["Valor Líquido"] ?? 0),
       meio: p.meio_pagamento || p["Meio de Pagamento"] || "",
       hist: p.historico || p["Histórico"] || ""
-    }));
-    if (empresaCtx) arr = arr.filter(x=>x.empresa === empresaCtx);
-    arr.sort((a,b)=> new Date(b.data) - new Date(a.data));
+    }))
+    .filter(x=>{
+      const sameSupplier = x.fornecedor.toString().trim().toLowerCase() === fornecedorKey;
+      const sameCompany  = empresaCtx ? (x.empresa === empresaCtx) : true;
+      const dOk = x.data && !isNaN(new Date(x.data));
+      return sameSupplier && sameCompany && dOk;
+    })
+    .sort((a,b)=> new Date(b.data) - new Date(a.data));
 
     const total = arr.reduce((s,x)=>s+x.valor,0);
+
     const map = {};
-    arr.forEach(x=>{ const k = ymKey(x.data); map[k] = (map[k]||0) + x.valor; });
+    arr.forEach(x=>{
+      const k = ymKey(x.data);
+      if(!k) return;
+      map[k] = (map[k]||0) + x.valor;
+    });
     const resumo = Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]))
       .map(([k,v])=> `<span style="display:inline-block;margin:3px 6px 0 0;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:#fff">${ymLabel(k)} • <b>${brl(v)}</b></span>`).join("");
 
     $("#mBody").innerHTML = `
       <div style="margin-bottom:8px">
         <div><b>Total no ano:</b> ${brl(total)}</div>
-        <div style="margin-top:6px">${resumo||'<span class="muted">Sem pagamentos</span>'}</div>
+        <div style="margin-top:6px">${resumo || '<span class="muted">Sem pagamentos</span>'}</div>
       </div>
       <div class="divider"></div>
       <table class="table" style="width:100%">
-        <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
+        <thead><tr><th>Liquidação</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
         <tbody>
           ${arr.map(x=>`
             <tr>
@@ -279,18 +310,25 @@ function aplicar(){
   const a = $("#fDataIni").value ? new Date($("#fDataIni").value) : null;
   const b = $("#fDataFim").value ? new Date($("#fDataFim").value) : null;
 
-  const pags = pagamentosAll.filter(p=>{
+  // Filtra por empresas selecionadas
+  const base = pagamentosAll.filter(p=>{
     const okEmp = empresasSelecionadas.has(p.empresa) || (empresasSelecionadas.size===empresas.length);
-    const d = parseISO(p.data_pagamento);
+    // DATA DE REFERÊNCIA = VENCIMENTO
+    const d = parseISO(p.vencimento);
     return okEmp && inRange(d,a,b);
   });
+
+  // Separar pagos vs a pagar
+  const pagos   = base.filter(p=> !!p.data_pagamento);
+  const apagar  = base.filter(p=> !p.data_pagamento);
+
+  // KPIs (pagamentos pagos; arrecadação idem de antes)
+  const totalPag = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
     const okEmp = x.empresa ? (empresasSelecionadas.has(x.empresa) || (empresasSelecionadas.size===empresas.length)) : true;
     return okEmp && inRange(d,a,b);
   });
-
-  const totalPag = pags.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const totalArr = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
   const res = totalArr-totalPag;
 
@@ -299,19 +337,19 @@ function aplicar(){
   $("#abcStatus").textContent = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
   $("#kResultado").innerHTML = `${brl(res)} <span class="badge ${res>=0?"lucr":"prej"}">${res>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
+  // Tabela / Cards (Pagos) — usa VENCIMENTO na primeira coluna
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  if(pags.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
+  if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
 
-  // mobile: cards
   if (matchMedia("(max-width: 768px)").matches){
-    pags.forEach(p=>{
+    pagos.forEach(p=>{
       const tr=document.createElement("tr");
       tr.className="clickable";
       tr.innerHTML=`
         <td style="display:none"></td><td style="display:none"></td><td style="display:none"></td><td style="display:none"></td>
         <div class="info">
           <div class="pill-supplier">${p.fornecedor||"-"}</div>
-          <div class="pill-sub">${p.empresa||"-"} • ${p.data_pagamento||"-"}</div>
+          <div class="pill-sub">${p.empresa||"-"} • ${p.vencimento||"-"}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div class="val-right">${brl(p.valor||0)}</div>
@@ -321,11 +359,10 @@ function aplicar(){
       tb.appendChild(tr);
     });
   } else {
-    // desktop: tabela
-    pags.forEach(p=>{
+    pagos.forEach(p=>{
       const tr=document.createElement("tr");
       tr.className="clickable";
-      tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
+      tr.innerHTML=`<td>${p.vencimento||"-"}</td>
                     <td>${p.empresa||"-"}</td>
                     <td>${p.fornecedor||"-"}</td>
                     <td>${brl(p.valor||0)}</td>`;
@@ -334,12 +371,35 @@ function aplicar(){
     });
   }
 
-  // resumo por empresa
+  // A PAGAR
+  const wrap = $("#apagarWrap");
+  const info = $("#apagarInfo");
+  const tbAP = $("#tblAPagar tbody");
+  tbAP.innerHTML="";
+  if (apagar.length===0){
+    wrap.style.display="none";
+  } else {
+    const totalAP = apagar.reduce((s,p)=>s+cleanNumber(p.valor),0);
+    info.textContent = `${apagar.length} registro(s) • Total ${brl(totalAP)}`;
+    wrap.style.display="block";
+    apagar
+      .sort((a,b)=> new Date(a.vencimento) - new Date(b.vencimento))
+      .forEach(p=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td>${p.vencimento||"-"}</td>
+                      <td>${p.empresa||"-"}</td>
+                      <td>${p.fornecedor||"-"}</td>
+                      <td>${brl(p.valor||0)}</td>`;
+        tbAP.appendChild(tr);
+      });
+  }
+
+  // Resumo por empresa (continua igual, usa vencimento para filtrar pagamentos e data para ABC)
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
     const pEmp = pagamentosAll.filter(p=>{
-      const d=parseISO(p.data_pagamento);
-      return p.empresa===emp && inRange(d,a,b);
+      const d=parseISO(p.vencimento);
+      return p.empresa===emp && inRange(d,a,b) && !!p.data_pagamento;
     });
     const aEmp = abcAll.filter(x=>{
       const d=new Date(x.data);
