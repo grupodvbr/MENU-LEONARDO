@@ -215,6 +215,7 @@ const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
 function parseISO(d){return new Date(d+"T00:00:00");}
+function addDays(dt, n){return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()+n);} // <<< novo
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
@@ -283,9 +284,13 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”) */
+/* ABC: totais da COLUNA G (linhas “Total por Data”)
+   → consulta vai até FIM+1D para garantir inclusão do último dia (end inclusivo). */
 async function fetchABC(ini, fim){
-  const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
+  const hasRange = (ini && fim);
+  const qIni = hasRange ? new Date(ini.getFullYear(), ini.getMonth(), ini.getDate()) : null;
+  const qFim = hasRange ? addDays(new Date(fim.getFullYear(), fim.getMonth(), fim.getDate()), 1) : null; // <<< aqui
+  const qs = hasRange ? `?ini=${toISODate(qIni)}&fim=${toISODate(qFim)}` : "";
   let r = await fetch(ABC_URL + qs);
   if(!r.ok && qs){ r = await fetch(ABC_URL); }
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -396,6 +401,7 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
+  // PAGAMENTOS (inclusivo)
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
@@ -408,12 +414,14 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
+  // ABC (inclusivo)
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
+  // Agrupa por data e soma o total_dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -421,12 +429,14 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
+  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
 
   const resultado  = totalArr - somaTotal;
 
+  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
@@ -606,7 +616,7 @@ function hideAllPopovers(){
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
   const openPR = ()=>{
-    $("#popAR").style.display = 'none';         // fecha só o outro
+    $("#popAR").style.display = 'none';
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
@@ -617,7 +627,7 @@ function hideAllPopovers(){
   };
 
   const openAR = ()=>{
-    $("#popPR").style.display = 'none';         // fecha só o outro
+    $("#popPR").style.display = 'none';
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
@@ -630,7 +640,6 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
-  // clicar fora (overlay) e ESC
   $("#overlay").onclick = hideAllPopovers;
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
 
