@@ -2,8 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 <title>Painel • Couvert Mercatto 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -109,6 +108,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
       <button class="btn" id="btnAR">ABC: <span id="lblAR"></span></button>
+      <button class="btn dark" id="btnApply">Aplicar filtros</button>
     </div>
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
@@ -194,19 +194,19 @@
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
-/* Web App que devolve [{empresa, data, total_dia}] (coluna G) */
+/* Web App que devolve SOMENTE os totais da COLUNA G (linhas “Total por Data”), no formato:
+   [{ empresa, data, total_dia }] */
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGECsmogfVGt9DTOVF1zpiZh2QCIZuuvqssD25UN-dpGm2YL7s/exec";
 
 /*** STATE ***/
 const ANO = 2025;
 
-/* Remapeia textos do ABC para os nomes usados nos pagamentos */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
   {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
-  {match:["villa"], to:"VILLA GOURMET LEM"}, // fallback
+  {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
 let pagamentosAll = [];
@@ -223,7 +223,7 @@ let aIni=null,aFim=null; // ABC
 const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
-function parseISO(d){return new Date(d+"T00:00:00");}      // sempre meia-noite LOCAL
+function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
@@ -232,7 +232,6 @@ function cleanNumber(v){
   const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
   return parseFloat(s)||0;
 }
-/* yyyy-mm-dd | Date | dd/mm/yyyy -> "yyyy-mm-dd" gerado manualmente (sem toISOString/UTC) */
 function toISODate(s){
   if(!s) return "";
   let dt = null;
@@ -293,7 +292,7 @@ async function fetchPagamentos(){
   }));
 }
 
-/* Tenta filtrar no servidor com ?ini=...&fim=..., mas funciona também sem aceitar query */
+/* Puxa os totais da COLUNA G (Total por Data) via WebApp do ABC */
 async function fetchABC(ini, fim){
   const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
@@ -306,12 +305,12 @@ async function fetchABC(ini, fim){
     .map(o=>{
       const emp = remapEmpresaABCfromObj(o);
       const dataIso = toISODate(o.data || o.DATA || o.Data || "");
-      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
+      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]); // este valor vem da COLUNA G
       return { data: dataIso, empresa: emp, faturamento };
     })
     .filter(x=>{
       if(!x.data) return false;
-      const d = parseISO(x.data);            // <<< meia-noite local
+      const d = parseISO(x.data);
       return d.getFullYear() === ANO;
     });
 
@@ -323,12 +322,12 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  empresasSelecionadas = new Set(empresas); // padrão: Todas
+  if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
 }
 function sumArrecadacaoEmpresa(emp){
   return abcAll
     .filter(x=>{
-      const d = parseISO(x.data);            // <<< corrigido (sem UTC)
+      const d = parseISO(x.data);
       return x.empresa===emp && inRange(d,aIni,aFim);
     })
     .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
@@ -421,7 +420,7 @@ function aplicar(){
 
   // ABC (total por DIA dentro do período + empresas filtradas)
   const arrsFiltrados = abcAll.filter(x=>{
-    const d = parseISO(x.data);   // <<< corrigido (sem UTC)
+    const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
@@ -509,8 +508,15 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
+/*** FUNÇÃO CENTRAL — Aplicar filtros ***/
+async function applyFilters(){
+  document.getElementById('popPR').style.display = 'none';
+  document.getElementById('popAR').style.display = 'none';
+  try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
+  coletarEmpresas(); renderChips(); aplicar();
+}
 
-/*** CALENDÁRIO – intervalo com destaque ***/
+/*** CALENDÁRIO ***/
 function buildRangeCalendar(container, state, onApply, onCancel){
   container.innerHTML = "";
   const cal = document.createElement("div"); cal.className="cal";
@@ -606,24 +612,24 @@ function placePopover(pop, anchor){
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
       $("#lblPR").textContent=fmtRange(pIni,pFim);
-      prPop.style.display="none"; aplicar();
+      applyFilters();
     }, ()=> prPop.style.display="none");
     placePopover(prPop, $("#btnPR"));
   };
 
   const openAR = ()=>{ arState.anchor=$("#btnAR"); arPop.innerHTML="";
-    buildRangeCalendar(arPop, arState, async (start,end)=>{
+    buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
       $("#lblAR").textContent=fmtRange(aIni,aFim);
-      try { await fetchABC(aIni,aFim); } catch(e){ console.warn(e); }
-      coletarEmpresas(); renderChips(); aplicar();
-      arPop.style.display="none";
+      applyFilters();
     }, ()=> arPop.style.display="none");
     placePopover(arPop, $("#btnAR"));
   };
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
+  document.getElementById('btnApply').onclick = applyFilters;
+
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 
