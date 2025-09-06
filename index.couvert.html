@@ -1,5 +1,5 @@
 
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
@@ -9,21 +9,21 @@
 <style>
   :root{
     --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-    --green:#16a34a; --red:#ef4444; --brand:#111827; --accent:#2563eb; --radius:16px;
+    --green:#16a34a; --red:#ef4444; --accent:#2563eb; --radius:16px;
     --shadow:0 14px 34px rgba(2,6,23,.08);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
-  header{background:#111827;color:#fff;padding:14px 20px;display:flex;align-items:center}
-  header h1{font-size:16px;margin:0;font-weight:800}
+  header{background:#0b1220;color:#fff;padding:14px 20px;display:flex;align-items:center}
+  header h1{font-size:18px;margin:0;font-weight:800}
   .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:100%}
   .grid{display:grid;gap:12px}
-  .grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
-  .kpi h3{margin:0 0 4px;font-size:13px;color:var(--muted)}
-  .kpi .val{font-size:20px;font-weight:800}
+  .grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
+  .kpi .val{font-size:24px;font-weight:800}
   .table{width:100%;border-collapse:collapse;font-size:13px}
-  .table th,.table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+  .table th,.table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
   .table th{font-size:11px;color:var(--muted);text-transform:uppercase}
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
@@ -31,12 +31,14 @@
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .pill{display:flex;gap:6px;flex-wrap:wrap}
-  .pill .btn.active{background:#111827;color:#fff;border-color:#111827}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:600}
+  .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   /* overlay de carregando */
   #loading{
-    position:fixed;inset:0;background:rgba(255,255,255,0.8);
+    position:fixed;inset:0;background:rgba(255,255,255,0.85);
     display:flex;align-items:center;justify-content:center;
-    font-size:18px;font-weight:700;color:#111827;z-index:100;
+    font-size:18px;font-weight:800;color:#0b1220;z-index:100;
   }
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;z-index:50}
@@ -54,37 +56,67 @@
 <body>
 <header><h1>Painel de Arrecadação x Pagamentos</h1></header>
 
-<div id="loading">⏳ Carregando dados...</div>
+<div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
   <!-- filtros -->
   <div class="card">
-    <div class="pill" id="periodPill">
-      <button class="btn active" data-period="semana">Semana</button>
-      <button class="btn" data-period="mes">Mês</button>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+      <div>
+        <label>Data início: <input type="date" id="fDataIni"></label>
+      </div>
+      <div>
+        <label>Data fim: <input type="date" id="fDataFim"></label>
+      </div>
+      <button class="btn primary" id="btnAplicar">Aplicar</button>
     </div>
-    <div style="margin:8px 0">
-      <label>Data início: <input type="date" id="fDataIni"></label>
-      <label>Data fim: <input type="date" id="fDataFim"></label>
-      <button class="btn primary" onclick="filtrarPorData()">Aplicar</button>
+    <div style="margin-top:10px">
+      <strong>Empresas:</strong>
+      <div id="chipsEmpresas" class="chips" style="margin-top:6px"></div>
     </div>
   </div>
 
   <!-- KPIs -->
   <div class="grid cols-3">
-    <div class="card"><h3>Arrecadação (Couvert)</h3><div class="val" id="kArrecadacao">R$ 0,00</div></div>
-    <div class="card"><h3>Pagamentos</h3><div class="val" id="kPagamentos">R$ 0,00</div></div>
-    <div class="card"><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
+    <div class="card kpi">
+      <div>
+        <h3>Arrecadação (Couvert)</h3>
+        <div class="val" id="kArrecadacao">R$ 0,00</div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <div>
+        <h3>Pagamentos</h3>
+        <div class="val" id="kPagamentos">R$ 0,00</div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <div>
+        <h3>Resultado</h3>
+        <div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div>
+      </div>
+    </div>
   </div>
 
-  <!-- tabela -->
+  <!-- resumo por empresa -->
   <div class="card">
-    <h3>Pagamentos</h3>
+    <h3>Resumo por Empresa</h3>
+    <table class="table" id="tblResumoEmp">
+      <thead>
+        <tr><th>Empresa</th><th>Arrecadação</th><th>Pagamentos</th><th>Resultado</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- lista de pagamentos -->
+  <div class="card">
+    <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
       <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
       <tbody></tbody>
     </table>
-    <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período.</div>
+    <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
   </div>
 </div>
 
@@ -98,57 +130,135 @@
 </div>
 
 <script>
+/*** CONFIG – SUBSTITUA PELAS SUAS URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbyUvPTmmfLpAWIA9-zW6i6rYwkTQq7LED8gjdx205twpJv1zCKiyhByjXM7sJ-zIue-hQ/exec";   // <-- coloque aqui seu GAS de pagamentos
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec"; // <-- coloque aqui seu script do ABC de vendas
+/*** STATE ***/
 const ANO = 2025;
+let pagamentosAll = [];   // [{empresa, fornecedor, data_pagamento, valor, meio_pagamento, historico, ...}]
+let abcAll = [];          // [{data, empresa?, produto, faturamento, ...}] – filtraremos couvert aqui
+let empresas = [];        // nomes únicos
+let empresasSelecionadas = new Set(); // chips ativos
+let rangeAtual = {ini: null, fim: null};
 
-let pagamentosAll = [];
-let dadosABC = [];
-
-function brl(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+/*** HELPERS ***/
+const $ = (q)=>document.querySelector(q);
+function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function parseISO(d){return new Date(d+"T00:00:00");}
-function inRange(d,a,b){return d>=a && d<=b;}
+function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function containsCouvert(item){
   const p=(item.produto||"").toLowerCase();
   if(!p.includes("couvert")) return false;
   const ex=["couvert do villa","couvert delicia","couvert mercatto"];
   return !ex.some(x=>p.includes(x));
 }
+function uniq(arr){return [...new Set(arr)].filter(Boolean).sort();}
 
-/*** LOADERS COM ERRO ***/
-async function loadPagamentos(){
+/*** CARREGAMENTO + ERROS ***/
+async function loadPagamentos() {
   try{
     const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
-    if(!r.ok) throw new Error("Erro HTTP: "+r.status);
-    pagamentosAll=await r.json();
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const js=await r.json();
+    // Se seu GAS "retorna tudo" sem action, adapte aqui:
+    // const js = (await r.json()).registros;
+    pagamentosAll = js;
   }catch(e){
+    console.error("Erro pagamentos:", e);
     alert("Erro ao carregar pagamentos: "+e.message);
     pagamentosAll=[];
   }
 }
-async function loadABC(){
+async function loadABC() {
   try{
     const r=await fetch(ABC_URL);
-    if(!r.ok) throw new Error("Erro HTTP: "+r.status);
+    if(!r.ok) throw new Error("HTTP "+r.status);
     const arr=await r.json();
-    dadosABC=arr.filter(o=>{
-      const d=new Date(o.data);
+    // Filtra Couvert no lado do cliente (se quiser performance, faça no GAS):
+    abcAll = arr.filter(o=>{
+      const d = new Date(o.data || o.DATA || "");
       return d.getFullYear()===ANO && containsCouvert(o);
     });
   }catch(e){
-    alert("Erro ao carregar ABC: "+e.message);
-    dadosABC=[];
+    console.error("Erro ABC:", e);
+    alert("Erro ao carregar arrecadação (ABC): "+e.message);
+    abcAll=[];
   }
 }
 
-/*** RENDER ***/
-function renderTabela(lista){
-  const tb=document.querySelector("#tblPagamentos tbody"); tb.innerHTML="";
-  if(lista.length===0){
-    document.querySelector("#msgEmpty").style.display="block";
-    return;
-  }
-  document.querySelector("#msgEmpty").style.display="none";
+/*** EMPRESAS (separa) ***/
+function coletarEmpresas(){
+  const a = pagamentosAll.map(p=>p.empresa);
+  const b = abcAll.map(x=>x.empresa).filter(Boolean); // se seu ABC não tiver empresa, isso fica vazio
+  empresas = uniq(a.concat(b));
+  if(empresas.length===0) empresas=["Todas"];
+  if(empresasSelecionadas.size===0) empresas.forEach(e=>empresasSelecionadas.add(e));
+}
+function renderChipsEmpresas(){
+  const host=$("#chipsEmpresas"); host.innerHTML="";
+  // chip "Todas"
+  const allChip=document.createElement("div");
+  allChip.className="chip"+(empresasSelecionadas.size===empresas.length?" active":"");
+  allChip.textContent="Todas";
+  allChip.onclick=()=>{
+    empresasSelecionadas.clear();
+    empresas.forEach(e=>empresasSelecionadas.add(e));
+    renderChipsEmpresas();
+    aplicarFiltros();
+  };
+  host.appendChild(allChip);
+  // chips individuais
+  empresas.forEach(e=>{
+    const c=document.createElement("div");
+    c.className="chip"+(empresasSelecionadas.has(e)?" active":"");
+    c.textContent=e;
+    c.onclick=()=>{
+      if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e);
+      else empresasSelecionadas.add(e);
+      // se nenhum chip selecionado, volta para "Todas"
+      if(empresasSelecionadas.size===0) empresas.forEach(x=>empresasSelecionadas.add(x));
+      renderChipsEmpresas();
+      aplicarFiltros();
+    };
+    host.appendChild(c);
+  });
+}
+
+/*** KPI + TABELAS COM FILTRO DE DATA + EMPRESA ***/
+function aplicarFiltros(){
+  const a = rangeAtual.ini ? new Date(rangeAtual.ini) : null;
+  const b = rangeAtual.fim ? new Date(rangeAtual.fim) : null;
+  const emps = empresasSelecionadas;
+
+  // pagamentos filtrados
+  const pagamentos = pagamentosAll.filter(p=>{
+    const okEmp = emps.has(p.empresa) || (emps.size===empresas.length); // todas
+    const d = parseISO(p.data_pagamento);
+    return okEmp && inRange(d,a,b);
+  });
+
+  // arrecadação filtrada (se ABC não tiver empresa, somamos geral)
+  const arrecadacaoLista = abcAll.filter(x=>{
+    const d = new Date(x.data || x.DATA);
+    const okEmp = x.empresa ? (emps.has(x.empresa) || (emps.size===empresas.length)) : true;
+    return okEmp && inRange(d,a,b);
+  });
+
+  const totalPag = pagamentos.reduce((s,p)=>s+(Number(p.valor)||0),0);
+  const totalArr = arrecadacaoLista.reduce((s,x)=>s+(Number(x.faturamento || x.FATURAMENTO || 0)),0);
+  const res = totalArr - totalPag;
+
+  $("#kArrecadacao").textContent = brl(totalArr);
+  $("#kPagamentos").textContent = brl(totalPag);
+  $("#kResultado").innerHTML = `${brl(res)} <span class="badge ${res>=0?"lucr":"prej"}">${res>=0?"LUCRO":"PREJUÍZO"}</span>`;
+
+  renderPagamentos(pagamentos);
+  renderResumoEmpresas(a,b);
+}
+function renderPagamentos(lista){
+  const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
+  if(lista.length===0){ $("#msgEmpty").style.display="block"; return; }
+  $("#msgEmpty").style.display="none";
   lista.forEach(p=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td data-label="Data">${p.data_pagamento}</td>
@@ -159,52 +269,68 @@ function renderTabela(lista){
     tb.appendChild(tr);
   });
 }
+function renderResumoEmpresas(a,b){
+  const tb=$("#tblResumoEmp tbody"); tb.innerHTML="";
+  empresas.forEach(emp=>{
+    // Se o chip dessa empresa não estiver ativo, ainda mostramos no resumo (para visão geral).
+    const pags = pagamentosAll.filter(p=>{
+      const d=parseISO(p.data_pagamento);
+      return p.empresa===emp && inRange(d,a,b);
+    });
+    const arrs = abcAll.filter(x=>{
+      const d=new Date(x.data||x.DATA);
+      return (x.empresa? x.empresa===emp : true) && inRange(d,a,b);
+    });
+    const tPag = pags.reduce((s,p)=>s+(Number(p.valor)||0),0);
+    const tArr = arrs.reduce((s,x)=>s+(Number(x.faturamento||x.FATURAMENTO||0)),0);
+    const tRes = tArr - tPag;
+
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td>${emp}</td>
+      <td>${brl(tArr)}</td>
+      <td>${brl(tPag)}</td>
+      <td><span class="badge ${tRes>=0?"lucr":"prej"}">${brl(tRes)}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/*** MODAL ***/
 function openModalDetalhe(p){
   const html=`<p><b>Empresa:</b> ${p.empresa||"-"}</p>
     <p><b>Fornecedor:</b> ${p.fornecedor||"-"}</p>
     <p><b>Histórico:</b> ${p.historico||"-"}</p>
     <p><b>Meio:</b> ${p.meio_pagamento||"-"}</p>
     <p><b>Valor:</b> ${brl(p.valor||0)}</p>`;
-  document.querySelector("#modalBody").innerHTML=html;
-  document.querySelector("#modal").style.display="flex";
+  $("#modalBody").innerHTML=html;
+  $("#modal").style.display="flex";
 }
-function closeModal(){document.querySelector("#modal").style.display="none";}
+function closeModal(){ $("#modal").style.display="none"; }
 
-/*** FILTRO POR DATA ***/
-function filtrarPorData(){
-  const ini=document.querySelector("#fDataIni").value;
-  const fim=document.querySelector("#fDataFim").value;
-  if(!ini||!fim) return alert("Selecione as duas datas");
-  const a=new Date(ini), b=new Date(fim);
-
-  const pagamentosFiltrados=pagamentosAll.filter(p=>{
-    const d=parseISO(p.data_pagamento);
-    return inRange(d,a,b);
-  });
-
-  const arrecadacaoFiltrada=dadosABC.reduce((s,o)=>{
-    const d=new Date(o.data);
-    if(inRange(d,a,b)) s+=Number(o.faturamento||0);
-    return s;
-  },0);
-
-  const totalPag=pagamentosFiltrados.reduce((s,p)=>s+(Number(p.valor)||0),0);
-  const resultado=arrecadacaoFiltrada-totalPag;
-
-  document.querySelector("#kArrecadacao").textContent=brl(arrecadacaoFiltrada);
-  document.querySelector("#kPagamentos").textContent=brl(totalPag);
-  document.querySelector("#kResultado").innerHTML=`${brl(resultado)} <span id="badgeResult" class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
-
-  renderTabela(pagamentosFiltrados);
-}
+/*** AÇÕES ***/
+$("#btnAplicar").onclick = ()=>{
+  rangeAtual.ini = $("#fDataIni").value || null;
+  rangeAtual.fim = $("#fDataFim").value || null;
+  aplicarFiltros();
+};
 
 /*** INIT ***/
 async function init(){
-  document.querySelector("#loading").style.display="flex";
+  $("#loading").style.display="flex";
   await Promise.all([loadPagamentos(), loadABC()]);
-  document.querySelector("#loading").style.display="none";
+  coletarEmpresas();
+  renderChipsEmpresas();
+  // define datas padrão (mês atual)
+  const now=new Date();
+  const ini = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+  const fim = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+  $("#fDataIni").value = ini;
+  $("#fDataFim").value = fim;
+  rangeAtual = {ini, fim};
+  aplicarFiltros();
+  $("#loading").style.display="none";
 }
 init();
 </script>
 </body>
 </html>
+
