@@ -13,43 +13,34 @@
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#0f172a}
-
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
-
   .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
-
   .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:#64748b}
   .kpi h3{margin:0 0 4px;font-size:14px;color:#64748b}
   .kpi .val{font-size:24px;font-weight:800}
-
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
-
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
   .table tr.clickable{cursor:pointer}
   .table-wrap{width:100%;overflow:auto}
-
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
   .chip .dash{color:#94a3b8}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   .chip.active .amt{color:#fff}
-
   .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
   .pill .tag{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
-
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
@@ -199,11 +190,10 @@ const EMPRESA_REMAP = [
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
-
 let pagamentosAll = [];
 let abcAll = [];
 let empresas = [];
-let empresasSelecionadas = new Set();
+let empresasSelecionadas = new Set(); // preservado entre filtros
 let abcLoaded = false;
 
 // ranges (Date)
@@ -214,9 +204,8 @@ let aIni=null,aFim=null; // ABC
 const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
-function parseISO(d){return new Date(d+"T00:00:00");}
-function addDays(dt, n){return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()+n);} // <<< novo
-function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
+function parseISO(d){return new Date(d+"T00:00:00");} // meia-noite local
+function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);} // inclusivo
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
   if(v==null||v==="") return 0;
@@ -284,13 +273,9 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”)
-   → consulta vai até FIM+1D para garantir inclusão do último dia (end inclusivo). */
+/* ABC: totais da COLUNA G (linhas “Total por Data”) – envio inclusivo (ini,fim) */
 async function fetchABC(ini, fim){
-  const hasRange = (ini && fim);
-  const qIni = hasRange ? new Date(ini.getFullYear(), ini.getMonth(), ini.getDate()) : null;
-  const qFim = hasRange ? addDays(new Date(fim.getFullYear(), fim.getMonth(), fim.getDate()), 1) : null; // <<< aqui
-  const qs = hasRange ? `?ini=${toISODate(qIni)}&fim=${toISODate(qFim)}` : "";
+  const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
   if(!r.ok && qs){ r = await fetch(ABC_URL); }
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -317,8 +302,16 @@ async function fetchABC(ini, fim){
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
-  empresas = uniq(a.concat(b));
+  const nova = uniq(a.concat(b));
+  empresas = nova;
+
+  // mantém seleção atual; se vazia (primeira carga), assume todas
   if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
+  else {
+    // remove seleções de empresas que não existem mais
+    empresasSelecionadas = new Set([...empresasSelecionadas].filter(e=>empresas.includes(e)));
+    if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
+  }
 }
 function sumArrecadacaoEmpresa(emp){
   return abcAll
@@ -401,27 +394,28 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // PAGAMENTOS (inclusivo)
+  // PAGOS
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
+  // ABERTOS
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = !p.data_pagamento && p.vencimento ? parseISO(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (inclusivo)
+  // ABC
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Agrupa por data e soma o total_dia
+  // agrupa por dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -429,11 +423,10 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
-  // Totais de pagamentos
+  // Totais
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
-
   const resultado  = totalArr - somaTotal;
 
   // KPIs
@@ -445,7 +438,7 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar
+  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -462,7 +455,7 @@ function aplicar(){
 
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
+  $("#msgEmpty").style.display = pagos.length===0? "block":"none";
   pagos.forEach(p=>{
     const tr=document.createElement("tr");
     tr.className="clickable";
@@ -616,7 +609,7 @@ function hideAllPopovers(){
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
   const openPR = ()=>{
-    $("#popAR").style.display = 'none';
+    $("#popAR").style.display = 'none'; // fecha só o outro
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
@@ -627,7 +620,7 @@ function hideAllPopovers(){
   };
 
   const openAR = ()=>{
-    $("#popPR").style.display = 'none';
+    $("#popPR").style.display = 'none'; // fecha só o outro
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
@@ -640,6 +633,7 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
+  // clicar fora (overlay) e ESC
   $("#overlay").onclick = hideAllPopovers;
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
 
