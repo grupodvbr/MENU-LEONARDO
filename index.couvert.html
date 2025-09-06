@@ -10,38 +10,44 @@
   :root{
     --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
     --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
-    --brand:#0b1220; --accent:#1f2937;
-    --blue:#2563eb; --blue-100:#dbeafe; --blue-600:#2563eb;
+    --brand:#0b1220;
+    --blue:#2563eb; --blue-100:#dbeafe;
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
+
+  /* Cabeçalho */
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
-  .wrap{margin:14px auto;padding:0 16px;width:100%;max-width:1600px}
 
-  /* GRID – desktop tela cheia */
-  .grid{display:grid;gap:14px}
-  .grid.cols-3{
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-  .kpi-card{grid-column: span 4 / span 4}
+  /* Container cheio – desktop largura total */
+  .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
+
+  /* Grid principal */
+  .grid{display:grid;gap:12px}
+  .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
+  .kpi-card{grid-column:span 4 / span 4}
 
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:var(--muted)}
-  .kpi h3{margin:0 0 6px;font-size:14px;color:var(--muted)}
-  .kpi .val{font-size:26px;font-weight:800}
+
+  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
+  .kpi .val{font-size:24px;font-weight:800}
+
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800;touch-action:manipulation}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
 
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
   .table tr.clickable{cursor:pointer}
+  .table-wrap{width:100%;overflow:auto} /* rolagem horizontal no mobile quando precisar */
+
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
 
   /* chips empresas - single select */
-  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;
         font-weight:800;display:inline-flex;gap:10px;align-items:center;touch-action:manipulation}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
@@ -62,14 +68,13 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
-  /* popover base (calendários) */
+  /* popover base (calendário) */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
 
   /* calendário */
-  .cal{position:relative;width:100%}
+  .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
-  .cal .title-btn{cursor:pointer;font-weight:800;user-select:none}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
   .cal .dow{font-size:12px;color:var(--muted);text-align:center}
   .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
@@ -79,16 +84,6 @@
   .cal .day.sel{background:var(--blue);color:#fff}
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
-  /* mini-popup para digitar data */
-  .cal .mini{
-    position:absolute; left:50%; transform:translateX(-50%);
-    top:44px; z-index:5; background:#fff; border:1px solid var(--line);
-    border-radius:12px; box-shadow:var(--shadow); padding:10px; width:calc(100% - 16px);
-    max-width:280px; display:none;
-  }
-  .cal .mini .row{display:flex; gap:8px; align-items:center; justify-content:space-between}
-  .cal .mini input[type="date"]{padding:6px;border:1px solid var(--line);border-radius:8px;width:100%}
-  .cal .mini .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 
   /* Modal bottom sheet */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
@@ -104,28 +99,16 @@
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
            font-size:18px;font-weight:800;color:var(--brand);z-index:100}
 
-  /* Mobile-friendly */
+  /* Mobile: 1 coluna e espaçamento confortável */
   @media(max-width:760px){
-    header{padding:12px 14px}
-    header h1{font-size:16px}
-    .wrap{padding:0 12px;margin:12px auto}
-    .card{padding:12px;border-radius:14px}
-    .kpi .val{font-size:22px}
-
+    .wrap{padding:0 12px}
     .grid.cols-3{grid-template-columns:1fr}
     .kpi-card{grid-column:auto}
+    .card{padding:12px;border-radius:14px}
+    .kpi .val{font-size:22px}
     .chips{gap:8px}
     .chip{padding:8px 10px;font-size:14px}
-
-    .table,.table thead{display:none}
-    #tblPagamentos tbody,#tblApagar tbody{display:grid;gap:8px}
-    #tblPagamentos tbody tr,#tblApagar tbody tr{
-      display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);
-      border-radius:12px;padding:10px;background:#fff
-    }
-    .pill-supplier{font-weight:700}
-    .pill-sub{font-size:12px;color:#64748b}
-    .val-right{font-weight:800}
+    .table th,.table td{padding:10px 8px}
   }
 </style>
 </head>
@@ -170,10 +153,12 @@
         <details class="paylist" id="dlstApagar">
           <summary>A pagar (<span id="qtApagar">0</span>)</summary>
           <div style="padding:0 10px 10px 10px">
-            <table class="smalltable" id="tblApagar">
-              <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
-              <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="smalltable" id="tblApagar">
+                <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
             <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
           </div>
         </details>
@@ -188,19 +173,23 @@
   <!-- Resumo por Empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
-    <table class="table" id="tblResumoEmp">
-      <thead><tr><th>Empresa</th><th>Arrecadação</th><th>Pagamentos</th><th>Resultado</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table" id="tblResumoEmp">
+        <thead><tr><th>Empresa</th><th>Arrecadação</th><th>Pagamentos</th><th>Resultado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Detalhes pagos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
-    <table class="table" id="tblPagamentos">
-      <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table" id="tblPagamentos">
+        <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
   </div>
 </div>
@@ -228,7 +217,15 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN
 
 /*** STATE ***/
 const ANO = 2025;
-const DEFAULT_EMPRESA = "mercatto";
+
+/* Normalização de nomes do ABC -> nomes dos pagamentos */
+const EMPRESA_REMAP = [
+  {match:["mercatto"], to:"MERCATTO DELÍCIA"},
+  {match:["delicia"],  to:"DELICIA GOURMET"},
+  {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
+  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
+  {match:["villa"], to:"VILLA GOURMET LEM"},
+];
 
 let pagamentosAll = [];
 let abcAll = [];
@@ -237,8 +234,8 @@ let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
 // ranges atuais (Date)
-let pIni=null,pFim=null; // Pagamentos (liquidação / vencimento para "a pagar")
-let aIni=null,aFim=null; // ABC (arrecadação)
+let pIni=null,pFim=null; // pagamentos
+let aIni=null,aFim=null; // ABC
 
 /*** HELPERS ***/
 const $ = s=>document.querySelector(s);
@@ -264,7 +261,17 @@ function isoFromStr(s){
   if(isNaN(d)) return String(s).slice(0,10);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
 }
-function fmtRange(a,b){ const f = d => new Date(d).toLocaleDateString('pt-BR'); return `${f(a)} → ${f(b)}`;}
+function fmtRange(a,b){
+  const f = d => new Date(d).toLocaleDateString('pt-BR');
+  return `${f(a)} → ${f(b)}`;
+}
+function remapEmpresaABC(raw){
+  const s = String(raw||"").toLowerCase();
+  for (const rule of EMPRESA_REMAP){
+    if (rule.match.every(m => s.includes(m))) return rule.to;
+  }
+  return String(raw||"").replace(/^ABC\s+DE\s+VENDAS\s+/i,"").trim() || "";
+}
 
 /*** FETCH ***/
 async function fetchPagamentos(){
@@ -277,7 +284,7 @@ async function fetchPagamentos(){
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
     data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
-    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),      // Valor Bruto
+    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
@@ -286,16 +293,22 @@ async function fetchABC(){
   const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
   const arr=await r.json();
-  abcAll = arr.filter(o=>{
-    const d = new Date(o.data || o.DATA || "");
-    if(isNaN(d)) return false;
-    return d.getFullYear()===ANO && containsCouvert(o);
-  }).map(o=>({
-    data: o.data || o.DATA,
-    empresa: o.empresa || o.EMPRESA || "",   // se sua API não trouxer empresa, fica vazio
-    faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
-    produto: o.produto || o.PRODUTO || ""
-  }));
+  abcAll = arr
+    .filter(o=>{
+      const d = new Date(o.data || o.DATA || "");
+      if(isNaN(d)) return false;
+      return d.getFullYear()===ANO && containsCouvert(o);
+    })
+    .map(o=>{
+      const empRaw = o.empresa || o.EMPRESA || "";
+      const emp    = remapEmpresaABC(empRaw);
+      return {
+        data: o.data || o.DATA,
+        empresa: emp,
+        faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
+        produto: o.produto || o.PRODUTO || ""
+      };
+    });
   abcLoaded = true;
 }
 
@@ -304,33 +317,31 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  empresasSelecionadas.clear();
-  const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
-  if(merc) empresasSelecionadas.add(merc); else empresas.forEach(e=>empresasSelecionadas.add(e));
+  empresasSelecionadas = new Set(empresas); // padrão: Todas
 }
 function sumArrecadacaoEmpresa(emp){
-  const hasEmpresa = abcAll.some(x=>x.empresa);
-  if(!hasEmpresa) return null;
   return abcAll
-    .filter(x=>{ const d=new Date(x.data); return x.empresa===emp && inRange(d,aIni,aFim); })
+    .filter(x=>{
+      const d=new Date(x.data);
+      return x.empresa===emp && inRange(d,aIni,aFim);
+    })
     .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
 }
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  // "Todas"
   const cTodas=document.createElement("span");
   const allActive=(empresasSelecionadas.size===empresas.length);
   cTodas.className="chip"+(allActive?" active":"");
   cTodas.textContent="Todas";
-  cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
+  cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
   host.appendChild(cTodas);
-  // individuais (single select)
+
   empresas.forEach(e=>{
     const c=document.createElement("span");
     const isActive=(empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
     c.className="chip"+(isActive?" active":"");
     const amt=sumArrecadacaoEmpresa(e);
-    c.innerHTML=`<span>${e}</span>${amt===null? "<span class='dash'>—</span>":"<span class='amt'>"+brl(amt)+"</span>"}`;
+    c.innerHTML=`<span>${e}</span>${Number.isFinite(amt)? "<span class='amt'>"+brl(amt)+"</span>":"<span class='dash'>—</span>"}`;
     c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
     host.appendChild(c);
   });
@@ -389,24 +400,21 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // pagos (tem liquidação dentro do range de Pagamentos)
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
-  // a pagar (sem liquidação, vencimento dentro do range de Pagamentos)
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (arrecadação dentro do range ABC)
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
-    const okEmp = x.empresa ? filtroEmp(x.empresa) : true; // se não vier empresa, soma geral
+    const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
@@ -439,35 +447,19 @@ function aplicar(){
       tbA.appendChild(tr);
     });
 
-  // Detalhes pagos (tabela/cards)
+  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
-  if (matchMedia("(max-width: 760px)").matches){
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.className="clickable";
-      tr.innerHTML=`
-        <td style="display:none"></td><td style="display:none"></td><td style="display:none"></td><td style="display:none"></td>
-        <div class="info">
-          <div class="pill-supplier">${p.fornecedor||"-"}</div>
-          <div class="pill-sub">${p.empresa||"-"} • ${p.data_pagamento||"-"}</div>
-        </div>
-        <div class="val-right">${brl(p.valor||0)}</div>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
-  } else {
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.className="clickable";
-      tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
-                    <td>${p.empresa||"-"}</td>
-                    <td>${p.fornecedor||"-"}</td>
-                    <td>${brl(p.valor||0)}</td>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
-  }
+  pagos.forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.className="clickable";
+    tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
+                  <td>${p.empresa||"-"}</td>
+                  <td>${p.fornecedor||"-"}</td>
+                  <td>${brl(p.valor||0)}</td>`;
+    tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
+    tb.appendChild(tr);
+  });
 
   // Resumo por empresa
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
@@ -497,75 +489,25 @@ function aplicar(){
     rb.appendChild(tr);
   });
 
-  // labels de range
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** CALENDÁRIO – intervalo com destaque + mini-popup interno para digitar data ***/
+/*** CALENDÁRIO – intervalo com destaque ***/
 function buildRangeCalendar(container, state, onApply, onCancel){
   container.innerHTML = "";
   const cal = document.createElement("div"); cal.className="cal";
 
-  // Cabeçalho
   const head = document.createElement("div"); head.className="cal-head";
   const prev = document.createElement("button"); prev.className="btn"; prev.textContent="‹";
   const next = document.createElement("button"); next.className="btn"; next.textContent="›";
-
-  // Título clicável (abre mini-popup)
-  const titleBtn = document.createElement("div");
-  titleBtn.className = "title-btn";
-  const updTitle = ()=> titleBtn.textContent =
-      state.cursor.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-
-  // Mini-popup interno para digitar data
-  const mini = document.createElement("div"); mini.className = "mini";
-  mini.innerHTML = `
-    <div class="row">
-      <label style="font-weight:700;">Ir para:</label>
-      <input type="date" id="miniDate">
-    </div>
-    <div class="actions">
-      <button class="btn" id="miniCancel">Cancelar</button>
-      <button class="btn dark" id="miniGo">Ir</button>
-    </div>
-  `;
-  const setMiniDefault = ()=>{
-    const y = state.cursor.getFullYear();
-    const m = state.cursor.getMonth()+1;
-    mini.querySelector("#miniDate").value = `${y}-${String(m).padStart(2,'0')}-01`;
-  };
-
-  titleBtn.onclick = ()=>{
-    if (mini.style.display === "block"){ mini.style.display = "none"; return; }
-    setMiniDefault();
-    mini.style.display = "block";
-  };
-  mini.querySelector("#miniCancel").onclick = ()=> mini.style.display = "none";
-  mini.querySelector("#miniGo").onclick = ()=>{
-    const v = mini.querySelector("#miniDate").value;
-    if (v){
-      const d = new Date(v+"T00:00:00");
-      if (!isNaN(d)){
-        state.cursor = new Date(d.getFullYear(), d.getMonth(), 1);
-        if (!state.start || (state.start && state.end)){
-          state.start = new Date(d); state.end = null;
-        } else {
-          if (d < state.start){ state.end = state.start; state.start = new Date(d); }
-          else { state.end = new Date(d); }
-        }
-        drawGrid(); updTitle();
-        placePopover(container, state.anchor);
-      }
-    }
-    mini.style.display = "none";
-  };
-
-  head.appendChild(prev); head.appendChild(titleBtn); head.appendChild(next);
+  const title = document.createElement("div"); title.style.fontWeight="800";
+  const updTitle=()=>title.textContent = state.cursor.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
+  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
+  head.appendChild(prev); head.appendChild(title); head.appendChild(next);
   cal.appendChild(head);
-  cal.appendChild(mini);
 
-  // DOW + grid
   const grid = document.createElement("div"); grid.className="cal-grid";
   "DSTQQSS".split("").forEach(l=>{ const d=document.createElement("div"); d.className="dow"; d.textContent=l; grid.appendChild(d); });
 
@@ -584,31 +526,17 @@ function buildRangeCalendar(container, state, onApply, onCancel){
     const first=new Date(y,m,1);
     const startDay=(first.getDay()+6)%7; // segunda=0
     const daysInMonth=new Date(y,m+1,0).getDate();
-
     for(let i=0;i<startDay;i++){ const x=document.createElement("div"); x.className="day out"; grid.appendChild(x); }
     for(let d=1; d<=daysInMonth; d++){
       const date=new Date(y,m,d);
       const el=document.createElement("div"); el.className="day"; el.textContent=d;
       if(isSameDay(date,state.start)||isSameDay(date,state.end)) el.classList.add('sel');
       else if(inSelRange(date)) el.classList.add('range');
-
-      el.onclick=()=>{
-        if(!state.start || (state.start && state.end)){
-          state.start=date; state.end=null;
-        }else{
-          if(date<state.start){ state.end=state.start; state.start=date; }
-          else{ state.end=date; }
-        }
-        drawGrid();
-      };
+      el.onclick=()=>{ if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } } drawGrid(); };
       grid.appendChild(el);
     }
   }
-
   cal.appendChild(grid);
-
-  prev.onclick = ()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); setMiniDefault(); placePopover(container, state.anchor); };
-  next.onclick = ()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); setMiniDefault(); placePopover(container, state.anchor); };
 
   const foot=document.createElement("div"); foot.className="foot";
   const cancel=document.createElement("button"); cancel.className="btn"; cancel.textContent="Cancelar";
@@ -622,7 +550,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO (sempre dentro da tela) ***/
+/*** POPOVER POSICIONAMENTO ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -631,10 +559,8 @@ function placePopover(pop, anchor){
   const h = Math.min(window.innerHeight * 0.80, 540);
   pop.style.width = w + 'px';
   pop.style.maxHeight = h + 'px';
-
   let left = r.left;
   let top  = r.bottom + 6;
-
   if (left + w > window.innerWidth - PAD) left = window.innerWidth - w - PAD;
   if (left < PAD) left = PAD;
   if (top + pop.offsetHeight > window.innerHeight - PAD) {
@@ -648,34 +574,18 @@ function placePopover(pop, anchor){
 
 /*** INIT ***/
 (async function init(){
-  // ranges padrão = mês atual
   const now=new Date();
   const ini=new Date(now.getFullYear(),now.getMonth(),1);
   const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
   pIni=new Date(ini); pFim=new Date(fim);
   aIni=new Date(ini); aFim=new Date(fim);
 
-  // calendários (um para cada fonte)
   const prPop = $("#popPR"), arPop=$("#popAR");
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{
-    prState.anchor=$("#btnPR");
-    prPop.innerHTML="";
-    buildRangeCalendar(prPop, prState, (start,end)=>{
-      pIni=new Date(start); pFim=new Date(end); $("#lblPR").textContent=fmtRange(pIni,pFim); prPop.style.display="none"; aplicar();
-    }, ()=> prPop.style.display="none");
-    placePopover(prPop, $("#btnPR"));
-  };
-  const openAR = ()=>{
-    arState.anchor=$("#btnAR");
-    arPop.innerHTML="";
-    buildRangeCalendar(arPop, arState, (start,end)=>{
-      aIni=new Date(start); aFim=new Date(end); $("#lblAR").textContent=fmtRange(aIni,aFim); renderChips(); aplicar(); arPop.style.display="none";
-    }, ()=> arPop.style.display="none");
-    placePopover(arPop, $("#btnAR"));
-  };
+  const openPR = ()=>{ prState.anchor=$("#btnPR"); prPop.innerHTML=""; buildRangeCalendar(prPop, prState, (start,end)=>{ pIni=new Date(start); pFim=new Date(end); $("#lblPR").textContent=fmtRange(pIni,pFim); prPop.style.display="none"; aplicar(); }, ()=> prPop.style.display="none"); placePopover(prPop, $("#btnPR")); };
+  const openAR = ()=>{ arState.anchor=$("#btnAR"); arPop.innerHTML=""; buildRangeCalendar(arPop, arState, (start,end)=>{ aIni=new Date(start); aFim=new Date(end); $("#lblAR").textContent=fmtRange(aIni,aFim); renderChips(); aplicar(); arPop.style.display="none"; }, ()=> arPop.style.display="none"); placePopover(arPop, $("#btnAR")); };
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
@@ -683,7 +593,6 @@ function placePopover(pop, anchor){
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 
-  // fetch + render
   try{
     await fetchPagamentos();
     coletarEmpresas(); renderChips(); aplicar();
@@ -692,8 +601,8 @@ function placePopover(pop, anchor){
 
     try{
       await fetchABC();
+      coletarEmpresas(); renderChips(); aplicar();
       $("#empLoadMsg").style.display="none";
-      renderChips(); aplicar();
     }catch(e){
       console.error(e);
       $("#abcStatus").textContent="Não foi possível carregar o ABC agora.";
@@ -708,11 +617,7 @@ function placePopover(pop, anchor){
 /*** BLOQUEIO DE ZOOM (mobile) ***/
 document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
 let __lt = 0;
-document.addEventListener('touchend', e=>{
-  const now = Date.now();
-  if (now - __lt <= 300) e.preventDefault();
-  __lt = now;
-}, {passive:false});
+document.addEventListener('touchend', e=>{ const now = Date.now(); if (now - __lt <= 300) e.preventDefault(); __lt = now; }, {passive:false});
 window.addEventListener('wheel', e=>{ if(e.ctrlKey) e.preventDefault(); }, {passive:false});
 </script>
 </body>
