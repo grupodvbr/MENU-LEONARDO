@@ -8,15 +8,14 @@
 <style>
   :root{
     --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-    --accent:#0b1220; --accentSoft:#e7ecff; --green:#16a34a; --red:#ef4444;
-    --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
+    --accent:#0b1220; --green:#16a34a; --red:#ef4444; --shadow:0 14px 34px rgba(2,6,23,.08);
     --range:#dbeafe; --rangeEdge:#2563eb;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
-  header{background:var(--accent);color:#fff;padding:14px 24px;display:flex;align-items:center}
+  header{background:var(--accent);color:#fff;padding:16px 24px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.2px}
-  .wrap{margin:14px auto;padding:0 14px;max-width:1400px}
+  .wrap{margin:16px auto;padding:0 16px;max-width:100%}
   .grid{display:grid;gap:14px}
   .grid.cols-3{grid-template-columns:repeat(3,1fr)}
   @media(max-width:1100px){ .grid.cols-3{grid-template-columns:1fr 1fr} }
@@ -34,22 +33,18 @@
   .table tr.clickable{cursor:pointer}
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .btn.ghost{background:#fff}
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
 
-  /* chips de empresa (single-select com valor) */
+  /* chips (single-select) */
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   .chip{border:1px solid var(--line);padding:10px 14px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
-  .chip .amt{font-weight:800;color:#0b1220;opacity:.9}
-  .chip .dash{color:#94a3b8}
+  .chip .amt{font-weight:800}
   .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-  /* Pagamentos: breakdown */
   .row{display:flex;gap:14px;flex-wrap:wrap}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:700;background:#fff}
-  .pill .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
+  .pill .tag{font-size:11px;color:var(--muted);text-transform:uppercase}
 
-  /* Collapsible de a pagar */
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
@@ -57,10 +52,10 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
-  /* POP: calendário de período */
+  /* filtros + calendário */
   .filters{display:flex;gap:12px;flex-wrap:wrap}
   .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:800;display:inline-flex;gap:8px;align-items:center}
-  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px;z-index:80;display:none;width:320px}
+  .popover{position:fixed;z-index:90;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px;display:none;width:320px}
   .cal{user-select:none}
   .cal .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .cal .top .ttl{font-weight:800}
@@ -73,16 +68,6 @@
   .cal .day.in-range{background:var(--range)}
   .cal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 
-  /* Modal */
-  .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
-  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
-  .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .sheet header h3{margin:0;font-size:16px;font-weight:800}
-  .sheet header small{color:#64748b}
-  .sheet .content{overflow:auto;padding:10px 12px}
-  .sheet .close{position:absolute;right:12px;top:10px}
-
-  /* mobile cards para lista de pagos */
   @media(max-width:760px){
     .table, .table thead{display:none}
     #tblPagamentos tbody{display:grid;gap:10px}
@@ -99,19 +84,17 @@
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- Filtros -->
   <div class="card">
     <div class="filters">
-      <div style="position:relative">
+      <div>
         <button class="range-btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
         <div class="popover" id="popPR"></div>
       </div>
-      <div style="position:relative">
+      <div>
         <button class="range-btn" id="btnAR">ABC: <span id="lblAR"></span></button>
         <div class="popover" id="popAR"></div>
       </div>
     </div>
-
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
       <div id="chipsEmpresas" class="chips"></div>
@@ -119,7 +102,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
   <div class="grid cols-3">
     <div class="card kpi">
       <h3>Arrecadação (Couvert)</h3>
@@ -153,7 +135,6 @@
     </div>
   </div>
 
-  <!-- Resumo por Empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
     <table class="table" id="tblResumoEmp">
@@ -162,7 +143,6 @@
     </table>
   </div>
 
-  <!-- Detalhes pagos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
@@ -173,7 +153,7 @@
   </div>
 </div>
 
-<!-- MODAL HISTÓRICO -->
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
@@ -183,54 +163,39 @@
 </div>
 
 <script>
-/* ====== CONFIG URLs ====== */
+/* URLs */
 const SHEET_API = "https://script.google.com/macros/s/AKfycbyUvPTmmfLpAWIA9-zW6i6rYwkTQq7LED8gjdx205twpJv1zCKiyhByjXM7sJ-zIue-hQ/exec";
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec";
 
-/* ====== STATE ====== */
+/* State */
 const ANO = 2025;
 const DEFAULT_EMPRESA = "mercatto";
 
-let pagamentosAll = [];
-let abcAll = [];
-let empresas = [];
-let empresasSelecionadas = new Set();
-let abcLoaded = false;
+let pagamentosAll=[], abcAll=[], empresas=[], empresasSelecionadas=new Set(), abcLoaded=false;
+let pIni=null,pFim=null,aIni=null,aFim=null;
 
-let pIni=null,pFim=null;  // Pagamentos
-let aIni=null,aFim=null;  // ABC
-
-/* ====== HELPERS ====== */
-const $ = s => document.querySelector(s);
+/* Utils */
+const $ = s=>document.querySelector(s);
 const norm = s => (s??"").toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function toDateSafe(x){
   if(!x && x!==0) return null;
   if (Object.prototype.toString.call(x)==='[object Date]' && !isNaN(x)) return new Date(x.getFullYear(),x.getMonth(),x.getDate());
   const s=String(x).trim();
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m){ const d=new Date(+m[3],+m[2]-1,+m[1]); return isNaN(d)?null:d; }
   const d=new Date(s); return isNaN(d)?null:new Date(d.getFullYear(),d.getMonth(),d.getDate());
 }
 function isoFromStr(s){const d=toDateSafe(s); return d? d.toISOString().slice(0,10) : "";}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
-function cleanNumber(v){
-  if(v==null || v==="") return 0;
-  if(typeof v==="number") return v;
-  const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
-  const n=parseFloat(s); return isFinite(n)?n:0;
-}
-function containsCouvert(item){
-  const p=norm(item.produto||""); if(!p.includes("couvert")) return false;
-  return !["couvert do villa","couvert delicia","couvert mercatto"].some(b=>p.includes(b));
-}
+function cleanNumber(v){ if(v==null||v==="")return 0; if(typeof v==="number")return v; const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isFinite(n)?n:0; }
+function containsCouvert(item){ const p=norm(item.produto||""); if(!p.includes("couvert")) return false; return !["couvert do villa","couvert delicia","couvert mercatto"].some(b=>p.includes(b)); }
 function fmtRange(a,b){const f=d=>d? new Date(d).toLocaleDateString('pt-BR'):""; return `${f(a)} → ${f(b)}`;}
 
-/* ====== FETCH ====== */
+/* Fetch */
 async function fetchPagamentos(){
-  const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
-  const js=await r.json(); const list=Array.isArray(js)?js:(js.registros||[]);
-  pagamentosAll = list.map(p=>({
+  const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`); const js=await r.json(); const list=Array.isArray(js)?js:(js.registros||[]);
+  pagamentosAll=list.map(p=>({
     empresa:(p.empresa||p.Empresa||"").toString().trim(),
     fornecedor:p.fornecedor||p["Cliente / Fornecedor"]||"",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
@@ -242,21 +207,23 @@ async function fetchPagamentos(){
 }
 
 async function fetchABC(){
-  const r=await fetch(ABC_URL);
-  const arr=await r.json();
+  const r=await fetch(ABC_URL); const arr=await r.json();
   abcAll = arr.filter(o=>{
-    const d = toDateSafe(o.data || o.DATA || "");
-    return d && d.getFullYear()===ANO && containsCouvert(o);
-  }).map(o=>({
-    data: toDateSafe(o.data || o.DATA),
-    empresa:(o.empresa || o.EMPRESA || "").toString().trim(),
-    faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
-    produto:o.produto || o.PRODUTO || ""
-  }));
+    const d=toDateSafe(o.data||o.DATA||""); return d && d.getFullYear()===ANO && containsCouvert(o);
+  }).map(o=>{
+    const empresa =
+      (o.empresa||o.EMPRESA||o.sheet||o.SHEET||o.aba||o.ABA||o.origem||o.ORIGEM||"").toString().trim();
+    return {
+      data: toDateSafe(o.data||o.DATA),
+      empresa,
+      faturamento: cleanNumber(o.faturamento||o.FATURAMENTO||o.valor||0),
+      produto:o.produto||o.PRODUTO||""
+    };
+  });
   abcLoaded=true;
 }
 
-/* ====== EMPRESAS & CHIPS ====== */
+/* Empresas */
 function coletarEmpresas(){
   const a=pagamentosAll.map(p=>p.empresa), b=abcAll.map(x=>x.empresa).filter(Boolean);
   empresas=[...new Set(a.concat(b).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'pt',{sensitivity:'base'}));
@@ -265,8 +232,8 @@ function coletarEmpresas(){
   if(pref) empresasSelecionadas.add(pref);
 }
 function totalArrecEmp(emp){
-  const ne=norm(emp); if(!abcAll.some(x=>x.empresa)) return null;
-  return abcAll.filter(x=>norm(x.empresa)===ne && inRange(x.data,aIni,aFim))
+  if(!abcAll.some(x=>x.empresa)) return null;
+  return abcAll.filter(x=>norm(x.empresa)===norm(emp) && inRange(x.data,aIni,aFim))
                .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
 }
 function renderChips(){
@@ -276,142 +243,107 @@ function renderChips(){
   all.textContent="Todas";
   all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
   host.appendChild(all);
-
   empresas.forEach(e=>{
-    const c=document.createElement("span");
     const isActive=(empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
+    const c=document.createElement("span");
     c.className="chip"+(isActive?" active":"");
     const amt=totalArrecEmp(e);
-    c.innerHTML=`<span>${e}</span>${amt===null?'<span class="dash">—</span>':'<span class="amt">'+brl(amt)+'</span>'}`;
+    c.innerHTML=`<span>${e}</span>${amt==null?"":" <span class='amt'>"+brl(amt)+"</span>"}`;
     c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
     host.appendChild(c);
   });
 }
 
-/* ====== MODAL ====== */
+/* Modal */
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
-  $("#mTitle").textContent = fornecedor;
-  $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
-  $("#mBody").innerHTML = `<div class="muted" style="padding:8px 2px">⏳ Carregando…</div>`;
-  openModal();
+  $("#mTitle").textContent=fornecedor; $("#mSub").textContent=`Histórico de pagamentos em ${ANO}`;
+  $("#mBody").innerHTML=`<div class="muted" style="padding:8px 2px">⏳ Carregando…</div>`; openModal();
   try{
-    const r = await fetch(`${SHEET_API}?action=histFornecedor&ano=${ANO}&fornecedor=${encodeURIComponent(fornecedor)}`);
-    const js = await r.json();
-    const arr = (js.registros||[]).filter(p => (p.fornecedor||p["Cliente / Fornecedor"]||"").trim()===fornecedor)
-      .map(p=>({data: isoFromStr(p.data_pagamento || p.Liquidação || ""),
-                empresa:p.empresa||p.Empresa||"",
-                valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
-                meio: p.meio_pagamento || p["Meio de Pagamento"] || "",
-                hist: p.historico || p["Histórico"] || ""}))
+    const r=await fetch(`${SHEET_API}?action=histFornecedor&ano=${ANO}&fornecedor=${encodeURIComponent(fornecedor)}`);
+    const js=await r.json();
+    const arr=(js.registros||[]).filter(p=>(p.fornecedor||p["Cliente / Fornecedor"]||"").trim()===fornecedor)
+      .map(p=>({data: isoFromStr(p.data_pagamento||p.Liquidação||""), empresa:p.empresa||p.Empresa||"", valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0), meio:p.meio_pagamento||p["Meio de Pagamento"]||"", hist:p.historico||p["Histórico"]||""}))
       .sort((a,b)=> new Date(b.data)-new Date(a.data));
-    const total = arr.reduce((s,x)=>s+x.valor,0);
-    $("#mBody").innerHTML = `
-      <div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
+    const total=arr.reduce((s,x)=>s+x.valor,0);
+    $("#mBody").innerHTML=`<div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
       <table class="table"><thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
       <tbody>${arr.map(x=>`<tr><td>${(x.data||"").slice(0,10)}</td><td>${x.empresa||"-"}</td><td>${x.meio||"-"}</td><td>${x.hist||"-"}</td><td style="text-align:right">${brl(x.valor)}</td></tr>`).join("")}</tbody></table>`;
   }catch(e){ $("#mBody").innerHTML="<div class='muted'>Falha ao carregar.</div>"; }
 }
 
-/* ====== RENDER PRINCIPAL ====== */
+/* Render */
 function aplicar(){
-  const allSelected = (empresasSelecionadas.size===empresas.length);
-  const selectedOne = (empresasSelecionadas.size===1) ? [...empresasSelecionadas][0] : null;
-  const filtroEmp = emp => allSelected || (selectedOne && norm(emp)===norm(selectedOne));
+  const allSelected=(empresasSelecionadas.size===empresas.length);
+  const oneSel=(empresasSelecionadas.size===1)?[...empresasSelecionadas][0]:null;
+  const byEmp=emp=> allSelected || (oneSel && norm(emp)===norm(oneSel));
 
-  const pagos = pagamentosAll.filter(p=>{
-    const d = p.data_pagamento ? toDateSafe(p.data_pagamento) : null;
-    return filtroEmp(p.empresa) && d && inRange(d,pIni,pFim);
+  const pagos=pagamentosAll.filter(p=>{ const d=p.data_pagamento?toDateSafe(p.data_pagamento):null; return byEmp(p.empresa)&&d&&inRange(d,pIni,pFim); });
+  const abertos=pagamentosAll.filter(p=>{ const d=(!p.data_pagamento && p.vencimento)?toDateSafe(p.vencimento):null; return byEmp(p.empresa)&&d&&inRange(d,pIni,pFim)&&!p.data_pagamento; });
+  const arrs=abcAll.filter(x=> byEmp(x.empresa) && inRange(x.data,aIni,aFim));
+
+  const somaPago=pagos.reduce((s,p)=>s+cleanNumber(p.valor),0),
+        somaApagar=abertos.reduce((s,p)=>s+cleanNumber(p.valor),0),
+        somaTotal=somaPago+somaApagar,
+        totalArr=arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0),
+        resultado=totalArr-somaTotal;
+
+  $("#kArrecadacao").textContent=abcLoaded?brl(totalArr):"⏳ carregando…";
+  $("#abcStatus").textContent=abcLoaded?"":"Arrecadação sendo carregada em segundo plano";
+  $("#kPagamentos").textContent=brl(somaTotal);
+  $("#kPago").textContent=brl(somaPago);
+  $("#kApagar").textContent=brl(somaApagar);
+  $("#kTotal").textContent=brl(somaTotal);
+  $("#kResultado").innerHTML=`${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
+
+  // a pagar
+  const tbA=$("#tblApagar tbody"); tbA.innerHTML=""; $("#qtApagar").textContent=abertos.length; $("#msgApagar").style.display=abertos.length?"none":"block";
+  abertos.sort((x,y)=>toDateSafe(x.vencimento)-toDateSafe(y.vencimento)).forEach(p=>{
+    const tr=document.createElement("tr"); tr.innerHTML=`<td>${p.vencimento||"-"}</td><td>${p.empresa||"-"}</td><td>${p.fornecedor||"-"}</td><td style="text-align:right">${brl(p.valor||0)}</td>`; tbA.appendChild(tr);
   });
-  const abertos = pagamentosAll.filter(p=>{
-    const d = (!p.data_pagamento && p.vencimento) ? toDateSafe(p.vencimento) : null;
-    return filtroEmp(p.empresa) && d && inRange(d,pIni,pFim) && !p.data_pagamento;
-  });
-  const arrs = abcAll.filter(x=> filtroEmp(x.empresa) && inRange(x.data,aIni,aFim));
 
-  const somaPago=pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
-  const somaApagar=abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
-  const somaTotal=somaPago+somaApagar;
-  const totalArr=arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
-  const resultado=totalArr-somaTotal;
-
-  $("#kArrecadacao").textContent = abcLoaded? brl(totalArr) : "⏳ carregando…";
-  $("#abcStatus").textContent = abcLoaded? "" : "Arrecadação sendo carregada em segundo plano";
-  $("#kPagamentos").textContent = brl(somaTotal);
-  $("#kPago").textContent = brl(somaPago);
-  $("#kApagar").textContent = brl(somaApagar);
-  $("#kTotal").textContent = brl(somaTotal);
-  $("#kResultado").innerHTML = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
-
-  // lista "a pagar"
-  const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
-  $("#qtApagar").textContent=abertos.length;
-  $("#msgApagar").style.display=abertos.length?"none":"block";
-  abertos.sort((x,y)=> toDateSafe(x.vencimento)-toDateSafe(y.vencimento))
-    .forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${p.vencimento||"-"}</td><td>${p.empresa||"-"}</td><td>${p.fornecedor||"-"}</td><td style="text-align:right">${brl(p.valor||0)}</td>`;
-      tbA.appendChild(tr);
-    });
-
-  // detalhes pagos
-  const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  $("#msgEmpty").style.display = pagos.length? "none":"block";
-  if (matchMedia("(max-width:760px)").matches){
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr"); tr.className="clickable";
+  // pagos
+  const tb=$("#tblPagamentos tbody"); tb.innerHTML=""; $("#msgEmpty").style.display=pagos.length?"none":"block";
+  if(matchMedia("(max-width:760px)").matches){
+    pagos.forEach(p=>{ const tr=document.createElement("tr"); tr.className="clickable";
       tr.innerHTML=`<td style="display:none"></td><td style="display:none"></td><td style="display:none"></td><td style="display:none"></td>
         <div class="left"><div class="strong">${p.fornecedor||"-"}</div><div class="sub">${p.empresa||"-"} • ${p.data_pagamento||"-"}</div></div>
         <div class="strong">${brl(p.valor||0)}</div>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
-  } else {
-    pagos.forEach(p=>{
-      const tr=document.createElement("tr"); tr.className="clickable";
+      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor); tb.appendChild(tr); });
+  }else{
+    pagos.forEach(p=>{ const tr=document.createElement("tr"); tr.className="clickable";
       tr.innerHTML=`<td>${p.data_pagamento||"-"}</td><td>${p.empresa||"-"}</td><td>${p.fornecedor||"-"}</td><td>${brl(p.valor||0)}</td>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-      tb.appendChild(tr);
-    });
+      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor); tb.appendChild(tr); });
   }
 
-  // resumo por empresa
+  // resumo
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
-    const pPago = pagamentosAll.filter(p=>{
-      const d= p.data_pagamento ? toDateSafe(p.data_pagamento) : null;
-      return norm(p.empresa)===norm(emp) && d && inRange(d,pIni,pFim);
-    });
-    const pAber = pagamentosAll.filter(p=>{
-      const d= !p.data_pagamento && p.vencimento ? toDateSafe(p.vencimento) : null;
-      return norm(p.empresa)===norm(emp) && d && inRange(d,pIni,pFim) && !p.data_pagamento;
-    });
-    const aEmp = abcAll.filter(x=> norm(x.empresa)===norm(emp) && inRange(x.data,aIni,aFim));
-    const tP = pPago.reduce((s,p)=>s+cleanNumber(p.valor),0) + pAber.reduce((s,p)=>s+cleanNumber(p.valor),0);
-    const tA = aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
-    const tR = tA - tP;
+    const pPago=pagamentosAll.filter(p=>{ const d=p.data_pagamento?toDateSafe(p.data_pagamento):null; return norm(p.empresa)===norm(emp)&&d&&inRange(d,pIni,pFim); });
+    const pAber=pagamentosAll.filter(p=>{ const d=!p.data_pagamento&&p.vencimento?toDateSafe(p.vencimento):null; return norm(p.empresa)===norm(emp)&&d&&inRange(d,pIni,pFim)&&!p.data_pagamento; });
+    const aEmp=abcAll.filter(x=>norm(x.empresa)===norm(emp)&&inRange(x.data,aIni,aFim));
+    const tP=pPago.reduce((s,p)=>s+cleanNumber(p.valor),0)+pAber.reduce((s,p)=>s+cleanNumber(p.valor),0);
+    const tA=aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+    const tR=tA-tP;
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${emp}</td><td>${abcLoaded?brl(tA):"⏳"}</td><td>${brl(tP)}</td><td><span class="badge ${tR>=0?"lucr":"prej"}">${abcLoaded?brl(tR):"⏳"}</span></td>`;
     rb.appendChild(tr);
   });
 
-  // labels
   $("#lblPR").textContent=fmtRange(pIni,pFim);
   $("#lblAR").textContent=fmtRange(aIni,aFim);
 }
 
-/* ====== CALENDÁRIO DE PERÍODO ======
-   Um componente simples que pinta toda a faixa selecionada */
+/* Calendário de período (fixed + anti-estouro) */
 function makeRangeCalendar(popEl, initialStart, initialEnd, onApply){
-  const st = {cursor: new Date(initialStart.getFullYear(), initialStart.getMonth(), 1),
-              start: new Date(initialStart), end: new Date(initialEnd)};
-  popEl.innerHTML = `
+  const st={cursor:new Date(initialStart.getFullYear(),initialStart.getMonth(),1), start:new Date(initialStart), end:new Date(initialEnd)};
+  popEl.innerHTML=`
     <div class="cal">
       <div class="top">
-        <button class="btn ghost" id="prevM">◀</button>
+        <button class="btn" id="prevM">◀</button>
         <div class="ttl" id="ttl"></div>
-        <button class="btn ghost" id="nextM">▶</button>
+        <button class="btn" id="nextM">▶</button>
       </div>
       <div class="grid" id="dow"></div>
       <div class="grid" id="days"></div>
@@ -420,109 +352,71 @@ function makeRangeCalendar(popEl, initialStart, initialEnd, onApply){
         <button class="btn primary" id="cApply">Aplicar</button>
       </div>
     </div>`;
-  const fmtMonth = (d)=> d.toLocaleString('pt-BR',{month:'long', year:'numeric'});
-  const $ttl = ()=>popEl.querySelector('#ttl');
-  const $days= ()=>popEl.querySelector('#days');
-  const $dow = ()=>popEl.querySelector('#dow');
-  // DOW header
-  'D S T Q Q S S'.split(' ').forEach(l=>{
-    const dv=document.createElement('div'); dv.className='dow'; dv.textContent=l; $dow().appendChild(dv);
-  });
-
-  function sameDay(a,b){ return a && b && a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate(); }
-  function inSel(d){
-    if(!st.start || !st.end) return false;
-    const t=d.getTime(), a=st.start.getTime(), b=st.end.getTime();
-    return t>a && t<b;
-  }
+  const fmtMonth=d=>d.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  const ttl=()=>popEl.querySelector('#ttl'), days=()=>popEl.querySelector('#days'), dow=()=>popEl.querySelector('#dow');
+  'D S T Q Q S S'.split(' ').forEach(l=>{const dv=document.createElement('div'); dv.className='dow'; dv.textContent=l; dow().appendChild(dv);});
+  function same(a,b){return a&&b&&a.getFullYear()==b.getFullYear()&&a.getMonth()==b.getMonth()&&a.getDate()==b.getDate();}
+  function inside(d){ if(!st.start||!st.end) return false; const t=d.getTime(),a=st.start.getTime(),b=st.end.getTime(); return t>a && t<b; }
   function render(){
-    $ttl().textContent = fmtMonth(st.cursor);
-    $days().innerHTML='';
-    const first = new Date(st.cursor.getFullYear(), st.cursor.getMonth(), 1);
-    const startCell = (first.getDay()+6)%7; // começa em segunda (BR)
-    const total = new Date(st.cursor.getFullYear(), st.cursor.getMonth()+1, 0).getDate();
-    // dias do mês anterior para preencher grade
-    for(let i=0;i<startCell;i++){
-      const d=new Date(first); d.setDate(d.getDate()-(startCell-i));
-      const el=document.createElement('div'); el.className='day off'; el.textContent=d.getDate(); $days().appendChild(el);
-    }
+    ttl().textContent=fmtMonth(st.cursor); days().innerHTML='';
+    const first=new Date(st.cursor.getFullYear(),st.cursor.getMonth(),1);
+    const startCell=(first.getDay()+6)%7; const total=new Date(st.cursor.getFullYear(),st.cursor.getMonth()+1,0).getDate();
+    for(let i=0;i<startCell;i++){ const d=new Date(first); d.setDate(d.getDate()-(startCell-i));
+      const el=document.createElement('div'); el.className='day off'; el.textContent=d.getDate(); days().appendChild(el);}
     for(let day=1; day<=total; day++){
-      const d=new Date(st.cursor.getFullYear(), st.cursor.getMonth(), day);
+      const d=new Date(st.cursor.getFullYear(),st.cursor.getMonth(),day);
       const el=document.createElement('div'); el.className='day'; el.textContent=day;
-      if (sameDay(d, st.start)) el.classList.add('sel-start');
-      if (sameDay(d, st.end))   el.classList.add('sel-end');
-      if (inSel(d))             el.classList.add('in-range');
-      el.addEventListener('click', ()=>{
+      if (same(d,st.start)) el.classList.add('sel-start');
+      if (same(d,st.end))   el.classList.add('sel-end');
+      if (inside(d))        el.classList.add('in-range');
+      el.onclick=()=>{
         if(!st.start || (st.start && st.end)){ st.start=d; st.end=null; }
-        else{
-          if(d < st.start){ st.start=d; st.end=null; }
-          else st.end=d;
-        }
+        else{ if(d<st.start){st.start=d; st.end=null;} else st.end=d; }
         render();
-      });
-      $days().appendChild(el);
+      };
+      days().appendChild(el);
     }
-    // completar a grade
-    const cells=$days().children.length;
-    for(let i=0;i<(7*6 - cells); i++){
-      const d=new Date(st.cursor.getFullYear(), st.cursor.getMonth()+1, i+1);
-      const el=document.createElement('div'); el.className='day off'; el.textContent=d.getDate(); $days().appendChild(el);
-    }
+    const cells=days().children.length;
+    for(let i=0;i<(7*6-cells); i++){ const d=new Date(st.cursor.getFullYear(),st.cursor.getMonth()+1,i+1);
+      const el=document.createElement('div'); el.className='day off'; el.textContent=d.getDate(); days().appendChild(el);}
   }
   render();
-  popEl.querySelector('#prevM').onclick=()=>{ st.cursor.setMonth(st.cursor.getMonth()-1); render(); };
-  popEl.querySelector('#nextM').onclick=()=>{ st.cursor.setMonth(st.cursor.getMonth()+1); render(); };
+  popEl.querySelector('#prevM').onclick=()=>{st.cursor.setMonth(st.cursor.getMonth()-1); render();};
+  popEl.querySelector('#nextM').onclick=()=>{st.cursor.setMonth(st.cursor.getMonth()+1); render();};
   popEl.querySelector('#cCancel').onclick=()=> popEl.style.display='none';
-  popEl.querySelector('#cApply').onclick=()=>{
-    if(st.start && !st.end) st.end=st.start;
-    onApply(st.start, st.end);
-    popEl.style.display='none';
-  };
+  popEl.querySelector('#cApply').onclick=()=>{ if(st.start && !st.end) st.end=st.start; onApply(st.start,st.end); popEl.style.display='none'; };
   return {
-    setVisible(v, anchorBtn){
-      if(!v){ popEl.style.display='none'; return; }
-      const r=anchorBtn.getBoundingClientRect();
+    setVisible(v,anchor){
+      if(!v){popEl.style.display='none';return;}
       popEl.style.display='block';
-      popEl.style.top=(r.bottom+window.scrollY+6)+'px';
-      popEl.style.left=(r.left+window.scrollX)+'px';
-      render();
+      const r=anchor.getBoundingClientRect(), w=popEl.offsetWidth, h=popEl.offsetHeight;
+      let left=r.left, top=r.bottom+6;
+      if(left+w>window.innerWidth-8) left=window.innerWidth-w-8;
+      if(top+h>window.innerHeight-8) top=r.top-h-6;
+      if(top<8) top=8;
+      popEl.style.left=left+'px'; popEl.style.top=top+'px';
     },
     setRange(a,b){ st.start=new Date(a); st.end=new Date(b); st.cursor=new Date(a.getFullYear(),a.getMonth(),1); render(); }
   };
 }
 
-/* ====== INIT ====== */
+/* Init */
 (async function init(){
-  const now=new Date();
-  const ini=new Date(now.getFullYear(),now.getMonth(),1);
-  const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
-  pIni=new Date(ini); pFim=new Date(fim);
-  aIni=new Date(ini); aFim=new Date(fim);
+  const now=new Date(), ini=new Date(now.getFullYear(),now.getMonth(),1), fim=new Date(now.getFullYear(),now.getMonth()+1,0);
+  pIni=new Date(ini); pFim=new Date(fim); aIni=new Date(ini); aFim=new Date(fim);
 
-  // calendários (com faixa colorida)
-  const calPR = makeRangeCalendar($("#popPR"), pIni, pFim, (s,e)=>{ pIni=s; pFim=e; aplicar(); });
-  const calAR = makeRangeCalendar($("#popAR"), aIni, aFim, (s,e)=>{ aIni=s; aFim=e; renderChips(); aplicar(); });
-
-  $("#btnPR").onclick = ()=> calPR.setVisible(true, $("#btnPR"));
-  $("#btnAR").onclick = ()=> calAR.setVisible(true, $("#btnAR"));
-
-  $("#lblPR").textContent=fmtRange(pIni,pFim);
-  $("#lblAR").textContent=fmtRange(aIni,aFim);
+  const calPR=makeRangeCalendar($("#popPR"), pIni, pFim, (s,e)=>{pIni=s; pFim=e; aplicar();});
+  const calAR=makeRangeCalendar($("#popAR"), aIni, aFim, (s,e)=>{aIni=s; aFim=e; renderChips(); aplicar();});
+  $("#btnPR").onclick=()=>calPR.setVisible(true,$("#btnPR"));
+  $("#btnAR").onclick=()=>calAR.setVisible(true,$("#btnAR"));
+  $("#lblPR").textContent=fmtRange(pIni,pFim); $("#lblAR").textContent=fmtRange(aIni,aFim);
 
   try{
-    await fetchPagamentos();
-    coletarEmpresas(); renderChips(); aplicar();
-    $("#loading").style.display="none";
-    $("#empLoadMsg").style.display="block";
-    try{
-      await fetchABC();
-      $("#empLoadMsg").style.display="none";
-      renderChips(); aplicar();
-    }catch(e){ $("#abcStatus").textContent="Não foi possível carregar o ABC agora."; }
-  }catch(e){
-    alert("Erro ao carregar: "+e.message);
-    $("#loading").style.display="none";
-  }
+    await fetchPagamentos(); coletarEmpresas(); renderChips(); aplicar();
+    $("#loading").style.display="none"; $("#empLoadMsg").style.display="block";
+    try{ await fetchABC(); $("#empLoadMsg").style.display="none"; renderChips(); aplicar(); }
+    catch{ $("#abcStatus").textContent="Não foi possível carregar o ABC agora."; }
+  }catch(e){ alert("Erro ao carregar: "+e.message); $("#loading").style.display="none"; }
 })();
 </script>
 </body>
