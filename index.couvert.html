@@ -66,8 +66,7 @@
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
   .cal .dow{font-size:12px;color:var(--muted);text-align:center}
-  .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-            cursor:pointer;border:1px solid transparent;font-weight:700}
+  .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
   .cal .day:hover{background:#f1f5f9}
   .cal .day.out{opacity:.35}
   .cal .day.sel{background:var(--blue);color:#fff}
@@ -108,6 +107,8 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
       <button class="btn" id="btnAR">ABC: <span id="lblAR"></span></button>
+      <!-- ADICIONADO: botão para aplicar filtros manualmente -->
+      <button class="btn dark" id="btnApply">Aplicar filtros</button>
     </div>
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
@@ -193,7 +194,7 @@
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
-/* Web App que devolve SOMENTE os totais da COLUNA G (linhas “Total por Data”), no formato:
+/* Web App que devolve SOMENTE os totais da COLUNA G (linhas “Total por Data”):
    [{ empresa, data, total_dia }] */
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGECsmogfVGt9DTOVF1zpiZh2QCIZuuvqssD25UN-dpGm2YL7s/exec";
 
@@ -291,7 +292,7 @@ async function fetchPagamentos(){
   }));
 }
 
-/* Puxa os totais da COLUNA G (Total por Data) via WebApp do ABC */
+/* ABC: totais da COLUNA G (linhas “Total por Data”) */
 async function fetchABC(ini, fim){
   const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
@@ -304,7 +305,7 @@ async function fetchABC(ini, fim){
     .map(o=>{
       const emp = remapEmpresaABCfromObj(o);
       const dataIso = toISODate(o.data || o.DATA || o.Data || "");
-      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]); // este valor vem da COLUNA G
+      const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
       return { data: dataIso, empresa: emp, faturamento };
     })
     .filter(x=>{
@@ -351,7 +352,7 @@ function renderChips(){
   });
 }
 
-/*** MODAL (histórico) ***/
+/*** MODAL ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
@@ -424,7 +425,7 @@ function aplicar(){
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Agrupa por data (yyyy-mm-dd) e soma o total_dia
+  // Agrupa por data e soma o total_dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -507,7 +508,7 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** FUNÇÃO CENTRAL — Aplicar filtros ***/
+/*** Aplicar filtros (botão + calendário) ***/
 async function applyFilters(){
   document.getElementById('popPR').style.display = 'none';
   document.getElementById('popAR').style.display = 'none';
