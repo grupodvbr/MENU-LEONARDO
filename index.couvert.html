@@ -50,7 +50,7 @@
 
   .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
-  .pill .tag{font-size:11px;color:#muted;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+  .pill .tag{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
 
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
@@ -289,12 +289,10 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”)
-   >>> IMPORTANTE: o WebApp parece tratar a data inicial como EXCLUSIVA.
-   Para garantir que o dia 1º entre, pedimos ini - 1 dia no servidor
-   e depois filtramos no cliente com limites INCLUSIVOS. */
+/* ABC: totais da COLUNA G (linhas “Total por Data”) — usa ini-1 no servidor
+   para garantir inclusão do 1º dia; no cliente, filtro inclusivo. */
 async function fetchABC(ini, fim){
-  const qIni = ini ? addDays(ini, -1) : null;   // <- ajuste para não perder o 1º dia
+  const qIni = ini ? addDays(ini, -1) : null;
   const qFim = fim ? new Date(fim) : null;
   const qs = (qIni && qFim) ? `?ini=${toISODate(qIni)}&fim=${toISODate(qFim)}` : "";
   let r = await fetch(ABC_URL + qs);
@@ -319,7 +317,7 @@ async function fetchABC(ini, fim){
   abcLoaded = true;
 }
 
-/*** EMPRESAS / CHIPS ***/
+/*** EMPRESAS / CHIPS (agora multi-seleção) ***/
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
@@ -340,16 +338,31 @@ function renderChips(){
   const allActive=(empresasSelecionadas.size===empresas.length);
   cTodas.className="chip"+(allActive?" active":"");
   cTodas.textContent="Todas";
-  cTodas.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
+  cTodas.onclick=()=>{
+    // alterna: se já estava “todas”, limpa; senão seleciona todas
+    if(empresasSelecionadas.size===empresas.length){
+      empresasSelecionadas.clear();
+    }else{
+      empresasSelecionadas=new Set(empresas);
+    }
+    // nunca deixar vazio – vazio trata como “todas”
+    if(empresasSelecionadas.size===0) empresasSelecionadas=new Set(empresas);
+    renderChips(); aplicar();
+  };
   host.appendChild(cTodas);
 
   empresas.forEach(e=>{
     const c=document.createElement("span");
-    const isActive=(empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
+    const isActive=empresasSelecionadas.has(e);
     c.className="chip"+(isActive?" active":"");
     const amt=sumArrecadacaoEmpresa(e);
     c.innerHTML=`<span>${e}</span>${Number.isFinite(amt)? "<span class='amt'>"+brl(amt)+"</span>":"<span class='dash'>—</span>"}`;
-    c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
+    c.onclick=()=>{
+      if(empresasSelecionadas.has(e)) empresasSelecionadas.delete(e);
+      else empresasSelecionadas.add(e);
+      if(empresasSelecionadas.size===0) empresasSelecionadas=new Set(empresas);
+      renderChips(); aplicar();
+    };
     host.appendChild(c);
   });
 }
@@ -510,7 +523,7 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** Aplicar filtros (calendário) ***/
+/*** Aplicar filtros (calendários) ***/
 async function applyFilters(){
   $("#popPR").style.display = 'none';
   $("#popAR").style.display = 'none';
@@ -583,7 +596,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER POSICIONAMENTO E FECHAMENTO ***/
+/*** POPOVER: posição e fechamento ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -605,7 +618,7 @@ function placePopover(pop, anchor){
   pop.style.top  = top  + 'px';
 }
 
-// fecha ao clicar fora
+// fecha ao clicar fora ou pressionar ESC
 document.addEventListener('click', (e)=>{
   const pr=$("#popPR"), ar=$("#popAR");
   const bpr=$("#btnPR"), bar=$("#btnAR");
@@ -615,6 +628,7 @@ document.addEventListener('click', (e)=>{
     pr.style.display='none'; ar.style.display='none';
   }
 });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ $("#popPR").style.display='none'; $("#popAR").style.display='none'; }});
 
 /*** INIT ***/
 (async function init(){
