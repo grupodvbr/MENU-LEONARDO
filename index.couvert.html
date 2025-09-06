@@ -6,112 +6,113 @@
 <title>Painel • Couvert Mercatto 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#f4f6f8; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-         --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08); }
+  :root{
+    --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
+    --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
+    --ink:#0b1220; --accent:#0b1220;
+  }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
-  header{background:#0b1220;color:#fff;padding:14px 20px;display:flex;align-items:center}
-  header h1{font-size:18px;margin:0;font-weight:800}
-  .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:100%}
+  header{background:var(--ink);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
+  .wrap{margin:12px auto;padding:0 12px;max-width:1100px}
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
-  .kpi .val{font-size:24px;font-weight:800}
+  .kpi h3{margin:0 0 6px;font-size:14px;color:var(--muted)}
+  .kpi .val{font-size:24px;font-weight:900}
   .muted{color:var(--muted)}
-  .table{width:100%;border-collapse:collapse;font-size:13px}
-  .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
-  .table tr.clickable{cursor:pointer}
-  .table th{font-size:11px;color:var(--muted);text-transform:uppercase}
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer}
+  .btn.ink{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.ghost{background:#fff}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
 
-  /* chips de empresa (single-select + valor) */
-  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
-  .chip .amt{font-weight:800;color:#0b1220;opacity:.9}
+  /* chips de empresa (single select com valor) */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{border:1px solid var(--line);padding:10px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:8px;align-items:center;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  .chip .amt{font-weight:900;color:var(--ink)}
   .chip .dash{color:#94a3b8}
-  .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
+  .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
   .chip.active .amt{color:#fff}
-  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
 
-  /* blocos dentro do card de pagamentos */
-  .pay-break{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
-  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
-  .pill .tag{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+  /* tabela padrão (desktop) */
+  .table{width:100%;border-collapse:collapse;font-size:13px}
+  .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
+  .table th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .table tr.clickable{cursor:pointer}
+
+  /* mobile – cards para a lista de pagamentos */
+  @media(max-width:768px){
+    .table, .table thead{display:none}
+    #tblPagamentos tbody{display:grid;gap:10px}
+    #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;box-shadow:var(--shadow)}
+    #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:4px}
+    .pill-supplier{font-weight:800}
+    .pill-sub{font-size:12px;color:#64748b}
+    .val-right{font-weight:900}
+  }
+
+  /* “Pagamentos” – mini KPIs */
+  .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:800;background:#fff}
+  .pill .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
+
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
-  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
+  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:900}
   details.paylist > summary::-webkit-details-marker{display:none}
   .smalltable{width:100%;border-collapse:collapse}
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
-  .smallmuted{color:#6b7280;font-size:12px}
+
+  /* overlay de carregando */
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--ink);z-index:100}
 
   /* MODAL bottom sheet */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
   .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .sheet header h3{margin:0;font-size:16px;font-weight:800}
+  .sheet header h3{margin:0;font-size:16px;font-weight:900}
   .sheet header small{color:#64748b}
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
 
-  /* Range popover */
-  .range{display:flex;gap:12px;flex-wrap:wrap}
-  .range .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:800}
-  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;z-index:60;display:none}
-  .popover .row{display:flex;gap:8px;align-items:center}
-  .popover .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
-  .popover input[type="date"]{padding:6px;border:1px solid var(--line);border-radius:8px}
-
-  /* Mobile cards */
-  @media(max-width:768px){
-    .table, .table thead{display:none}
-    #tblPagamentos tbody{display:grid;gap:10px}
-    #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
-    #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:6px}
-    .pill-supplier{font-weight:700}
-    .pill-sub{font-size:12px;color:#64748b}
-    .val-right{font-weight:800}
-  }
+  /* RANGE PICKER (um calendário só – start→end) */
+  .range{display:flex;gap:10px;flex-wrap:wrap}
+  .range .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:900}
+  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:60;display:none;width:320px}
+  .rp-head{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 10px 6px}
+  .rp-head .title{font-weight:900}
+  .rp-nav{display:flex;gap:6px}
+  .rp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 6px 8px 6px}
+  .rp-day, .rp-wd{height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-weight:700;cursor:pointer}
+  .rp-wd{height:28px;color:#94a3b8;font-size:12px;cursor:default}
+  .rp-day.out{color:#cbd5e1}
+  .rp-day.sel{background:#0b1220;color:#fff}
+  .rp-day.in{background:#f1f5f9}
+  .rp-foot{display:flex;align-items:center;justify-content:space-between;padding:6px}
+  .rp-actions{display:flex;gap:6px}
 </style>
 </head>
 <body>
-<header><h1>Painel de Arrecadação x Pagamentos</h1></header>
+<header>
+  <h1>Painel de Arrecadação x Pagamentos</h1>
+</header>
 
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- Filtros: agora 1 controle (range) para cada fonte -->
+  <!-- Filtros -->
   <div class="card">
     <div class="range">
       <div style="position:relative">
         <div class="range-btn" id="btnPR">Pagamentos: <span id="lblPR"></span></div>
-        <div class="popover" id="popPR">
-          <div class="row">
-            <label>De: <input type="date" id="pStart"></label>
-            <label>Até: <input type="date" id="pEnd"></label>
-          </div>
-          <div class="actions">
-            <button class="btn" id="prCancel">Cancelar</button>
-            <button class="btn" id="prApply">Aplicar</button>
-          </div>
-        </div>
+        <div class="popover" id="popPR"></div>
       </div>
 
       <div style="position:relative">
         <div class="range-btn" id="btnAR">ABC: <span id="lblAR"></span></div>
-        <div class="popover" id="popAR">
-          <div class="row">
-            <label>De: <input type="date" id="aStart"></label>
-            <label>Até: <input type="date" id="aEnd"></label>
-          </div>
-          <div class="actions">
-            <button class="btn" id="arCancel">Cancelar</button>
-            <button class="btn" id="arApply">Aplicar</button>
-          </div>
-        </div>
+        <div class="popover" id="popAR"></div>
       </div>
     </div>
 
@@ -125,38 +126,35 @@
   <!-- KPIs -->
   <div class="grid cols-3">
     <div class="card kpi">
-      <div>
-        <h3>Arrecadação (Couvert)</h3>
-        <div class="val" id="kArrecadacao">⏳ carregando…</div>
-        <div id="abcStatus" class="muted" style="font-size:12px"></div>
-      </div>
+      <h3>Arrecadação (Couvert)</h3>
+      <div class="val" id="kArrecadacao">⏳ carregando…</div>
+      <div id="abcStatus" class="muted" style="font-size:12px"></div>
     </div>
 
     <div class="card kpi" id="cardPagamentos">
-      <div>
-        <h3>Pagamentos</h3>
-        <div class="val" id="kPagamentos">R$ 0,00</div>
-        <div class="pay-break">
-          <span class="pill"><span class="tag">Pago</span><span id="kPago">R$ 0,00</span></span>
-          <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
-          <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
-        </div>
-
-        <details class="paylist" id="dlstApagar">
-          <summary>A pagar (<span id="qtApagar">0</span>)</summary>
-          <div style="padding:0 10px 10px 10px">
-            <table class="smalltable" id="tblApagar">
-              <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
-              <tbody></tbody>
-            </table>
-            <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
-          </div>
-        </details>
+      <h3>Pagamentos</h3>
+      <div class="val" id="kPagamentos">R$ 0,00</div>
+      <div class="pay-break">
+        <span class="pill"><span class="tag">Pago</span><span id="kPago">R$ 0,00</span></span>
+        <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
+        <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
       </div>
+
+      <details class="paylist" id="dlstApagar">
+        <summary>A pagar (<span id="qtApagar">0</span>)</summary>
+        <div style="padding:0 10px 10px 10px">
+          <table class="smalltable" id="tblApagar">
+            <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="muted" id="msgApagar" style="display:none;font-size:12px">Sem lançamentos em aberto no período.</div>
+        </div>
+      </details>
     </div>
 
     <div class="card kpi">
-      <div><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
+      <h3>Resultado</h3>
+      <div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div>
     </div>
   </div>
 
@@ -182,7 +180,7 @@
 
 <!-- MODAL -->
 <div class="modal" id="modal">
-  <div class="sheet" style="left:0;right:0;">
+  <div class="sheet">
     <button class="btn close" onclick="closeModal()">Fechar</button>
     <header>
       <h3 id="mTitle">Histórico</h3>
@@ -298,6 +296,7 @@ function sumArrecadacaoEmpresa(emp){
 
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
+  // “Todas”
   const all=document.createElement("span");
   const allActive = (empresasSelecionadas.size===empresas.length);
   all.className="chip"+(allActive?" active":"");
@@ -446,8 +445,8 @@ function aplicar(){
                     <td>${p.empresa||"-"}</td>
                     <td>${p.fornecedor||"-"}</td>
                     <td>${brl(p.valor||0)}</td>`;
-    tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
-    tb.appendChild(tr);
+      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
+      tb.appendChild(tr);
     });
   }
 
@@ -479,67 +478,149 @@ function aplicar(){
     rb.appendChild(tr);
   });
 
-  // Atualiza os labels dos range buttons
+  // labels dos range buttons
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** RANGE POPOVERS (um controle por calendário) ***/
-function setupRange(btnId, popId, startId, endId, onApply){
-  const btn=$(btnId), pop=$(popId), start=$(startId), end=$(endId);
-  const close=()=>pop.style.display="none";
-  btn.addEventListener('click', ()=>{
-    // posiciona popover perto do botão
-    const r = btn.getBoundingClientRect();
-    pop.style.display='block';
-    pop.style.top = (r.bottom + window.scrollY + 6)+'px';
-    pop.style.left= (r.left   + window.scrollX)+'px';
+/*** RANGE PICKER – um calendário só (start→end) ***/
+function makeRangePicker(anchorBtn, popEl, initialStart, initialEnd, onApply){
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const wd = ['D','S','T','Q','Q','S','S'];
+
+  let current = new Date(initialStart);
+  current.setDate(1);
+  let start = new Date(initialStart);
+  let end   = new Date(initialEnd);
+
+  popEl.innerHTML = `
+    <div class="rp-head">
+      <div class="rp-nav">
+        <button class="btn ghost" id="rpPrev">‹</button>
+        <button class="btn ghost" id="rpNext">›</button>
+      </div>
+      <div class="title" id="rpTitle"></div>
+    </div>
+    <div class="rp-grid" id="rpGrid"></div>
+    <div class="rp-foot">
+      <div class="muted" id="rpSel"></div>
+      <div class="rp-actions">
+        <button class="btn" id="rpCancel">Cancelar</button>
+        <button class="btn ink" id="rpApply">Aplicar</button>
+      </div>
+    </div>
+  `;
+
+  function sameDay(a,b){return a&&b && a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate();}
+  function between(d,a,b){return d>=a && d<=b;}
+
+  function render(){
+    $("#rpTitle",popEl).textContent = `${monthNames[current.getMonth()]}/${current.getFullYear()}`;
+    const grid=$("#rpGrid",popEl); grid.innerHTML="";
+    wd.forEach(x=>{
+      const el=document.createElement('div'); el.className='rp-wd'; el.textContent=x; grid.appendChild(el);
+    });
+
+    const firstDow=(new Date(current.getFullYear(),current.getMonth(),1)).getDay(); // 0..6
+    const daysInMonth=new Date(current.getFullYear(),current.getMonth()+1,0).getDate();
+    const prevDays=new Date(current.getFullYear(),current.getMonth(),0).getDate();
+
+    // dates to show: previous month tail
+    for(let i=firstDow-1;i>=0;i--){
+      const d=new Date(current.getFullYear(),current.getMonth()-1,prevDays-i);
+      const btn=dayBtn(d,true); grid.appendChild(btn);
+    }
+    // current month
+    for(let i=1;i<=daysInMonth;i++){
+      const d=new Date(current.getFullYear(),current.getMonth(),i);
+      const btn=dayBtn(d,false); grid.appendChild(btn);
+    }
+    // next month head to complete grid (up to full weeks)
+    const totalCells=7+firstDow+daysInMonth; // +7 for header
+    const rest=(totalCells%7===0)?0:(7-(totalCells%7));
+    for(let i=1;i<=rest;i++){
+      const d=new Date(current.getFullYear(),current.getMonth()+1,i);
+      const btn=dayBtn(d,true); grid.appendChild(btn);
+    }
+
+    $("#rpSel",popEl).textContent = `${start.toLocaleDateString('pt-BR')} → ${end.toLocaleDateString('pt-BR')}`;
+  }
+
+  function dayBtn(date,isOut){
+    const el=document.createElement('div'); el.className='rp-day'+(isOut?' out':'');
+    el.textContent = date.getDate();
+    // states
+    if (sameDay(date,start) || sameDay(date,end)) el.classList.add('sel');
+    else if (date>=start && date<=end) el.classList.add('in');
+
+    el.onclick=()=>{
+      // primeira seleção: redefine intervalo
+      if (sameDay(start,end) && sameDay(start,date)){
+        // tocar novamente abre para escolher END
+        return;
+      }
+      if (!start || (start && end)){ start=new Date(date); end=new Date(date); }
+      else {
+        if (date<start){ end=start; start=new Date(date); }
+        else { end=new Date(date); }
+      }
+      render();
+    };
+    return el;
+  }
+
+  $("#rpPrev",popEl).onclick=()=>{ current.setMonth(current.getMonth()-1); render(); };
+  $("#rpNext",popEl).onclick=()=>{ current.setMonth(current.getMonth()+1); render(); };
+  $("#rpCancel",popEl).onclick=()=>popEl.style.display="none";
+  $("#rpApply",popEl).onclick=()=>{ onApply(start,end); popEl.style.display="none"; };
+
+  // abrir/posicionar
+  anchorBtn.addEventListener('click', ()=>{
+    const r = anchorBtn.getBoundingClientRect();
+    popEl.style.display='block';
+    popEl.style.top  = (r.bottom + window.scrollY + 6)+'px';
+    popEl.style.left = (r.left   + window.scrollX)+'px';
+    render();
   });
-  pop.addEventListener('click', e=>e.stopPropagation());
-  document.addEventListener('click', e=>{
-    if(!pop.contains(e.target) && !btn.contains(e.target)) close();
-  });
+
+  // click fora fecha
+  document.addEventListener('click', (e)=>{
+    if(!popEl.contains(e.target) && !anchorBtn.contains(e.target)) popEl.style.display='none';
+  }, true);
+
+  // helpers para obter/mudar
   return {
-    setRange:(ini,fim)=>{ start.value = ini; end.value = fim; },
-    read:()=>({ini:start.value, fim:end.value}),
-    close,
-    onApply
+    setRange:(ini,fim)=>{ start=new Date(ini); end=new Date(fim); current=new Date(start); current.setDate(1); },
   };
 }
 
 /*** INIT ***/
 (async function init(){
   const now=new Date();
-  const ini=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
-  const fim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
+  const ini=new Date(now.getFullYear(),now.getMonth(),1);
+  const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
 
   // ranges padrão
   pIni=new Date(ini); pFim=new Date(fim);
   aIni=new Date(ini); aFim=new Date(fim);
 
-  // popovers
-  const pr = setupRange("#btnPR","#popPR","#pStart","#pEnd", ()=>{
-    const {ini:si,fim:sf} = pr.read();
-    if(si && sf){ pIni=new Date(si); pFim=new Date(sf); aplicar(); }
-    pr.close();
-  });
-  const ar = setupRange("#btnAR","#popAR","#aStart","#aEnd", ()=>{
-    const {ini:si,fim:sf} = ar.read();
-    if(si && sf){ aIni=new Date(si); aFim=new Date(sf); renderChips(); aplicar(); }
-    ar.close();
-  });
+  // Range pickers (um calendário cada)
+  const prPicker = makeRangePicker(
+    $("#btnPR"), $("#popPR"),
+    pIni, pFim,
+    (s,e)=>{ pIni=s; pFim=e; aplicar(); }
+  );
+  const arPicker = makeRangePicker(
+    $("#btnAR"), $("#popAR"),
+    aIni, aFim,
+    (s,e)=>{ aIni=s; aFim=e; renderChips(); aplicar(); }
+  );
+  prPicker.setRange(pIni,pFim);
+  arPicker.setRange(aIni,aFim);
 
-  // preenche e labels
-  pr.setRange(ini,fim);
-  ar.setRange(ini,fim);
+  // labels iniciais
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
-
-  // botões aplicar/cancelar
-  $("#prApply").onclick = pr.onApply;
-  $("#arApply").onclick = ar.onApply;
-  $("#prCancel").onclick = pr.close;
-  $("#arCancel").onclick = ar.close;
 
   try{
     await fetchPagamentos();
