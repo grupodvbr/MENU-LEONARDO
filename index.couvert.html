@@ -13,34 +13,43 @@
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#0f172a}
+
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
+
   .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
+
   .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:#64748b}
   .kpi h3{margin:0 0 4px;font-size:14px;color:#64748b}
   .kpi .val{font-size:24px;font-weight:800}
+
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
+
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
   .table tr.clickable{cursor:pointer}
   .table-wrap{width:100%;overflow:auto}
+
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
+
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
   .chip .dash{color:#94a3b8}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   .chip.active .amt{color:#fff}
+
   .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
   .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
   .pill .tag{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
   details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
@@ -179,7 +188,7 @@
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
-const ABC_URL   = "https://script.google.com/macros/s/AKfycbysH6Wze1aOWRipO-Mt_VGL-AxqvmaLtyxdXK69k8Sxygc2N4Abt2jLCirirSJKmwb1/exec";
+const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGECsmogfVGt9DTOVF1zpiZh2QCIZuuvqssD25UN-dpGm2YL7s/exec";
 
 /*** STATE ***/
 const ANO = 2025;
@@ -190,10 +199,11 @@ const EMPRESA_REMAP = [
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
+
 let pagamentosAll = [];
 let abcAll = [];
 let empresas = [];
-let empresasSelecionadas = new Set(); // preservado entre filtros
+let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
 // ranges (Date)
@@ -204,42 +214,48 @@ let aIni=null,aFim=null; // ABC
 const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
-function parseISO(d){return new Date(d+"T00:00:00");} // meia-noite local
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);} // inclusivo
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
   if(v==null||v==="") return 0;
   if(typeof v==="number") return v;
-  const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
-  return parseFloat(s)||0;
+  const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",","=");
+  // truque para não confundir: troca vírgula por = e depois volta ponto
+  return parseFloat(s.replace("=", "."))||0;
 }
+
+/* ======== DATAS SEM UTC (correção de fuso) ======== */
 function toISODate(s){
   if(!s) return "";
-  let dt = null;
-  if (s instanceof Date && !isNaN(s)) {
-    dt = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-  } else {
-    const str = String(s).trim();
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)){
+  if (typeof s === "string") {
+    const str = s.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;                 // "2025-08-02"
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {                          // "02/08/2025"
       const [d,m,y] = str.split("/").map(Number);
-      dt = new Date(y, m-1, d);
-    } else {
-      const d = new Date(str);
-      if (!isNaN(d)) dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return `${y}-${pad2(m)}-${pad2(d)}`;
     }
   }
-  if (!dt || isNaN(dt)) return "";
-  return `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;
+  const d = (s instanceof Date) ? s : new Date(s);
+  if (!isNaN(d)) {
+    const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return `${dd.getFullYear()}-${pad2(dd.getMonth()+1)}-${pad2(dd.getDate())}`;
+  }
+  return "";
+}
+function parseISO(s){
+  const iso = toISODate(s);
+  if(!iso) return new Date(NaN);
+  const [y,m,d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d); // sempre local meia-noite
 }
 function isoFromStr(s){ return toISODate(s); }
+
 function fmtRange(a,b){
-  const f = d => new Date(d).toLocaleDateString('pt-BR');
+  const f = d => new Date(d.getFullYear(),d.getMonth(),d.getDate()).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
 function pickNumber(obj, keys){
-  for(const k of keys){
-    if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]);
-  }
+  for(const k of keys){ if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]); }
   return 0;
 }
 function remapEmpresaABCfromObj(o){
@@ -249,9 +265,7 @@ function remapEmpresaABCfromObj(o){
   ].filter(Boolean).map(s=>String(s).toLowerCase());
 
   const full = candidates.join(" ");
-  for(const rule of EMPRESA_REMAP){
-    if(rule.match.every(m => full.includes(m))) return rule.to;
-  }
+  for(const rule of EMPRESA_REMAP){ if(rule.match.every(m => full.includes(m))) return rule.to; }
   const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
   return plain || (o.empresa||o.EMPRESA||"");
 }
@@ -273,7 +287,7 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”) – envio inclusivo (ini,fim) */
+/* ABC: totais da COLUNA G (linhas “Total por Data”) */
 async function fetchABC(ini, fim){
   const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
@@ -291,8 +305,7 @@ async function fetchABC(ini, fim){
     })
     .filter(x=>{
       if(!x.data) return false;
-      const d = parseISO(x.data);
-      return d.getFullYear() === ANO;
+      return parseISO(x.data).getFullYear() === ANO;
     });
 
   abcLoaded = true;
@@ -302,16 +315,15 @@ async function fetchABC(ini, fim){
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
-  const nova = uniq(a.concat(b));
-  empresas = nova;
-
-  // mantém seleção atual; se vazia (primeira carga), assume todas
-  if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
-  else {
-    // remove seleções de empresas que não existem mais
-    empresasSelecionadas = new Set([...empresasSelecionadas].filter(e=>empresas.includes(e)));
-    if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
+  const novas = uniq(a.concat(b));
+  // preserva seleção atual quando possível
+  if (empresasSelecionadas.size === 0) {
+    empresasSelecionadas = new Set(novas);
+  } else {
+    const keep = [...empresasSelecionadas].filter(e=> novas.includes(e));
+    empresasSelecionadas = new Set(keep.length ? keep : novas);
   }
+  empresas = novas;
 }
 function sumArrecadacaoEmpresa(emp){
   return abcAll
@@ -364,7 +376,7 @@ async function openHistoricoFornecedor(fornecedor){
       valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
       meio: p.meio_pagamento || p["Meio de Pagamento"] || "",
       hist: p.historico || p["Histórico"] || ""
-    })).sort((a,b)=> new Date(b.data) - new Date(a.data));
+    })).sort((a,b)=> parseISO(b.data) - parseISO(a.data));
 
     const total = arr.reduce((s,x)=>s+x.valor,0);
 
@@ -408,14 +420,14 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC
+  // ABC (total por DIA no período + empresas filtradas)
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // agrupa por dia
+  // Agrupa por data
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -423,10 +435,12 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
-  // Totais
+  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
+
+  // Resultado
   const resultado  = totalArr - somaTotal;
 
   // KPIs
@@ -455,7 +469,7 @@ function aplicar(){
 
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
-  $("#msgEmpty").style.display = pagos.length===0? "block":"none";
+  $("#msgEmpty").style.display = pagos.length? "none":"block";
   pagos.forEach(p=>{
     const tr=document.createElement("tr");
     tr.className="clickable";
@@ -498,7 +512,7 @@ function aplicar(){
 
 /*** Aplicar filtros ***/
 async function applyFilters(){
-  hideAllPopovers();                 // fecha só ao aplicar
+  hideAllPopovers();                 // fecha só ao aplicar/fora
   try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -609,10 +623,10 @@ function hideAllPopovers(){
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
   const openPR = ()=>{
-    $("#popAR").style.display = 'none'; // fecha só o outro
+    $("#popAR").style.display = 'none';
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
-      pIni=new Date(start); pFim=new Date(end);
+      pIni=parseISO(start); pFim=parseISO(end);
       $("#lblPR").textContent=fmtRange(pIni,pFim);
       applyFilters();
     }, hideAllPopovers);
@@ -620,10 +634,10 @@ function hideAllPopovers(){
   };
 
   const openAR = ()=>{
-    $("#popPR").style.display = 'none'; // fecha só o outro
+    $("#popPR").style.display = 'none';
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
-      aIni=new Date(start); aFim=new Date(end);
+      aIni=parseISO(start); aFim=parseISO(end);
       $("#lblAR").textContent=fmtRange(aIni,aFim);
       applyFilters();
     }, hideAllPopovers);
