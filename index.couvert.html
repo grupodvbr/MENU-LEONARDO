@@ -220,7 +220,6 @@ function cleanNumber(v){
   if(v==null||v==="") return 0;
   if(typeof v==="number") return v;
   const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",","=");
-  // truque para não confundir: troca vírgula por = e depois volta ponto
   return parseFloat(s.replace("=", "."))||0;
 }
 
@@ -316,7 +315,6 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   const novas = uniq(a.concat(b));
-  // preserva seleção atual quando possível
   if (empresasSelecionadas.size === 0) {
     empresasSelecionadas = new Set(novas);
   } else {
@@ -325,11 +323,17 @@ function coletarEmpresas(){
   }
   empresas = novas;
 }
+function startForABC(){
+  // REGRA ESPECIAL: se o 1º dia foi selecionado, inclui também o último dia do mês anterior
+  if (aIni && aIni.getDate() === 1) return new Date(aIni.getFullYear(), aIni.getMonth(), 0);
+  return aIni;
+}
 function sumArrecadacaoEmpresa(emp){
+  const sIni = startForABC();
   return abcAll
     .filter(x=>{
       const d = parseISO(x.data);
-      return x.empresa===emp && inRange(d,aIni,aFim);
+      return x.empresa===emp && inRange(d,sIni,aFim);
     })
     .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
 }
@@ -420,11 +424,12 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (total por DIA no período + empresas filtradas)
+  // ABC (total por DIA no período + empresas filtradas) — com a REGRA do dia 1
+  const effAIni = startForABC();
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
-    return okEmp && inRange(d,aIni,aFim);
+    return okEmp && inRange(d,effAIni,aFim);
   });
 
   // Agrupa por data
@@ -512,8 +517,10 @@ function aplicar(){
 
 /*** Aplicar filtros ***/
 async function applyFilters(){
-  hideAllPopovers();                 // fecha só ao aplicar/fora
-  try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
+  hideAllPopovers(); // fecha só ao aplicar/fora
+  // Quando buscar no WebApp, também expandimos o INI se começar no dia 1
+  const fetchIniABC = (aIni && aIni.getDate() === 1) ? new Date(aIni.getFullYear(), aIni.getMonth(), 0) : aIni;
+  try { await fetchABC(fetchIniABC, aFim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
 
@@ -626,7 +633,8 @@ function hideAllPopovers(){
     $("#popAR").style.display = 'none';
     prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
-      pIni=parseISO(start); pFim=parseISO(end);
+      pIni=new Date(start.getFullYear(),start.getMonth(),start.getDate());
+      pFim=new Date(end.getFullYear(),end.getMonth(),end.getDate());
       $("#lblPR").textContent=fmtRange(pIni,pFim);
       applyFilters();
     }, hideAllPopovers);
@@ -637,7 +645,8 @@ function hideAllPopovers(){
     $("#popPR").style.display = 'none';
     arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
-      aIni=parseISO(start); aFim=parseISO(end);
+      aIni=new Date(start.getFullYear(),start.getMonth(),start.getDate());
+      aFim=new Date(end.getFullYear(),end.getMonth(),end.getDate());
       $("#lblAR").textContent=fmtRange(aIni,aFim);
       applyFilters();
     }, hideAllPopovers);
@@ -656,7 +665,9 @@ function hideAllPopovers(){
 
   try{
     await fetchPagamentos();
-    await fetchABC(aIni,aFim);
+    // já puxa o último dia do mês anterior se o mês abriu no dia 1
+    const fetchIniABC = (aIni.getDate() === 1) ? new Date(aIni.getFullYear(), aIni.getMonth(), 0) : aIni;
+    await fetchABC(fetchIniABC,aFim);
     coletarEmpresas(); renderChips(); aplicar();
     $("#loading").style.display="none";
   }catch(e){
