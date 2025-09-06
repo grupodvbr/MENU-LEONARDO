@@ -17,13 +17,10 @@
   html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
-  .wrap{margin:12px auto;padding:0 12px;width:100%}
+  .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:1600px}
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
-  .col-span-4{grid-column:span 4 / span 4}
-  .col-span-6{grid-column:span 6 / span 6}
-  .col-span-3{grid-column:span 3 / span 3}
-  .col-span-12{grid-column:1/-1}
+  .kpi-card{grid-column:span 4 / span 4}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
   .muted{color:var(--muted)}
   .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
@@ -90,9 +87,10 @@
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
            font-size:18px;font-weight:800;color:var(--brand);z-index:100}
 
-  /* Desktop grid responsivo */
+  /* Desktop */
   @media (min-width: 1024px){
-    .grid.cols-3 > .kpi-card{grid-column:span 4 / span 4}
+    .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
+    .kpi-card{grid-column:span 4 / span 4}
   }
 
   /* Mobile-friendly */
@@ -102,11 +100,8 @@
     .wrap{padding:0 10px;margin:10px auto}
     .card{padding:12px;border-radius:14px}
     .kpi .val{font-size:22px}
-
-    .range-btn{padding:10px 12px;border-radius:10px;font-size:14px}
     .chips{gap:8px}
     .chip{padding:8px 10px;font-size:14px}
-
     .table,.table thead{display:none}
     #tblPagamentos tbody,#tblApagar tbody{display:grid;gap:8px}
     #tblPagamentos tbody tr,#tblApagar tbody tr{
@@ -218,7 +213,17 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN
 
 /*** STATE ***/
 const ANO = 2025;
-const DEFAULT_EMPRESA = "mercatto";
+
+/* === Remapeia o nome que vem do ABC para o mesmo nome usado nos pagamentos ===
+   Regra: o primeiro termo encontrado (lowercase “includes”) vence. Edite à vontade. */
+const EMPRESA_REMAP = [
+  {match:["mercatto"], to:"MERCATTO DELÍCIA"},
+  {match:["delicia"],  to:"DELICIA GOURMET"},
+  {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
+  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
+  // fallback geral para “villa” (caso a planilha do ABC não diferencie)
+  {match:["villa"], to:"VILLA GOURMET LEM"},
+];
 
 let pagamentosAll = [];
 let abcAll = [];
@@ -258,6 +263,14 @@ function fmtRange(a,b){
   const f = d => new Date(d).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
+function remapEmpresaABC(raw){
+  const s = String(raw||"").toLowerCase();
+  for (const rule of EMPRESA_REMAP){
+    if (rule.match.every(m => s.includes(m))) return rule.to;
+  }
+  // se não bater nenhuma regra, usa o texto sem o prefixo “ABC DE VENDAS …”
+  return String(raw||"").replace(/^ABC\s+DE\s+VENDAS\s+/i,"").trim() || "";
+}
 
 /*** FETCH ***/
 async function fetchPagamentos(){
@@ -275,20 +288,27 @@ async function fetchPagamentos(){
     historico: p.historico || p["Histórico"] || ""
   }));
 }
+
 async function fetchABC(){
   const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
   const arr=await r.json();
-  abcAll = arr.filter(o=>{
-    const d = new Date(o.data || o.DATA || "");
-    if(isNaN(d)) return false;
-    return d.getFullYear()===ANO && containsCouvert(o);
-  }).map(o=>({
-    data: o.data || o.DATA,
-    empresa: o.empresa || o.EMPRESA || "",   // se sua API não trouxer empresa, ficará vazio
-    faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
-    produto: o.produto || o.PRODUTO || ""
-  }));
+  abcAll = arr
+    .filter(o=>{
+      const d = new Date(o.data || o.DATA || "");
+      if(isNaN(d)) return false;
+      return d.getFullYear()===ANO && containsCouvert(o);
+    })
+    .map(o=>{
+      const empRaw = o.empresa || o.EMPRESA || "";  // vem como “ABC DE VENDAS …”
+      const emp    = remapEmpresaABC(empRaw);       // normaliza para o mesmo nome dos pagamentos
+      return {
+        data: o.data || o.DATA,
+        empresa: emp,
+        faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
+        produto: o.produto || o.PRODUTO || ""
+      };
+    });
   abcLoaded = true;
 }
 
@@ -297,13 +317,10 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  empresasSelecionadas.clear();
-  const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
-  if(merc) empresasSelecionadas.add(merc); else empresas.forEach(e=>empresasSelecionadas.add(e));
+  // seleção padrão = Todas
+  empresasSelecionadas = new Set(empresas);
 }
 function sumArrecadacaoEmpresa(emp){
-  const hasEmpresa = abcAll.some(x=>x.empresa);
-  if(!hasEmpresa) return null;
   return abcAll
     .filter(x=>{
       const d=new Date(x.data);
@@ -326,8 +343,8 @@ function renderChips(){
     const isActive=(empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
     c.className="chip"+(isActive?" active":"");
     const amt=sumArrecadacaoEmpresa(e);
-    c.innerHTML=`<span>${e}</span>${amt===null? "<span class='dash'>—</span>":"<span class='amt'>"+brl(amt)+"</span>"}`;
-    c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();}
+    c.innerHTML=`<span>${e}</span>${Number.isFinite(amt)? "<span class='amt'>"+brl(amt)+"</span>":"<span class='dash'>—</span>"}`;
+    c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
     host.appendChild(c);
   });
 }
@@ -402,7 +419,7 @@ function aplicar(){
   // ABC (arrecadação dentro do range ABC)
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
-    const okEmp = x.empresa ? filtroEmp(x.empresa) : true; // se não vier empresa, soma geral
+    const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
@@ -435,7 +452,7 @@ function aplicar(){
       tbA.appendChild(tr);
     });
 
-  // Detalhes pagos (tabela/cards)
+  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
   if (matchMedia("(max-width: 760px)").matches){
@@ -500,29 +517,21 @@ function aplicar(){
 
 /*** CALENDÁRIO – intervalo com destaque ***/
 function buildRangeCalendar(container, state, onApply, onCancel){
-  // state: {cursor: Date (primeiro dia do mês em exibição), start: Date, end: Date}
   container.innerHTML = "";
   const cal = document.createElement("div"); cal.className="cal";
 
-  // Cabeçalho
   const head = document.createElement("div"); head.className="cal-head";
   const prev = document.createElement("button"); prev.className="btn"; prev.textContent="‹";
   const next = document.createElement("button"); next.className="btn"; next.textContent="›";
   const title = document.createElement("div"); title.style.fontWeight="800";
-
   const updTitle=()=>title.textContent = state.cursor.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-
-  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); placePopover(container.parentElement, state.anchor); };
-  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); placePopover(container.parentElement, state.anchor); };
-
+  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
+  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
   head.appendChild(prev); head.appendChild(title); head.appendChild(next);
   cal.appendChild(head);
 
-  // DOW
   const grid = document.createElement("div"); grid.className="cal-grid";
-  "DSTQQSS".split("").forEach(l=>{
-    const d=document.createElement("div"); d.className="dow"; d.textContent=l; grid.appendChild(d);
-  });
+  "DSTQQSS".split("").forEach(l=>{ const d=document.createElement("div"); d.className="dow"; d.textContent=l; grid.appendChild(d); });
 
   function isSameDay(a,b){return a&&b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();}
   function inSelRange(d){
@@ -534,42 +543,23 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   }
 
   function drawGrid(){
-    // remove dias antigos mantendo DOW
     grid.querySelectorAll('.day').forEach(n=>n.remove());
-
     const y=state.cursor.getFullYear(), m=state.cursor.getMonth();
     const first=new Date(y,m,1);
     const startDay=(first.getDay()+6)%7; // segunda=0
     const daysInMonth=new Date(y,m+1,0).getDate();
-
-    // dias "em branco" antes do 1
-    for(let i=0;i<startDay;i++){
-      const x=document.createElement("div"); x.className="day out"; x.textContent=""; grid.appendChild(x);
-    }
-    // dias do mês
+    for(let i=0;i<startDay;i++){ const x=document.createElement("div"); x.className="day out"; grid.appendChild(x); }
     for(let d=1; d<=daysInMonth; d++){
       const date=new Date(y,m,d);
       const el=document.createElement("div"); el.className="day"; el.textContent=d;
-
       if(isSameDay(date,state.start)||isSameDay(date,state.end)) el.classList.add('sel');
       else if(inSelRange(date)) el.classList.add('range');
-
-      el.onclick=()=>{
-        if(!state.start || (state.start && state.end)){
-          state.start=date; state.end=null;
-        }else{
-          if(date<state.start){ state.end=state.start; state.start=date; }
-          else{ state.end=date; }
-        }
-        drawGrid();
-      };
+      el.onclick=()=>{ if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } } drawGrid(); };
       grid.appendChild(el);
     }
   }
-
   cal.appendChild(grid);
 
-  // footer
   const foot=document.createElement("div"); foot.className="foot";
   const cancel=document.createElement("button"); cancel.className="btn"; cancel.textContent="Cancelar";
   const apply=document.createElement("button"); apply.className="btn dark"; apply.textContent="Aplicar";
@@ -591,14 +581,10 @@ function placePopover(pop, anchor){
   const h = Math.min(window.innerHeight * 0.80, 540);
   pop.style.width = w + 'px';
   pop.style.maxHeight = h + 'px';
-
   let left = r.left;
   let top  = r.bottom + 6;
-
   if (left + w > window.innerWidth - PAD) left = window.innerWidth - w - PAD;
   if (left < PAD) left = PAD;
-
-  // tenta abrir para baixo; se não couber, abre acima
   if (top + pop.offsetHeight > window.innerHeight - PAD) {
     top = r.top - pop.offsetHeight - 6;
     if (top < PAD) top = PAD;
@@ -610,34 +596,18 @@ function placePopover(pop, anchor){
 
 /*** INIT ***/
 (async function init(){
-  // ranges padrão = mês atual
   const now=new Date();
   const ini=new Date(now.getFullYear(),now.getMonth(),1);
   const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
   pIni=new Date(ini); pFim=new Date(fim);
   aIni=new Date(ini); aFim=new Date(fim);
 
-  // calendários (um para cada fonte)
   const prPop = $("#popPR"), arPop=$("#popAR");
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{
-    prState.anchor=$("#btnPR");
-    prPop.innerHTML="";
-    buildRangeCalendar(prPop, prState, (start,end)=>{
-      pIni=new Date(start); pFim=new Date(end); $("#lblPR").textContent=fmtRange(pIni,pFim); prPop.style.display="none"; aplicar();
-    }, ()=> prPop.style.display="none");
-    placePopover(prPop, $("#btnPR"));
-  };
-  const openAR = ()=>{
-    arState.anchor=$("#btnAR");
-    arPop.innerHTML="";
-    buildRangeCalendar(arPop, arState, (start,end)=>{
-      aIni=new Date(start); aFim=new Date(end); $("#lblAR").textContent=fmtRange(aIni,aFim); renderChips(); aplicar(); arPop.style.display="none";
-    }, ()=> arPop.style.display="none"));
-    placePopover(arPop, $("#btnAR"));
-  };
+  const openPR = ()=>{ prState.anchor=$("#btnPR"); prPop.innerHTML=""; buildRangeCalendar(prPop, prState, (start,end)=>{ pIni=new Date(start); pFim=new Date(end); $("#lblPR").textContent=fmtRange(pIni,pFim); prPop.style.display="none"; aplicar(); }, ()=> prPop.style.display="none"); placePopover(prPop, $("#btnPR")); };
+  const openAR = ()=>{ arState.anchor=$("#btnAR"); arPop.innerHTML=""; buildRangeCalendar(arPop, arState, (start,end)=>{ aIni=new Date(start); aFim=new Date(end); $("#lblAR").textContent=fmtRange(aIni,aFim); renderChips(); aplicar(); arPop.style.display="none"; }, ()=> arPop.style.display="none"); placePopover(arPop, $("#btnAR")); };
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
@@ -645,7 +615,6 @@ function placePopover(pop, anchor){
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 
-  // fetch + render
   try{
     await fetchPagamentos();
     coletarEmpresas(); renderChips(); aplicar();
@@ -654,8 +623,9 @@ function placePopover(pop, anchor){
 
     try{
       await fetchABC();
-      $("#empLoadMsg").style.display="none";
+      coletarEmpresas();           // agora que o ABC vem com empresa normalizada, atualiza a lista
       renderChips(); aplicar();
+      $("#empLoadMsg").style.display="none";
     }catch(e){
       console.error(e);
       $("#abcStatus").textContent="Não foi possível carregar o ABC agora.";
@@ -670,11 +640,7 @@ function placePopover(pop, anchor){
 /*** BLOQUEIO DE ZOOM (mobile) ***/
 document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
 let __lt = 0;
-document.addEventListener('touchend', e=>{
-  const now = Date.now();
-  if (now - __lt <= 300) e.preventDefault();
-  __lt = now;
-}, {passive:false});
+document.addEventListener('touchend', e=>{ const now = Date.now(); if (now - __lt <= 300) e.preventDefault(); __lt = now; }, {passive:false});
 window.addEventListener('wheel', e=>{ if(e.ctrlKey) e.preventDefault(); }, {passive:false});
 </script>
 </body>
