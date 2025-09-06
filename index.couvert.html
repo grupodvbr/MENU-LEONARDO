@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
-<title>Vendas de couvert</title>
+<title>Painel • Couvert Mercatto 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -99,7 +99,7 @@
 </style>
 </head>
 <body>
-<header><h1>Painel de couvert</h1></header>
+<header><h1>Painel de Arrecadação x Pagamentos</h1></header>
 
 <div id="loading">⏳ Carregando dados…</div>
 
@@ -507,6 +507,13 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
+/*** FUNÇÃO CENTRAL — Aplicar filtros ***/
+async function applyFilters(){
+  document.getElementById('popPR').style.display = 'none';
+  document.getElementById('popAR').style.display = 'none';
+  try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
+  coletarEmpresas(); renderChips(); aplicar();
+}
 
 /*** CALENDÁRIO ***/
 function buildRangeCalendar(container, state, onApply, onCancel){
