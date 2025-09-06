@@ -12,23 +12,22 @@
     --brand:#0b1220; --blue:#2563eb; --blue-100:#dbeafe;
   }
   *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
-  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);-webkit-text-size-adjust:100%}
+  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#0f172a}
 
   header{background:var(--brand);color:#fff;padding:16px 20px;display:flex;align-items:center}
   header h1{font-size:18px;margin:0;font-weight:800}
 
   .wrap{margin:12px auto;padding:0 16px;width:100%;max-width:100vw}
-
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-  .muted{color:var(--muted)}
-  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+  .muted{color:#64748b}
+  .kpi h3{margin:0 0 4px;font-size:14px;color:#64748b}
   .kpi .val{font-size:24px;font-weight:800}
 
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800;touch-action:manipulation}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
 
   .table{width:100%;border-collapse:collapse;font-size:13px}
@@ -41,8 +40,7 @@
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
 
   .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;
-        font-weight:800;display:inline-flex;gap:10px;align-items:center;touch-action:manipulation}
+  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
   .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
   .chip .dash{color:#94a3b8}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
@@ -59,9 +57,12 @@
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
   .smallmuted{color:#6b7280;font-size:12px}
 
+  /* POPOVER + OVERLAY */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
+  .overlay{position:fixed;inset:0;background:transparent;display:none;z-index:55}
 
+  /* CALENDÁRIO */
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
@@ -72,15 +73,6 @@
   .cal .day.sel{background:var(--blue);color:#fff}
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
-
-  .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
-  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);
-         box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
-  .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .sheet header h3{margin:0;font-size:16px;font-weight:800}
-  .sheet header small{color:#64748b}
-  .sheet .content{overflow:auto;padding:10px 12px}
-  .sheet .close{position:absolute;right:12px;top:10px}
 
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
            font-size:18px;font-weight:800;color:#0b1220;z-index:100}
@@ -186,6 +178,10 @@
   </div>
 </div>
 
+<!-- overlay para clique-fora -->
+<div class="overlay" id="overlay"></div>
+
+<!-- popovers dos calendários -->
 <div class="popover" id="popPR"></div>
 <div class="popover" id="popAR"></div>
 
@@ -196,7 +192,6 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGEC
 
 /*** STATE ***/
 const ANO = 2025;
-
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
@@ -220,7 +215,6 @@ const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
 function parseISO(d){return new Date(d+"T00:00:00");}
-function addDays(date, n){ return new Date(date.getFullYear(), date.getMonth(), date.getDate()+n); }
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
@@ -289,13 +283,9 @@ async function fetchPagamentos(){
   }));
 }
 
-/* ABC: totais da COLUNA G (linhas “Total por Data”)
-   → pede até FIM+1D para garantir inclusão do último dia.
-   → no cliente filtra inclusivo [aIni, aFim]. */
+/* ABC: totais da COLUNA G (linhas “Total por Data”) */
 async function fetchABC(ini, fim){
-  const qIni = ini ? new Date(ini) : null;
-  const qFim = fim ? addDays(fim, 1) : null; // *** aqui o ajuste ***
-  const qs = (qIni && qFim) ? `?ini=${toISODate(qIni)}&fim=${toISODate(qFim)}` : "";
+  const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
   if(!r.ok && qs){ r = await fetch(ABC_URL); }
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -318,12 +308,12 @@ async function fetchABC(ini, fim){
   abcLoaded = true;
 }
 
-/*** EMPRESAS / CHIPS — modo original (uma empresa por vez ou Todas) ***/
+/*** EMPRESAS / CHIPS ***/
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   empresas = uniq(a.concat(b));
-  if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas); // padrão: Todas
+  if (empresasSelecionadas.size === 0) empresasSelecionadas = new Set(empresas);
 }
 function sumArrecadacaoEmpresa(emp){
   return abcAll
@@ -406,7 +396,6 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
-  // PAGAMENTOS
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
@@ -419,14 +408,12 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (total por DIA dentro do período + empresas filtradas)
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
-  // Agrupa por data e soma o total_dia
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -434,15 +421,12 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
-  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
 
-  // Resultado
   const resultado  = totalArr - somaTotal;
 
-  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
@@ -451,7 +435,7 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar (lista)
+  // A pagar
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -511,8 +495,7 @@ function aplicar(){
 
 /*** Aplicar filtros ***/
 async function applyFilters(){
-  $("#popPR").style.display = 'none';
-  $("#popAR").style.display = 'none';
+  hideAllPopovers();                 // fecha só ao aplicar
   try { await fetchABC(aIni, aFim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -527,8 +510,8 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   const next = document.createElement("button"); next.className="btn"; next.textContent="›";
   const title = document.createElement("div"); title.style.fontWeight="800";
   const updTitle=()=>title.textContent = state.cursor.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); };
-  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); };
+  prev.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()-1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
+  next.onclick=()=>{ state.cursor = new Date(state.cursor.getFullYear(),state.cursor.getMonth()+1,1); drawGrid(); updTitle(); placePopover(container, state.anchor); };
   head.appendChild(prev); head.appendChild(title); head.appendChild(next);
   cal.appendChild(head);
 
@@ -557,10 +540,10 @@ function buildRangeCalendar(container, state, onApply, onCancel){
       const el=document.createElement("div"); el.className="day"; el.textContent=d;
       if(isSameDay(date,state.start)||isSameDay(date,state.end)) el.classList.add('sel');
       else if(inSelRange(date)) el.classList.add('range');
-      el.onclick=()=>{
-        if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; }
-        else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } }
-        drawGrid();
+      el.onclick=()=>{ 
+        if(!state.start || (state.start && state.end)){ state.start=date; state.end=null; } 
+        else { if(date<state.start){ state.end=state.start; state.start=date; } else { state.end=date; } } 
+        drawGrid(); 
       };
       grid.appendChild(el);
     }
@@ -572,8 +555,8 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   const apply=document.createElement("button"); apply.className="btn dark"; apply.textContent="Aplicar";
   cancel.onclick=onCancel;
   apply.onclick=()=>{ 
-    if(state.start && !state.end){ state.end = state.start; } // 1 dia
-    if(state.start && state.end) onApply(state.start, state.end);
+    if(state.start && !state.end){ state.end = state.start; }   // 1 dia = intervalo de 1 dia
+    if(state.start && state.end) onApply(state.start, state.end); 
   };
   foot.appendChild(cancel); foot.appendChild(apply);
   cal.appendChild(foot);
@@ -582,9 +565,10 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   updTitle(); drawGrid();
 }
 
-/*** POPOVER: posição e fechamento ***/
+/*** POPOVER + OVERLAY ***/
 function placePopover(pop, anchor){
   pop.style.display = 'block';
+  $("#overlay").style.display = 'block';
   const r = anchor.getBoundingClientRect();
   const PAD = 8;
   const w = Math.min(window.innerWidth * 0.94, 360);
@@ -603,18 +587,11 @@ function placePopover(pop, anchor){
   pop.style.left = left + 'px';
   pop.style.top  = top  + 'px';
 }
-
-// fecha ao clicar fora ou pressionar ESC
-document.addEventListener('click', (e)=>{
-  const pr=$("#popPR"), ar=$("#popAR");
-  const bpr=$("#btnPR"), bar=$("#btnAR");
-  const inside = (el)=> el && el.contains(e.target);
-  if( (pr.style.display==='block' || ar.style.display==='block') &&
-      !inside(pr) && !inside(ar) && !inside(bpr) && !inside(bar) ){
-    pr.style.display='none'; ar.style.display='none';
-  }
-});
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ $("#popPR").style.display='none'; $("#popAR").style.display='none'; }});
+function hideAllPopovers(){
+  $("#popPR").style.display = 'none';
+  $("#popAR").style.display = 'none';
+  $("#overlay").style.display = 'none';
+}
 
 /*** INIT ***/
 (async function init(){
@@ -628,26 +605,34 @@ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ $("#popPR").sty
   const prState={cursor:new Date(pIni.getFullYear(),pIni.getMonth(),1), start:pIni, end:pFim, anchor:$("#btnPR")};
   const arState={cursor:new Date(aIni.getFullYear(),aIni.getMonth(),1), start:aIni, end:aFim, anchor:$("#btnAR")};
 
-  const openPR = ()=>{ $("#popAR").style.display='none'; prState.anchor=$("#btnPR"); prPop.innerHTML="";
+  const openPR = ()=>{
+    $("#popAR").style.display = 'none';         // fecha só o outro
+    prState.anchor=$("#btnPR"); prPop.innerHTML="";
     buildRangeCalendar(prPop, prState, (start,end)=>{
       pIni=new Date(start); pFim=new Date(end);
       $("#lblPR").textContent=fmtRange(pIni,pFim);
       applyFilters();
-    }, ()=> prPop.style.display="none");
+    }, hideAllPopovers);
     placePopover(prPop, $("#btnPR"));
   };
 
-  const openAR = ()=>{ $("#popPR").style.display='none'; arState.anchor=$("#btnAR"); arPop.innerHTML="";
+  const openAR = ()=>{
+    $("#popPR").style.display = 'none';         // fecha só o outro
+    arState.anchor=$("#btnAR"); arPop.innerHTML="";
     buildRangeCalendar(arPop, arState, (start,end)=>{
       aIni=new Date(start); aFim=new Date(end);
       $("#lblAR").textContent=fmtRange(aIni,aFim);
       applyFilters();
-    }, ()=> arPop.style.display="none");
+    }, hideAllPopovers);
     placePopover(arPop, $("#btnAR"));
   };
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
+
+  // clicar fora (overlay) e ESC
+  $("#overlay").onclick = hideAllPopovers;
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
