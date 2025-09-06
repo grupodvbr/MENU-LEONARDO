@@ -398,6 +398,7 @@ function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
+  // PAGAMENTOS (já respeitava os filtros de empresa + período de Pagamentos)
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
@@ -410,26 +411,39 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  const arrs = abcAll.filter(x=>{
+  // ABC (total por DIA dentro do período + empresas filtradas)
+  const arrsFiltrados = abcAll.filter(x=>{
     const d = new Date(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
     return okEmp && inRange(d,aIni,aFim);
   });
 
+  // Agrupa por data (yyyy-mm-dd) e soma o total_dia
+  const dias = new Map(); // key: 'yyyy-mm-dd' -> valor somado do dia
+  for(const x of arrsFiltrados){
+    const key = String(x.data).slice(0,10);
+    dias.set(key, (dias.get(key) || 0) + cleanNumber(x.faturamento));
+  }
+  const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
+
+  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
-  const totalArr   = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+
+  // Resultado (Arrecadação filtrada – Pagamentos filtrados)
   const resultado  = totalArr - somaTotal;
 
+  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
-  $("#abcStatus").textContent    = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
+  $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
   $("#kPago").textContent        = brl(somaPago);
   $("#kApagar").textContent      = brl(somaApagar);
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
+  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -444,6 +458,7 @@ function aplicar(){
       tbA.appendChild(tr);
     });
 
+  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
   pagos.forEach(p=>{
@@ -457,6 +472,7 @@ function aplicar(){
     tb.appendChild(tr);
   });
 
+  // Resumo por empresa (já respeita período do ABC)
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
     const pPago = pagamentosAll.filter(p=>{
@@ -467,13 +483,12 @@ function aplicar(){
       const d = !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
       return p.empresa===emp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
     });
-    const aEmp = abcAll.filter(x=>{
-      const d=new Date(x.data);
-      return (x.empresa? x.empresa===emp : true) && inRange(d,aIni,aFim);
-    });
+
+    // Arrecadação por empresa dentro do período (somada por dia implicitamente)
+    const aEmp = arrsFiltrados.filter(x=> (x.empresa? x.empresa===emp : true));
+    const tA = aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
 
     const tP = pPago.reduce((s,p)=>s+cleanNumber(p.valor),0) + pAber.reduce((s,p)=>s+cleanNumber(p.valor),0);
-    const tA = aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
     const tR = tA - tP;
 
     const tr=document.createElement("tr");
@@ -487,6 +502,7 @@ function aplicar(){
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
+
 
 /*** CALENDÁRIO – intervalo com destaque ***/
 function buildRangeCalendar(container, state, onApply, onCancel){
