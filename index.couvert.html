@@ -6,113 +6,115 @@
 <title>Painel • Couvert Mercatto 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-    --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
-    --ink:#0b1220; --accent:#0b1220;
-  }
+  :root{ --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
+         --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08); }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
-  header{background:var(--ink);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
-  header h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
-  .wrap{margin:12px auto;padding:0 12px;max-width:1100px}
+  header{background:#0b1220;color:#fff;padding:14px 20px;display:flex;align-items:center}
+  header h1{font-size:18px;margin:0;font-weight:800}
+  .wrap{margin:12px auto;padding:0 12px;width:100%;max-width:1100px}
   .grid{display:grid;gap:12px}
   .grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-  .kpi h3{margin:0 0 6px;font-size:14px;color:var(--muted)}
-  .kpi .val{font-size:24px;font-weight:900}
+  .kpi h3{margin:0 0 4px;font-size:14px;color:var(--muted)}
+  .kpi .val{font-size:24px;font-weight:800}
   .muted{color:var(--muted)}
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer}
-  .btn.ink{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .btn.ghost{background:#fff}
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}
-  .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
-  .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-
-  /* chips de empresa (single select com valor) */
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .chip{border:1px solid var(--line);padding:10px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:8px;align-items:center;box-shadow:0 1px 0 rgba(0,0,0,.02)}
-  .chip .amt{font-weight:900;color:var(--ink)}
-  .chip .dash{color:#94a3b8}
-  .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .chip.active .amt{color:#fff}
-
-  /* tabela padrão (desktop) */
   .table{width:100%;border-collapse:collapse;font-size:13px}
   .table th,.table td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:left}
-  .table th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .table tr.clickable{cursor:pointer}
+  .table th{font-size:11px;color:var(--muted);text-transform:uppercase}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+  .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
+  .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
 
-  /* mobile – cards para a lista de pagamentos */
-  @media(max-width:768px){
-    .table, .table thead{display:none}
-    #tblPagamentos tbody{display:grid;gap:10px}
-    #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;box-shadow:var(--shadow)}
-    #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:4px}
-    .pill-supplier{font-weight:800}
-    .pill-sub{font-size:12px;color:#64748b}
-    .val-right{font-weight:900}
-  }
+  /* chips (single-select) com valor */
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:10px;align-items:center}
+  .chip .amt{font-weight:800;color:#0b1220;opacity:.9}
+  .chip .dash{color:#94a3b8}
+  .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
+  .chip.active .amt{color:#fff}
 
-  /* “Pagamentos” – mini KPIs */
-  .pay-break{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:800;background:#fff}
-  .pill .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
 
+  /* Pagamentos – subtags */
+  .pay-break{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
+  .pill .tag{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+
+  /* A pagar collapsible */
   details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
-  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:900}
+  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
   .smalltable{width:100%;border-collapse:collapse}
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
+  .smallmuted{color:#6b7280;font-size:12px}
 
-  /* overlay de carregando */
-  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--ink);z-index:100}
-
-  /* MODAL bottom sheet */
+  /* bottom-sheet modal */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
   .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .sheet header h3{margin:0;font-size:16px;font-weight:900}
+  .sheet header h3{margin:0;font-size:16px;font-weight:800}
   .sheet header small{color:#64748b}
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
 
-  /* RANGE PICKER (um calendário só – start→end) */
-  .range{display:flex;gap:10px;flex-wrap:wrap}
-  .range .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:900}
-  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:60;display:none;width:320px}
-  .rp-head{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 10px 6px}
-  .rp-head .title{font-weight:900}
-  .rp-nav{display:flex;gap:6px}
-  .rp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 6px 8px 6px}
-  .rp-day, .rp-wd{height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-weight:700;cursor:pointer}
-  .rp-wd{height:28px;color:#94a3b8;font-size:12px;cursor:default}
-  .rp-day.out{color:#cbd5e1}
-  .rp-day.sel{background:#0b1220;color:#fff}
-  .rp-day.in{background:#f1f5f9}
-  .rp-foot{display:flex;align-items:center;justify-content:space-between;padding:6px}
-  .rp-actions{display:flex;gap:6px}
+  /* Range popover (um “calendário” por fonte) */
+  .range{display:flex;gap:12px;flex-wrap:wrap}
+  .range .range-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:800}
+  .popover{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;z-index:60;display:none}
+  .popover .row{display:flex;gap:8px;align-items:center}
+  .popover .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  .popover input[type="date"]{padding:6px;border:1px solid var(--line);border-radius:8px}
+
+  /* Mobile cards para a lista de pagos */
+  @media(max-width:768px){
+    .table, .table thead{display:none}
+    #tblPagamentos tbody{display:grid;gap:10px}
+    #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+    #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:6px}
+    .pill-supplier{font-weight:700}
+    .pill-sub{font-size:12px;color:#64748b}
+    .val-right{font-weight:800}
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Painel de Arrecadação x Pagamentos</h1>
-</header>
+<header><h1>Painel de Arrecadação x Pagamentos</h1></header>
 
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
-  <!-- Filtros -->
+  <!-- Filtros – um range por origem -->
   <div class="card">
     <div class="range">
       <div style="position:relative">
         <div class="range-btn" id="btnPR">Pagamentos: <span id="lblPR"></span></div>
-        <div class="popover" id="popPR"></div>
+        <div class="popover" id="popPR">
+          <div class="row">
+            <label>De: <input type="date" id="pStart"></label>
+            <label>Até: <input type="date" id="pEnd"></label>
+          </div>
+          <div class="actions">
+            <button class="btn" id="prCancel">Cancelar</button>
+            <button class="btn" id="prApply">Aplicar</button>
+          </div>
+        </div>
       </div>
 
       <div style="position:relative">
         <div class="range-btn" id="btnAR">ABC: <span id="lblAR"></span></div>
-        <div class="popover" id="popAR"></div>
+        <div class="popover" id="popAR">
+          <div class="row">
+            <label>De: <input type="date" id="aStart"></label>
+            <label>Até: <input type="date" id="aEnd"></label>
+          </div>
+          <div class="actions">
+            <button class="btn" id="arCancel">Cancelar</button>
+            <button class="btn" id="arApply">Aplicar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -126,35 +128,38 @@
   <!-- KPIs -->
   <div class="grid cols-3">
     <div class="card kpi">
-      <h3>Arrecadação (Couvert)</h3>
-      <div class="val" id="kArrecadacao">⏳ carregando…</div>
-      <div id="abcStatus" class="muted" style="font-size:12px"></div>
+      <div>
+        <h3>Arrecadação (Couvert)</h3>
+        <div class="val" id="kArrecadacao">⏳ carregando…</div>
+        <div id="abcStatus" class="muted" style="font-size:12px"></div>
+      </div>
     </div>
 
     <div class="card kpi" id="cardPagamentos">
-      <h3>Pagamentos</h3>
-      <div class="val" id="kPagamentos">R$ 0,00</div>
-      <div class="pay-break">
-        <span class="pill"><span class="tag">Pago</span><span id="kPago">R$ 0,00</span></span>
-        <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
-        <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
-      </div>
-
-      <details class="paylist" id="dlstApagar">
-        <summary>A pagar (<span id="qtApagar">0</span>)</summary>
-        <div style="padding:0 10px 10px 10px">
-          <table class="smalltable" id="tblApagar">
-            <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
-            <tbody></tbody>
-          </table>
-          <div class="muted" id="msgApagar" style="display:none;font-size:12px">Sem lançamentos em aberto no período.</div>
+      <div>
+        <h3>Pagamentos</h3>
+        <div class="val" id="kPagamentos">R$ 0,00</div>
+        <div class="pay-break">
+          <span class="pill"><span class="tag">Pago</span><span id="kPago">R$ 0,00</span></span>
+          <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
+          <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
         </div>
-      </details>
+
+        <details class="paylist" id="dlstApagar">
+          <summary>A pagar (<span id="qtApagar">0</span>)</summary>
+          <div style="padding:0 10px 10px 10px">
+            <table class="smalltable" id="tblApagar">
+              <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
+          </div>
+        </details>
+      </div>
     </div>
 
     <div class="card kpi">
-      <h3>Resultado</h3>
-      <div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div>
+      <div><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
     </div>
   </div>
 
@@ -167,7 +172,7 @@
     </table>
   </div>
 
-  <!-- Detalhes -->
+  <!-- Detalhes pagos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
@@ -178,9 +183,9 @@
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- modal -->
 <div class="modal" id="modal">
-  <div class="sheet">
+  <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
     <header>
       <h3 id="mTitle">Histórico</h3>
@@ -205,36 +210,52 @@ let empresas = [];
 let empresasSelecionadas = new Set();
 let abcLoaded = false;
 
-// ranges atuais
+// ranges
 let pIni=null,pFim=null; // pagamentos
 let aIni=null,aFim=null; // ABC
 
 /*** HELPERS ***/
 const $ = (q)=>document.querySelector(q);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
-function parseISO(d){return new Date(d+"T00:00:00");}
-function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
-function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
-function containsCouvert(item){
-  const p=String(item.produto||"").toLowerCase();
-  if(!p.includes("couvert")) return false;
-  const ex=["couvert do villa","couvert delicia","couvert mercatto"];
-  return !ex.some(x=>p.includes(x));
+
+/* normaliza strings (sem acento/caixa/espaços extras) */
+const norm = s => (s??"").toString()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  .toLowerCase().trim();
+
+/* datas seguras: aceita Date, ISO e dd/mm/aaaa */
+function toDateSafe(x){
+  if(!x && x!==0) return null;
+  if (Object.prototype.toString.call(x)==='[object Date]' && !isNaN(x)) {
+    return new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  }
+  const s=String(x).trim();
+  // dd/mm/aaaa
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m){
+    const d = new Date(Number(m[3]), Number(m[2])-1, Number(m[1]));
+    return isNaN(d)? null : d;
+  }
+  // ISO yyyy-mm-dd...
+  const d = new Date(s);
+  return isNaN(d)? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+function isoFromStr(s){ const d=toDateSafe(s); return d? d.toISOString().slice(0,10) : ""; }
+function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function cleanNumber(v){
   if(v==null || v==="") return 0;
   if(typeof v==="number") return v;
   const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
-  return parseFloat(s)||0;
+  const n=parseFloat(s); return isFinite(n)?n:0;
 }
-function isoFromStr(s){
-  if(!s) return "";
-  const d = new Date(s);
-  if(isNaN(d)) return String(s).slice(0,10);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+function containsCouvert(item){
+  const p=norm(item.produto||"");
+  if(!p.includes("couvert")) return false;
+  const ex=["couvert do villa","couvert delicia","couvert mercatto"];
+  return !ex.some(b=>p.includes(b));
 }
 function fmtRange(a,b){
-  const f = d => new Date(d).toLocaleDateString('pt-BR');
+  const f=d=> d? new Date(d).toLocaleDateString('pt-BR'):"";
   return `${f(a)} → ${f(b)}`;
 }
 
@@ -246,11 +267,11 @@ async function fetchPagamentos(){
   const list = Array.isArray(js) ? js : (js.registros || []);
 
   pagamentosAll = list.map(p=>({
-    empresa: p.empresa || p.Empresa || "",
+    empresa: (p.empresa || p.Empresa || "").toString().trim(),
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
-    data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
-    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0), // Valor Bruto
+    data_pagamento: isoFromStr(p.data_pagamento || p.Liquidação || p.Liquidacao || p.liquidacao),
+    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0), // usa Valor Bruto
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
@@ -261,12 +282,12 @@ async function fetchABC(){
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
   const arr=await r.json();
   abcAll = arr.filter(o=>{
-    const d = new Date(o.data || o.DATA || "");
-    if(isNaN(d)) return false;
+    const d = toDateSafe(o.data || o.DATA || "");
+    if(!d) return false;
     return d.getFullYear()===ANO && containsCouvert(o);
   }).map(o=>({
-    data: o.data || o.DATA,
-    empresa: o.empresa || o.EMPRESA || "",
+    data: toDateSafe(o.data || o.DATA),
+    empresa: (o.empresa || o.EMPRESA || "").toString().trim(),
     faturamento: cleanNumber(o.faturamento || o.FATURAMENTO || o.valor || 0),
     produto: o.produto || o.PRODUTO || ""
   }));
@@ -277,38 +298,41 @@ async function fetchABC(){
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
-  empresas = uniq(a.concat(b));
+  empresas = [...new Set(a.concat(b).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'pt',{sensitivity:'base'}));
   empresasSelecionadas.clear();
-  const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
-  empresasSelecionadas.add(merc || empresas[0] || "Todas");
+  // seleciona Mercatto por padrão, senão primeira
+  const pref = empresas.find(e=> norm(e).includes(norm(DEFAULT_EMPRESA))) || empresas[0];
+  if (pref) empresasSelecionadas.add(pref);
 }
 
-function sumArrecadacaoEmpresa(emp){
+function totalArrecadacaoEmpresa(emp){
+  const ne = norm(emp);
   const hasEmpresa = abcAll.some(x=>x.empresa);
   if(!hasEmpresa) return null;
   return abcAll
     .filter(x=>{
-      const d=new Date(x.data);
-      return x.empresa===emp && inRange(d,aIni,aFim);
+      const okEmp = norm(x.empresa)===ne;
+      return okEmp && inRange(x.data, aIni, aFim);
     })
-    .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+    .reduce((s,x)=> s + cleanNumber(x.faturamento), 0);
 }
 
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  // “Todas”
+  // "Todas"
   const all=document.createElement("span");
   const allActive = (empresasSelecionadas.size===empresas.length);
   all.className="chip"+(allActive?" active":"");
   all.textContent="Todas";
-  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
+  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
   host.appendChild(all);
 
+  // individuais (single-select)
   empresas.forEach(e=>{
     const c=document.createElement("span");
-    const isActive=empresasSelecionadas.has(e) && empresasSelecionadas.size===1;
+    const isActive = (empresasSelecionadas.size===1 && empresasSelecionadas.has(e));
     c.className="chip"+(isActive?" active":"");
-    const amt = sumArrecadacaoEmpresa(e);
+    const amt = totalArrecadacaoEmpresa(e);
     c.innerHTML = `<span>${e}</span>${amt===null? "<span class='dash'>—</span>":"<span class='amt'>"+brl(amt)+"</span>"}`;
     c.onclick=()=>{empresasSelecionadas=new Set([e]); renderChips(); aplicar();};
     host.appendChild(c);
@@ -319,7 +343,7 @@ function renderChips(){
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 
-/*** HISTÓRICO (fornecedor selecionado) ***/
+/*** HISTÓRICO (por fornecedor) ***/
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
   $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
@@ -368,27 +392,33 @@ async function openHistoricoFornecedor(fornecedor){
 /*** RENDER PRINCIPAL ***/
 function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
-  const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
+  const selectedOne = (empresasSelecionadas.size===1) ? [...empresasSelecionadas][0] : null;
 
-  // pagos
+  const filtroEmp = (empresa)=> {
+    if (allSelected) return true;
+    if (!selectedOne) return true;
+    return norm(empresa)===norm(selectedOne);
+  };
+
+  // pagos (liquidados; usa data_pagamento)
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
-    const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
+    const d = p.data_pagamento ? toDateSafe(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
   // a pagar (sem liquidação; usa vencimento)
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
-    const d = !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
+    const d = !p.data_pagamento && p.vencimento ? toDateSafe(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC
+  // ABC – filtra por empresa com normalização + intervalo
   const arrs = abcAll.filter(x=>{
-    const d = new Date(x.data);
+    const d = x.data;
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
-    return okEmp && inRange(d,aIni,aFim);
+    return okEmp && d && inRange(d,aIni,aFim);
   });
 
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
@@ -405,11 +435,11 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // A pagar (lista)
+  // “A pagar”
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
-  abertos.sort((x,y)=> new Date(x.vencimento) - new Date(y.vencimento))
+  abertos.sort((x,y)=> toDateSafe(x.vencimento) - toDateSafe(y.vencimento))
     .forEach(p=>{
       const tr=document.createElement("tr");
       tr.innerHTML = `
@@ -454,16 +484,16 @@ function aplicar(){
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
     const pPago = pagamentosAll.filter(p=>{
-      const d= p.data_pagamento ? parseISO(p.data_pagamento) : null;
-      return p.empresa===emp && d && inRange(d,pIni,pFim);
+      const d= p.data_pagamento ? toDateSafe(p.data_pagamento) : null;
+      return norm(p.empresa)===norm(emp) && d && inRange(d,pIni,pFim);
     });
     const pAber = pagamentosAll.filter(p=>{
-      const d= !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
-      return p.empresa===emp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
+      const d= !p.data_pagamento && p.vencimento ? toDateSafe(p.vencimento) : null;
+      return norm(p.empresa)===norm(emp) && d && inRange(d,pIni,pFim) && !p.data_pagamento;
     });
     const aEmp = abcAll.filter(x=>{
-      const d=new Date(x.data);
-      return (x.empresa? x.empresa===emp : true) && inRange(d,aIni,aFim);
+      const d=x.data;
+      return (norm(x.empresa)===norm(emp)) && d && inRange(d,aIni,aFim);
     });
 
     const tP = pPago.reduce((s,p)=>s+cleanNumber(p.valor),0) + pAber.reduce((s,p)=>s+cleanNumber(p.valor),0);
@@ -478,149 +508,62 @@ function aplicar(){
     rb.appendChild(tr);
   });
 
-  // labels dos range buttons
+  // labels dos ranges
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
-/*** RANGE PICKER – um calendário só (start→end) ***/
-function makeRangePicker(anchorBtn, popEl, initialStart, initialEnd, onApply){
-  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const wd = ['D','S','T','Q','Q','S','S'];
-
-  let current = new Date(initialStart);
-  current.setDate(1);
-  let start = new Date(initialStart);
-  let end   = new Date(initialEnd);
-
-  popEl.innerHTML = `
-    <div class="rp-head">
-      <div class="rp-nav">
-        <button class="btn ghost" id="rpPrev">‹</button>
-        <button class="btn ghost" id="rpNext">›</button>
-      </div>
-      <div class="title" id="rpTitle"></div>
-    </div>
-    <div class="rp-grid" id="rpGrid"></div>
-    <div class="rp-foot">
-      <div class="muted" id="rpSel"></div>
-      <div class="rp-actions">
-        <button class="btn" id="rpCancel">Cancelar</button>
-        <button class="btn ink" id="rpApply">Aplicar</button>
-      </div>
-    </div>
-  `;
-
-  function sameDay(a,b){return a&&b && a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate();}
-  function between(d,a,b){return d>=a && d<=b;}
-
-  function render(){
-    $("#rpTitle",popEl).textContent = `${monthNames[current.getMonth()]}/${current.getFullYear()}`;
-    const grid=$("#rpGrid",popEl); grid.innerHTML="";
-    wd.forEach(x=>{
-      const el=document.createElement('div'); el.className='rp-wd'; el.textContent=x; grid.appendChild(el);
-    });
-
-    const firstDow=(new Date(current.getFullYear(),current.getMonth(),1)).getDay(); // 0..6
-    const daysInMonth=new Date(current.getFullYear(),current.getMonth()+1,0).getDate();
-    const prevDays=new Date(current.getFullYear(),current.getMonth(),0).getDate();
-
-    // dates to show: previous month tail
-    for(let i=firstDow-1;i>=0;i--){
-      const d=new Date(current.getFullYear(),current.getMonth()-1,prevDays-i);
-      const btn=dayBtn(d,true); grid.appendChild(btn);
-    }
-    // current month
-    for(let i=1;i<=daysInMonth;i++){
-      const d=new Date(current.getFullYear(),current.getMonth(),i);
-      const btn=dayBtn(d,false); grid.appendChild(btn);
-    }
-    // next month head to complete grid (up to full weeks)
-    const totalCells=7+firstDow+daysInMonth; // +7 for header
-    const rest=(totalCells%7===0)?0:(7-(totalCells%7));
-    for(let i=1;i<=rest;i++){
-      const d=new Date(current.getFullYear(),current.getMonth()+1,i);
-      const btn=dayBtn(d,true); grid.appendChild(btn);
-    }
-
-    $("#rpSel",popEl).textContent = `${start.toLocaleDateString('pt-BR')} → ${end.toLocaleDateString('pt-BR')}`;
-  }
-
-  function dayBtn(date,isOut){
-    const el=document.createElement('div'); el.className='rp-day'+(isOut?' out':'');
-    el.textContent = date.getDate();
-    // states
-    if (sameDay(date,start) || sameDay(date,end)) el.classList.add('sel');
-    else if (date>=start && date<=end) el.classList.add('in');
-
-    el.onclick=()=>{
-      // primeira seleção: redefine intervalo
-      if (sameDay(start,end) && sameDay(start,date)){
-        // tocar novamente abre para escolher END
-        return;
-      }
-      if (!start || (start && end)){ start=new Date(date); end=new Date(date); }
-      else {
-        if (date<start){ end=start; start=new Date(date); }
-        else { end=new Date(date); }
-      }
-      render();
-    };
-    return el;
-  }
-
-  $("#rpPrev",popEl).onclick=()=>{ current.setMonth(current.getMonth()-1); render(); };
-  $("#rpNext",popEl).onclick=()=>{ current.setMonth(current.getMonth()+1); render(); };
-  $("#rpCancel",popEl).onclick=()=>popEl.style.display="none";
-  $("#rpApply",popEl).onclick=()=>{ onApply(start,end); popEl.style.display="none"; };
-
-  // abrir/posicionar
-  anchorBtn.addEventListener('click', ()=>{
-    const r = anchorBtn.getBoundingClientRect();
-    popEl.style.display='block';
-    popEl.style.top  = (r.bottom + window.scrollY + 6)+'px';
-    popEl.style.left = (r.left   + window.scrollX)+'px';
-    render();
+/*** RANGE POPOVERS (um por origem) ***/
+function setupRange(btnId, popId, startId, endId, onApply){
+  const btn=$(btnId), pop=$(popId), start=$(startId), end=$(endId);
+  const close=()=>pop.style.display="none";
+  btn.addEventListener('click', ()=>{
+    const r = btn.getBoundingClientRect();
+    pop.style.display='block';
+    pop.style.top = (r.bottom + window.scrollY + 6)+'px';
+    pop.style.left= (r.left   + window.scrollX)+'px';
   });
-
-  // click fora fecha
-  document.addEventListener('click', (e)=>{
-    if(!popEl.contains(e.target) && !anchorBtn.contains(e.target)) popEl.style.display='none';
-  }, true);
-
-  // helpers para obter/mudar
+  pop.addEventListener('click', e=>e.stopPropagation());
+  document.addEventListener('click', e=>{
+    if(!pop.contains(e.target) && !btn.contains(e.target)) close();
+  });
   return {
-    setRange:(ini,fim)=>{ start=new Date(ini); end=new Date(fim); current=new Date(start); current.setDate(1); },
+    setRange:(ini,fim)=>{ start.value = ini; end.value = fim; },
+    read:()=>({ini:start.value, fim:end.value}),
+    close,
+    onApply
   };
 }
 
 /*** INIT ***/
 (async function init(){
   const now=new Date();
-  const ini=new Date(now.getFullYear(),now.getMonth(),1);
-  const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const ini=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  const fim=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
 
-  // ranges padrão
   pIni=new Date(ini); pFim=new Date(fim);
   aIni=new Date(ini); aFim=new Date(fim);
 
-  // Range pickers (um calendário cada)
-  const prPicker = makeRangePicker(
-    $("#btnPR"), $("#popPR"),
-    pIni, pFim,
-    (s,e)=>{ pIni=s; pFim=e; aplicar(); }
-  );
-  const arPicker = makeRangePicker(
-    $("#btnAR"), $("#popAR"),
-    aIni, aFim,
-    (s,e)=>{ aIni=s; aFim=e; renderChips(); aplicar(); }
-  );
-  prPicker.setRange(pIni,pFim);
-  arPicker.setRange(aIni,aFim);
+  const pr = setupRange("#btnPR","#popPR","#pStart","#pEnd", ()=>{
+    const {ini:si,fim:sf} = pr.read();
+    if(si && sf){ pIni=new Date(si); pFim=new Date(sf); aplicar(); }
+    pr.close();
+  });
+  const ar = setupRange("#btnAR","#popAR","#aStart","#aEnd", ()=>{
+    const {ini:si,fim:sf} = ar.read();
+    if(si && sf){ aIni=new Date(si); aFim=new Date(sf); renderChips(); aplicar(); }
+    ar.close();
+  });
 
-  // labels iniciais
+  pr.setRange(ini,fim);
+  ar.setRange(ini,fim);
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
+
+  $("#prApply").onclick = pr.onApply;
+  $("#arApply").onclick = ar.onApply;
+  $("#prCancel").onclick = pr.close;
+  $("#arCancel").onclick = ar.close;
 
   try{
     await fetchPagamentos();
