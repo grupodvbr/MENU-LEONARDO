@@ -26,39 +26,41 @@
   .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:600}
+  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:600;margin-right:8px;margin-top:6px;display:inline-block}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
   #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0b1220;z-index:100}
+
+  /* bloco dentro do card de pagamentos */
+  .pay-break{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
+  .pill .tag{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+  details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
+  details.paylist > summary::-webkit-details-marker{display:none}
+  .smalltable{width:100%;border-collapse:collapse}
+  .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:13px;text-align:left}
+  .smallmuted{color:#6b7280;font-size:12px}
 
   /* MODAL bottom sheet */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
-  .sheet header{background:#fff;color:#000;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
+  .sheet header{background:#fff;color:var(--text);padding:12px 16px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
   .sheet header h3{margin:0;font-size:16px;font-weight:800}
   .sheet header small{color:var(--muted)}
   .sheet .content{overflow:auto;padding:10px 12px}
   .sheet .close{position:absolute;right:12px;top:10px}
-  .divider{height:1px;background:var(--line);margin:8px 0}
 
-  /* mobile first (cards) */
+  /* Mobile cards */
   @media(max-width:768px){
     .table, .table thead{display:none}
     #tblPagamentos tbody{display:grid;gap:10px}
-    #tblPagamentos tbody tr{display:flex;flex-direction:row;align-items:center;justify-content:space-between;
-      border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+    #tblPagamentos tbody tr{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
     #tblPagamentos tbody tr .info{display:flex;flex-direction:column;gap:6px}
     .pill-supplier{font-weight:700}
     .pill-sub{font-size:12px;color:var(--muted)}
     .val-right{font-weight:800}
-    .chev{font-size:20px;color:#94a3b8;margin-left:8px}
   }
-
-  /* seção a pagar */
-  .apagar-wrap{margin-top:14px}
-  .apagar-head{display:flex;align-items:center;gap:8px}
-  .apagar-badge{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}
 </style>
 </head>
 <body>
@@ -67,6 +69,7 @@
 <div id="loading">⏳ Carregando dados…</div>
 
 <div class="wrap">
+  <!-- Filtros -->
   <div class="card">
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
       <div><label>Data início: <input type="date" id="fDataIni"></label></div>
@@ -75,17 +78,53 @@
     </div>
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
-      <div id="chipsEmpresas" class="chips"></div>
-      <div id="empLoadMsg" class="muted" style="display:none">Carregando outras empresas em segundo plano…</div>
+      <div id="chipsEmpresas"></div>
+      <div id="empLoadMsg" class="muted" style="display:none">Carregando arrecadação (ABC) em segundo plano…</div>
     </div>
   </div>
 
+  <!-- KPIs -->
   <div class="grid cols-3">
-    <div class="card kpi"><h3>Arrecadação (Couvert)</h3><div class="val" id="kArrecadacao">⏳ carregando…</div><div id="abcStatus" class="muted" style="font-size:12px"></div></div>
-    <div class="card kpi"><h3>Pagamentos</h3><div class="val" id="kPagamentos">R$ 0,00</div></div>
-    <div class="card kpi"><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
+    <div class="card kpi">
+      <div>
+        <h3>Arrecadação (Couvert)</h3>
+        <div class="val" id="kArrecadacao">⏳ carregando…</div>
+        <div id="abcStatus" class="muted" style="font-size:12px"></div>
+      </div>
+    </div>
+
+    <div class="card kpi" id="cardPagamentos">
+      <div>
+        <h3>Pagamentos</h3>
+        <div class="val" id="kPagamentos">R$ 0,00</div>
+        <div class="pay-break">
+          <span class="pill"><span class="tag">Pago</span><span id="kPago">R$ 0,00</span></span>
+          <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
+          <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
+        </div>
+
+        <!-- Lista A Pagar no mesmo card -->
+        <details class="paylist" id="dlstApagar">
+          <summary>A pagar (<span id="qtApagar">0</span>)</summary>
+          <div style="padding:0 10px 10px 10px">
+            <table class="smalltable" id="tblApagar">
+              <thead>
+                <tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="card kpi">
+      <div><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
+    </div>
   </div>
 
+  <!-- Resumo por empresa -->
   <div class="card">
     <h3>Resumo por Empresa</h3>
     <table class="table" id="tblResumoEmp">
@@ -94,31 +133,20 @@
     </table>
   </div>
 
+  <!-- Detalhes pagtos -->
   <div class="card">
     <h3>Pagamentos (detalhes)</h3>
     <table class="table" id="tblPagamentos">
-      <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+      <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
       <tbody></tbody>
     </table>
     <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
-
-    <!-- A PAGAR -->
-    <div class="apagar-wrap" id="apagarWrap" style="display:none">
-      <div class="apagar-head">
-        <h3 style="margin:0">A pagar (sem liquidação)</h3>
-        <span id="apagarInfo" class="apagar-badge"></span>
-      </div>
-      <table class="table" id="tblAPagar">
-        <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
-<!-- MODAL / BOTTOM SHEET -->
-<div class="modal" id="modal" role="dialog" aria-modal="true">
-  <div class="sheet">
+<!-- MODAL bottom sheet -->
+<div class="modal" id="modal">
+  <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
     <header>
       <h3 id="mTitle">Histórico</h3>
@@ -129,7 +157,7 @@
 </div>
 
 <script>
-/* === URLs === */
+/* === URLs (as suas) === */
 const SHEET_API = "https://script.google.com/macros/s/AKfycbyUvPTmmfLpAWIA9-zW6i6rYwkTQq7LED8gjdx205twpJv1zCKiyhByjXM7sJ-zIue-hQ/exec";
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec";
 
@@ -150,7 +178,7 @@ function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function containsCouvert(item){
-  const p=String(item.produto||item.PRODUTO||"").toLowerCase();
+  const p=String(item.produto||"").toLowerCase();
   if(!p.includes("couvert")) return false;
   const ex=["couvert do villa","couvert delicia","couvert mercatto"];
   return !ex.some(x=>p.includes(x));
@@ -163,31 +191,33 @@ function cleanNumber(v){
 }
 function isoFromStr(s){
   if(!s) return "";
-  const d=new Date(s);
+  const d = new Date(s);
   if(isNaN(d)) return String(s).slice(0,10);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
 }
-const monthPt=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-function ymKey(s){ const d=new Date(s); if(isNaN(d)) return null; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;}
-function ymLabel(k){const [y,m]=k.split("-"); return `${monthPt[Number(m)-1]}/${y}`;}
 
 /* === FETCHERS === */
+// Pega registros e NORMALIZA para usar SEMPRE Valor Bruto
 async function fetchPagamentos(){
   const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
   if(!r.ok) throw new Error("Pagamentos HTTP "+r.status);
   const js=await r.json();
   const list = Array.isArray(js) ? js : (js.registros || []);
-  // Normaliza e inclui VENCIMENTO (passa a ser a data de referência para exibir/filtrar)
+
   pagamentosAll = list.map(p=>({
     empresa: p.empresa || p.Empresa || "",
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
+    // vencimento é a data base para “a pagar” quando sem liquidação
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
-    data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao), // pode ser vazio
-    valor: cleanNumber(p.valor ?? p["Valor Líquido"] ?? p["Valor Bruto"] ?? 0),
+    // data do pagamento efetivo:
+    data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
+    // **Valor Bruto** como base oficial
+    valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
 }
+
 async function fetchABC(){
   const r=await fetch(ABC_URL);
   if(!r.ok) throw new Error("ABC HTTP "+r.status);
@@ -214,15 +244,17 @@ function coletarEmpresas(){
   const merc = empresas.find(e=>String(e).toLowerCase().includes(DEFAULT_EMPRESA));
   if(merc) empresasSelecionadas.add(merc); else empresas.forEach(e=>empresasSelecionadas.add(e));
 }
+
 function renderChips(){
   const host=$("#chipsEmpresas"); host.innerHTML="";
-  const all=document.createElement("div");
+  const all=document.createElement("span");
   all.className="chip"+(empresasSelecionadas.size===empresas.length?" active":"");
   all.textContent="Todas";
-  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();}
+  all.onclick=()=>{empresasSelecionadas=new Set(empresas); renderChips(); aplicar();};
   host.appendChild(all);
+
   empresas.forEach(e=>{
-    const c=document.createElement("div");
+    const c=document.createElement("span");
     c.className="chip"+(empresasSelecionadas.has(e)?" active":"");
     c.textContent=e;
     c.onclick=()=>{
@@ -238,11 +270,10 @@ function renderChips(){
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 
-/* === HISTÓRICO DO FORNECEDOR === */
-async function openHistoricoFornecedor(fornecedor, empresaCtx){
-  const fornecedorKey = String(fornecedor||"").trim().toLowerCase();
-  $("#mTitle").textContent = fornecedor || "-";
-  $("#mSub").textContent = `Histórico de pagamentos em ${ANO}${empresaCtx? " • "+empresaCtx : ""}`;
+/* === HISTÓRICO (somente do fornecedor clicado) === */
+async function openHistoricoFornecedor(fornecedor){
+  $("#mTitle").textContent = fornecedor;
+  $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
   $("#mBody").innerHTML = `<div class="muted" style="padding:8px 2px">⏳ Carregando histórico…</div>`;
   openModal();
   try{
@@ -251,96 +282,112 @@ async function openHistoricoFornecedor(fornecedor, empresaCtx){
     if(!r.ok) throw new Error("HTTP "+r.status);
     const js = await r.json();
 
-    let arr = (js.registros || []).map(p=>({
-      data: isoFromStr(p.Liquidação || p.data_pagamento || ""), // histórico mostra liquidação se houver
+    // Garante que só mostre do fornecedor selecionado
+    const arrBase = (js.registros || []);
+    const arr = arrBase.filter(p => {
+      const f = (p.fornecedor || p["Cliente / Fornecedor"] || "").trim();
+      return f === fornecedor;
+    }).map(p=>({
+      data: isoFromStr(p.data_pagamento || p.Liquidação || ""),
       empresa: p.empresa || p.Empresa || "",
-      fornecedor: (p.fornecedor || p["Cliente / Fornecedor"] || "").toString(),
-      valor: cleanNumber(p.valor ?? p["Valor Líquido"] ?? 0),
+      valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
       meio: p.meio_pagamento || p["Meio de Pagamento"] || "",
       hist: p.historico || p["Histórico"] || ""
-    }))
-    .filter(x=>{
-      const sameSupplier = x.fornecedor.toString().trim().toLowerCase() === fornecedorKey;
-      const sameCompany  = empresaCtx ? (x.empresa === empresaCtx) : true;
-      const dOk = x.data && !isNaN(new Date(x.data));
-      return sameSupplier && sameCompany && dOk;
-    })
-    .sort((a,b)=> new Date(b.data) - new Date(a.data));
+    })).sort((a,b)=> new Date(b.data) - new Date(a.data));
 
     const total = arr.reduce((s,x)=>s+x.valor,0);
 
-    const map = {};
-    arr.forEach(x=>{
-      const k = ymKey(x.data);
-      if(!k) return;
-      map[k] = (map[k]||0) + x.valor;
-    });
-    const resumo = Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]))
-      .map(([k,v])=> `<span style="display:inline-block;margin:3px 6px 0 0;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:#fff">${ymLabel(k)} • <b>${brl(v)}</b></span>`).join("");
-
-    $("#mBody").innerHTML = `
-      <div style="margin-bottom:8px">
-        <div><b>Total no ano:</b> ${brl(total)}</div>
-        <div style="margin-top:6px">${resumo || '<span class="muted">Sem pagamentos</span>'}</div>
-      </div>
-      <div class="divider"></div>
+    const body = `
+      <div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
       <table class="table" style="width:100%">
-        <thead><tr><th>Liquidação</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
+        <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
         <tbody>
           ${arr.map(x=>`
             <tr>
-              <td>${String(x.data).slice(0,10)}</td>
+              <td>${String(x.data||"").slice(0,10)}</td>
               <td>${x.empresa||"-"}</td>
               <td>${x.meio||"-"}</td>
               <td>${x.hist||"-"}</td>
               <td style="text-align:right">${brl(x.valor)}</td>
-            </tr>
-          `).join("")}
+            </tr>`).join("")}
         </tbody>
       </table>
     `;
+    $("#mBody").innerHTML = body;
   }catch(e){
     $("#mBody").innerHTML = `<div class="muted">Não foi possível carregar o histórico agora.</div>`;
     console.error(e);
   }
 }
 
-/* === RENDER === */
+/* === RENDER PRINCIPAL === */
 function aplicar(){
   const a = $("#fDataIni").value ? new Date($("#fDataIni").value) : null;
   const b = $("#fDataFim").value ? new Date($("#fDataFim").value) : null;
 
-  // Filtra por empresas selecionadas
-  const base = pagamentosAll.filter(p=>{
-    const okEmp = empresasSelecionadas.has(p.empresa) || (empresasSelecionadas.size===empresas.length);
-    // DATA DE REFERÊNCIA = VENCIMENTO
-    const d = parseISO(p.vencimento);
-    return okEmp && inRange(d,a,b);
+  // Filtro por empresa e intervalo
+  const filtroEmpresa = (empresa) => (empresasSelecionadas.has(empresa) || (empresasSelecionadas.size===empresas.length));
+
+  // Pago = tem data_pagamento
+  const pagos = pagamentosAll.filter(p=>{
+    const okEmp = filtroEmpresa(p.empresa);
+    const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
+    return okEmp && d && inRange(d,a,b);
   });
 
-  // Separar pagos vs a pagar
-  const pagos   = base.filter(p=> !!p.data_pagamento);
-  const apagar  = base.filter(p=> !p.data_pagamento);
+  // A pagar = NÃO tem data_pagamento; usa VENCIMENTO para o filtro
+  const abertos = pagamentosAll.filter(p=>{
+    const okEmp = filtroEmpresa(p.empresa);
+    const d = p.data_pagamento ? null : (p.vencimento ? new Date(p.vencimento) : null);
+    return okEmp && d && inRange(d,a,b) && !p.data_pagamento;
+  });
 
-  // KPIs (pagamentos pagos; arrecadação idem de antes)
-  const totalPag = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
+  // Arrecadação filtrada (se tiver empresa no ABC, respeita; se não, soma geral)
   const arrs = abcAll.filter(x=>{
     const d = new Date(x.data);
-    const okEmp = x.empresa ? (empresasSelecionadas.has(x.empresa) || (empresasSelecionadas.size===empresas.length)) : true;
+    const okEmp = x.empresa ? filtroEmpresa(x.empresa) : filtroEmpresa((empresas[0]||"")); // fallback: soma geral
     return okEmp && inRange(d,a,b);
   });
-  const totalArr = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
-  const res = totalArr-totalPag;
 
-  $("#kPagamentos").textContent = brl(totalPag);
+  // Somatórios (todos por Valor Bruto)
+  const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
+  const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
+  const somaTotal  = somaPago + somaApagar;
+  const totalArr   = arrs.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
+  const resultado  = totalArr - somaTotal;
+
+  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
-  $("#abcStatus").textContent = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
-  $("#kResultado").innerHTML = `${brl(res)} <span class="badge ${res>=0?"lucr":"prej"}">${res>=0?"LUCRO":"PREJUÍZO"}</span>`;
+  $("#abcStatus").textContent    = abcLoaded ? "" : "Arrecadação sendo carregada em segundo plano";
+  $("#kPagamentos").textContent  = brl(somaTotal);
+  $("#kPago").textContent        = brl(somaPago);
+  $("#kApagar").textContent      = brl(somaApagar);
+  $("#kTotal").textContent       = brl(somaTotal);
+  $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
-  // Tabela / Cards (Pagos) — usa VENCIMENTO na primeira coluna
+  // Lista A PAGAR no card
+  const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
+  $("#qtApagar").textContent = abertos.length;
+  if(abertos.length===0){
+    $("#msgApagar").style.display="block";
+  } else {
+    $("#msgApagar").style.display="none";
+    abertos
+      .sort((x,y)=> new Date(x.vencimento) - new Date(y.vencimento))
+      .forEach(p=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.vencimento||"-"}</td>
+          <td>${p.empresa||"-"}</td>
+          <td>${p.fornecedor||"-"}</td>
+          <td style="text-align:right">${brl(p.valor||0)}</td>`;
+        tbA.appendChild(tr);
+      });
+  }
+
+  // Detalhes (somente pagos)
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   if(pagos.length===0){ $("#msgEmpty").style.display="block"; } else { $("#msgEmpty").style.display="none"; }
-
   if (matchMedia("(max-width: 768px)").matches){
     pagos.forEach(p=>{
       const tr=document.createElement("tr");
@@ -349,63 +396,41 @@ function aplicar(){
         <td style="display:none"></td><td style="display:none"></td><td style="display:none"></td><td style="display:none"></td>
         <div class="info">
           <div class="pill-supplier">${p.fornecedor||"-"}</div>
-          <div class="pill-sub">${p.empresa||"-"} • ${p.vencimento||"-"}</div>
+          <div class="pill-sub">${p.empresa||"-"} • ${p.data_pagamento||"-"}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="val-right">${brl(p.valor||0)}</div>
-          <div class="chev">›</div>
-        </div>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor, p.empresa);
+        <div class="val-right">${brl(p.valor||0)}</div>`;
+      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
       tb.appendChild(tr);
     });
   } else {
     pagos.forEach(p=>{
       const tr=document.createElement("tr");
       tr.className="clickable";
-      tr.innerHTML=`<td>${p.vencimento||"-"}</td>
+      tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
                     <td>${p.empresa||"-"}</td>
                     <td>${p.fornecedor||"-"}</td>
                     <td>${brl(p.valor||0)}</td>`;
-      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor, p.empresa);
+      tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
       tb.appendChild(tr);
     });
   }
 
-  // A PAGAR
-  const wrap = $("#apagarWrap");
-  const info = $("#apagarInfo");
-  const tbAP = $("#tblAPagar tbody");
-  tbAP.innerHTML="";
-  if (apagar.length===0){
-    wrap.style.display="none";
-  } else {
-    const totalAP = apagar.reduce((s,p)=>s+cleanNumber(p.valor),0);
-    info.textContent = `${apagar.length} registro(s) • Total ${brl(totalAP)}`;
-    wrap.style.display="block";
-    apagar
-      .sort((a,b)=> new Date(a.vencimento) - new Date(b.vencimento))
-      .forEach(p=>{
-        const tr=document.createElement("tr");
-        tr.innerHTML=`<td>${p.vencimento||"-"}</td>
-                      <td>${p.empresa||"-"}</td>
-                      <td>${p.fornecedor||"-"}</td>
-                      <td>${brl(p.valor||0)}</td>`;
-        tbAP.appendChild(tr);
-      });
-  }
-
-  // Resumo por empresa (continua igual, usa vencimento para filtrar pagamentos e data para ABC)
+  // Resumo por empresa (usando Bruto)
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
-    const pEmp = pagamentosAll.filter(p=>{
-      const d=parseISO(p.vencimento);
-      return p.empresa===emp && inRange(d,a,b) && !!p.data_pagamento;
+    const pPago = pagamentosAll.filter(p=>{
+      const d= p.data_pagamento ? parseISO(p.data_pagamento) : null;
+      return p.empresa===emp && d && inRange(d,a,b);
+    });
+    const pAber = pagamentosAll.filter(p=>{
+      const d= !p.data_pagamento && p.vencimento ? new Date(p.vencimento) : null;
+      return p.empresa===emp && d && inRange(d,a,b) && !p.data_pagamento;
     });
     const aEmp = abcAll.filter(x=>{
       const d=new Date(x.data);
       return (x.empresa? x.empresa===emp : true) && inRange(d,a,b);
     });
-    const tP = pEmp.reduce((s,p)=>s+cleanNumber(p.valor),0);
+    const tP = pPago.reduce((s,p)=>s+cleanNumber(p.valor),0) + pAber.reduce((s,p)=>s+cleanNumber(p.valor),0);
     const tA = aEmp.reduce((s,x)=>s+cleanNumber(x.faturamento),0);
     const tR = tA - tP;
     const tr=document.createElement("tr");
@@ -427,14 +452,15 @@ document.getElementById("btnAplicar").onclick=aplicar;
   $("#fDataIni").value=ini; $("#fDataFim").value=fim;
 
   try{
-    await fetchPagamentos();
+    await fetchPagamentos();     // rápido
     coletarEmpresas(); renderChips();
     aplicar();
     $("#loading").style.display="none";
     $("#empLoadMsg").style.display="block";
 
+    // ABC em segundo plano
     try{
-      await fetchABC();           // em segundo plano
+      await fetchABC();
       $("#empLoadMsg").style.display="none";
       aplicar();
     }catch(e){
