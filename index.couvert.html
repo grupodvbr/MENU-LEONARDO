@@ -70,7 +70,7 @@
 
   <!-- KPIs -->
   <div class="grid cols-3">
-    <div class="card"><h3>Arrecadação</h3><div class="val" id="kArrecadacao">R$ 0,00</div></div>
+    <div class="card"><h3>Arrecadação (Couvert)</h3><div class="val" id="kArrecadacao">R$ 0,00</div></div>
     <div class="card"><h3>Pagamentos</h3><div class="val" id="kPagamentos">R$ 0,00</div></div>
     <div class="card"><h3>Resultado</h3><div class="val" id="kResultado">R$ 0,00 <span id="badgeResult" class="badge lucr">LUCRO</span></div></div>
   </div>
@@ -78,7 +78,7 @@
   <!-- tabela -->
   <div class="card">
     <h3>Pagamentos</h3>
-    <table class="table" id="tblMeses">
+    <table class="table" id="tblPagamentos">
       <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
       <tbody></tbody>
     </table>
@@ -95,54 +95,96 @@
 </div>
 
 <script>
-const SHEET_API="SUA_URL_DO_GAS"; 
-const ANO=2025;
-let pagamentosAll=[];
+/*** CONFIG ***/
+const SHEET_API = "https://script.google.com/macros/s/AKfycbzd0Fenj9212CE4twk03qvVt3CCLlyN9QeUf0mpErGIrKnZBNudW-g7GRlI79M0M7rxBg/exec";   // <-- coloque aqui seu GAS de pagamentos
+const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec"; // <-- coloque aqui seu script do ABC de vendas
+const ANO = 2025;
 
+let pagamentosAll = [];
+let dadosABC = [];
+
+/*** HELPERS ***/
 function brl(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function parseISO(d){return new Date(d+"T00:00:00");}
+function inRange(d,a,b){return d>=a && d<=b;}
+function containsCouvert(item){
+  const p=(item.produto||"").toLowerCase();
+  if(!p.includes("couvert")) return false;
+  const ex=["couvert do villa","couvert delicia","couvert mercatto"];
+  return !ex.some(x=>p.includes(x));
+}
 
+/*** LOADERS ***/
 async function loadPagamentos(){
   const r=await fetch(`${SHEET_API}?action=listAno&ano=${ANO}`);
   pagamentosAll=await r.json();
-  renderTabela(pagamentosAll);
 }
+async function loadABC(){
+  const r=await fetch(ABC_URL);
+  const arr=await r.json();
+  dadosABC=arr.filter(o=>{
+    const d=new Date(o.data);
+    return d.getFullYear()===ANO && containsCouvert(o);
+  });
+}
+
+/*** RENDER ***/
 function renderTabela(lista){
-  const tb=document.querySelector("#tblMeses tbody"); tb.innerHTML="";
+  const tb=document.querySelector("#tblPagamentos tbody"); tb.innerHTML="";
   lista.forEach(p=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td data-label="Data">${p.data_pagamento}</td>
-      <td data-label="Empresa">${p.empresa}</td>
-      <td data-label="Fornecedor">${p.fornecedor}</td>
-      <td data-label="Valor">${brl(p.valor)}</td>`;
+      <td data-label="Empresa">${p.empresa||"-"}</td>
+      <td data-label="Fornecedor">${p.fornecedor||"-"}</td>
+      <td data-label="Valor">${brl(p.valor||0)}</td>`;
     tr.onclick=()=>openModalDetalhe(p);
     tb.appendChild(tr);
   });
 }
 function openModalDetalhe(p){
-  const html=`<p><b>Empresa:</b> ${p.empresa}</p>
-    <p><b>Fornecedor:</b> ${p.fornecedor}</p>
+  const html=`<p><b>Empresa:</b> ${p.empresa||"-"}</p>
+    <p><b>Fornecedor:</b> ${p.fornecedor||"-"}</p>
     <p><b>Histórico:</b> ${p.historico||"-"}</p>
     <p><b>Meio:</b> ${p.meio_pagamento||"-"}</p>
-    <p><b>Valor:</b> ${brl(p.valor)}</p>`;
+    <p><b>Valor:</b> ${brl(p.valor||0)}</p>`;
   document.querySelector("#modalBody").innerHTML=html;
   document.querySelector("#modal").style.display="flex";
 }
 function closeModal(){document.querySelector("#modal").style.display="none";}
 
+/*** FILTRO POR DATA ***/
 function filtrarPorData(){
   const ini=document.querySelector("#fDataIni").value;
   const fim=document.querySelector("#fDataFim").value;
   if(!ini||!fim) return alert("Selecione as duas datas");
   const a=new Date(ini), b=new Date(fim);
-  const f=pagamentosAll.filter(p=>{
+
+  const pagamentosFiltrados=pagamentosAll.filter(p=>{
     const d=parseISO(p.data_pagamento);
-    return d>=a && d<=b;
+    return inRange(d,a,b);
   });
-  renderTabela(f);
+
+  const arrecadacaoFiltrada=dadosABC.reduce((s,o)=>{
+    const d=new Date(o.data);
+    if(inRange(d,a,b)) s+=Number(o.faturamento||0);
+    return s;
+  },0);
+
+  const totalPag=pagamentosFiltrados.reduce((s,p)=>s+(Number(p.valor)||0),0);
+  const resultado=arrecadacaoFiltrada-totalPag;
+
+  document.querySelector("#kArrecadacao").textContent=brl(arrecadacaoFiltrada);
+  document.querySelector("#kPagamentos").textContent=brl(totalPag);
+  document.querySelector("#kResultado").innerHTML=`${brl(resultado)} <span id="badgeResult" class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
+
+  renderTabela(pagamentosFiltrados);
 }
 
-loadPagamentos();
+/*** INIT ***/
+async function init(){
+  await Promise.all([loadPagamentos(), loadABC()]);
+}
+init();
 </script>
 </body>
 </html>
