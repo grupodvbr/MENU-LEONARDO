@@ -107,8 +107,6 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
       <button class="btn" id="btnAR">ABC: <span id="lblAR"></span></button>
-      <!-- ADICIONADO: botão para aplicar filtros manualmente -->
-      <button class="btn dark" id="btnApply">Aplicar filtros</button>
     </div>
     <div style="margin-top:10px">
       <strong>Empresas:</strong>
@@ -628,7 +626,6 @@ function placePopover(pop, anchor){
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
-  document.getElementById('btnApply').onclick = applyFilters;
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
