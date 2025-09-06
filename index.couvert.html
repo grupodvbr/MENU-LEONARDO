@@ -196,6 +196,16 @@
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
 const ABC_URL   = "https://script.google.com/macros/s/AKfycbxu0HjXsbvXr9OGYDAEfN8Kqyle4d2GFb26wu8aAcAtfM-RkcILV9AywDjf1Fu8rW_NwQ/exec";
 
+/*** CONFIG – produtos que entram/saem da Arrecadação ***/
+const PRODUTOS_ARRECADACAO = [
+  "couvert"           // adicione aqui outros termos: "couvert artistico", "entrada couvert", etc.
+];
+const PRODUTOS_EXCLUIR = [
+  "couvert do villa",
+  "couvert villa",
+  "couvert delicia"
+];
+
 /*** STATE ***/
 const ANO = 2025;
 
@@ -205,7 +215,6 @@ const EMPRESA_REMAP = [
   {match:["delicia"],  to:"DELICIA GOURMET"},
   {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
-  // fallback “villa” simples → LEM (se precisar, troque aqui)
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
@@ -225,17 +234,6 @@ function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',cur
 function parseISO(d){return new Date(d+"T00:00:00");}
 function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);}
 function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
-
-/* inclui qualquer “couvert” (sem acento/caixa), EXCETO “couvert do villa” e “couvert delicia” */
-function containsCouvert(item){
-  const raw = String(item.produto || item.PRODUTO || "");
-  const p = raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  if(!p.includes("couvert")) return false;
-  const isVilla   = p.includes("couvert do villa") || (p.includes("couvert") && p.includes("villa"));
-  const isDelicia = p.includes("couvert delicia")  || (p.includes("couvert") && p.includes("delicia"));
-  return !(isVilla || isDelicia);
-}
-
 function cleanNumber(v){
   if(v==null||v==="") return 0;
   if(typeof v==="number") return v;
@@ -252,7 +250,17 @@ function fmtRange(a,b){
   const f = d => new Date(d).toLocaleDateString('pt-BR');
   return `${f(a)} → ${f(b)}`;
 }
-
+/* normaliza string para comparação */
+function _norm(s){
+  return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+}
+/* Decide se o produto entra na Arrecadação conforme as listas de config */
+function produtoContaParaArrecadacao(nome){
+  const p = _norm(nome);
+  if(!p) return false;
+  if (PRODUTOS_EXCLUIR.some(x => p.includes(_norm(x)))) return false;
+  return PRODUTOS_ARRECADACAO.length>0 && PRODUTOS_ARRECADACAO.some(x => p.includes(_norm(x)));
+}
 /* pega número do primeiro campo que existir */
 function pickNumber(obj, keys){
   for(const k of keys){
@@ -260,7 +268,6 @@ function pickNumber(obj, keys){
   }
   return 0;
 }
-
 /* detecta empresa a partir de vários campos possíveis do ABC e remapeia */
 function remapEmpresaABCfromObj(o){
   const candidates = [
@@ -272,7 +279,6 @@ function remapEmpresaABCfromObj(o){
   for(const rule of EMPRESA_REMAP){
     if(rule.match.every(m => full.includes(m))) return rule.to;
   }
-  // também remove prefixos "ABC DE VENDAS ..."
   const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
   return plain || (o.empresa||o.EMPRESA||"");
 }
@@ -288,7 +294,6 @@ async function fetchPagamentos(){
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
     vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
     data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
-    // Valor Bruto (pedido anterior)
     valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
@@ -304,7 +309,8 @@ async function fetchABC(){
     .filter(o=>{
       const d = new Date(o.data || o.DATA || o.Data || "");
       if(isNaN(d)) return false;
-      return d.getFullYear()===ANO && containsCouvert(o);
+      const nomeProduto = o.produto || o.PRODUTO || o.Produto || "";
+      return d.getFullYear()===ANO && produtoContaParaArrecadacao(nomeProduto);
     })
     .map(o=>{
       const emp = remapEmpresaABCfromObj(o);
