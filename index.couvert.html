@@ -30,6 +30,7 @@
   .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;
        font-size:clamp(12px,3.5vw,14px);cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
 
   /* TABELAS (rolagem horizontal apenas nelas) */
   .table-wrap{width:100%;overflow-x:auto;overflow-y:hidden}
@@ -57,16 +58,6 @@
         font-weight:700;background:#fff;font-size:clamp(11px,3.2vw,13px)}
   .pill .tag{font-size:clamp(10px,2.9vw,11px);color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
 
-  /* details “a pagar” — evita estourar a largura do card */
-  details.paylist{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff; overflow:hidden;}
-  details.paylist > summary{list-style:none;padding:9px 10px;cursor:pointer;font-weight:800}
-  details.paylist > summary::-webkit-details-marker{display:none}
-  .paylist-body{ padding:0 10px 10px 10px; overflow:hidden; }
-  .paylist-body .table-wrap{ overflow-x:auto; overflow-y:hidden; max-width:100%; -webkit-overflow-scrolling:touch; }
-  .smalltable{width:100%;border-collapse:collapse;min-width:560px}
-  .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:9px 8px;font-size:clamp(11px,3.1vw,13px);text-align:left;white-space:nowrap}
-  .smallmuted{color:#6b7280;font-size:clamp(10px,2.9vw,12px)}
-
   /* POPUP (calendário e nota/histórico) + overlay */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
            padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
@@ -86,7 +77,7 @@
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
 
-  /* modal (histórico do fornecedor) */
+  /* modal (histórico e a pagar) */
   .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);
          box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
@@ -143,18 +134,11 @@
           <span class="pill"><span class="tag">A pagar</span><span id="kApagar">R$ 0,00</span></span>
           <span class="pill"><span class="tag">Total</span><span id="kTotal">R$ 0,00</span></span>
         </div>
-        <details class="paylist" id="dlstApagar">
-          <summary>A pagar (<span id="qtApagar">0</span>)</summary>
-          <div class="paylist-body">
-            <div class="table-wrap">
-              <table class="smalltable" id="tblApagar">
-                <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <div class="smallmuted" id="msgApagar" style="display:none">Sem lançamentos em aberto no período.</div>
-          </div>
-        </details>
+
+        <!-- novo: botão para abrir o modal “A pagar” -->
+        <div style="margin-top:8px">
+          <button class="btn" id="btnApagar">Ver A pagar (<span id="qtApagar">0</span>)</button>
+        </div>
       </div>
     </div>
 
@@ -199,7 +183,27 @@
   </div>
 </div>
 
-<!-- overlay para clique-fora -->
+<!-- Modal “A pagar” -->
+<div class="modal" id="modalApagar">
+  <div class="sheet" style="left:0;right:0;">
+    <button class="btn close" onclick="closeApagar()">Fechar</button>
+    <header>
+      <h3>Contas a pagar</h3>
+      <small id="subApagar"></small>
+    </header>
+    <div class="content">
+      <div class="table-wrap">
+        <table class="table" style="min-width:640px" id="tblApagarModal">
+          <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="muted" id="msgApagarModal" style="display:none;margin-top:6px">Sem lançamentos em aberto no período.</div>
+    </div>
+  </div>
+</div>
+
+<!-- overlay leve p/ popovers -->
 <div class="overlay" id="overlay"></div>
 
 <!-- popovers dos calendários -->
@@ -217,11 +221,11 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGEC
 /*** STATE ***/
 const ANO = 2025;
 
-/* mapeia nomes vindos das abas/planilhas para nomes “canonizados” */
+/* mapeia nomes vindos das abas/planilhas */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
-  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"}, /* mapeia barreiras explicitamente */
+  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"},
   {match:["villa","lem"], to:"VILLA GOURMET LEM"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
@@ -237,6 +241,7 @@ let abcAll = [];
 let empresas = [];
 let empresasSelecionadas = new Set();
 let abcLoaded = false;
+let lastAbertos = []; // <— lista para o modal “A pagar”
 
 // ranges (Date)
 let pIni=null,pFim=null; // pagamentos
@@ -320,7 +325,6 @@ async function fetchPagamentos(){
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }))
-  /* remove Barreiras deste painel */
   .filter(p => !isExcludedEmpresa(p.empresa));
 }
 async function fetchABC(ini, fim){
@@ -338,7 +342,6 @@ async function fetchABC(ini, fim){
       const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
       return { data: dataIso, empresa: emp, faturamento };
     })
-    /* mantém só ano do painel e exclui Barreiras */
     .filter(x=> x.data && parseISO(x.data).getFullYear() === ANO && !isExcludedEmpresa(x.empresa));
   abcLoaded = true;
 }
@@ -348,9 +351,7 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   let novas = uniq(a.concat(b));
-  /* ainda garante que Barreiras não apareça nos chips */
   novas = novas.filter(n => !isExcludedEmpresa(n));
-
   if (empresasSelecionadas.size === 0) {
     empresasSelecionadas = new Set(novas);
   } else {
@@ -388,9 +389,13 @@ function renderChips(){
   });
 }
 
-/*** MODAL (histórico por fornecedor) ***/
+/*** MODAIS ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
+function openApagar(){ $("#modalApagar").style.display="block"; }
+function closeApagar(){ $("#modalApagar").style.display="none"; }
+
+/*** Histórico por fornecedor (modal de histórico) ***/
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
   $("#mSub").textContent = ` Pagamentos em ${ANO}`;
@@ -480,6 +485,9 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
+  // guarda para o modal
+  lastAbertos = abertos.slice().sort((x,y)=> parseISO(x.vencimento) - parseISO(y.vencimento));
+
   // ABC (com intervalo efetivo)
   const {ini:effIni, fim:effFim} = getEffectiveABCRange();
   const arrsFiltrados = abcAll.filter(x=>{
@@ -512,21 +520,8 @@ function aplicar(){
   $("#kApagar").textContent      = brl(somaApagar);
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
-
-  // A pagar (lista)
-  const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
-  $("#qtApagar").textContent = abertos.length;
-  $("#msgApagar").style.display = abertos.length? "none":"block";
-  abertos.sort((x,y)=> parseISO(x.vencimento) - parseISO(y.vencimento))
-    .forEach(p=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML = `
-        <td>${fmtBR(p.vencimento)}</td>
-        <td>${p.empresa||"-"}</td>
-        <td>${p.fornecedor||"-"}</td>
-        <td style="text-align:right">${brl(p.valor||0)}</td>`;
-      tbA.appendChild(tr);
-    });
+  $("#qtApagar").textContent     = lastAbertos.length;
+  $("#btnApagar").disabled       = (lastAbertos.length===0);
 
   // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
@@ -578,10 +573,32 @@ function aplicar(){
   $("#lblAR").textContent = fmtRange(aIni,aFim);
 }
 
+/*** Modal “A pagar” — popula e abre ***/
+function openApagarModal(){
+  $("#subApagar").textContent = fmtRange(pIni,pFim);
+  const tb = $("#tblApagarModal tbody");
+  tb.innerHTML = "";
+  if(lastAbertos.length === 0){
+    $("#msgApagarModal").style.display="block";
+  }else{
+    $("#msgApagarModal").style.display="none";
+    lastAbertos.forEach(p=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtBR(p.vencimento)}</td>
+        <td>${p.empresa||"-"}</td>
+        <td>${p.fornecedor||"-"}</td>
+        <td style="text-align:right">${brl(p.valor||0)}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+  openApagar();
+}
+
 /*** Aplicar filtros ***/
 async function applyFilters(){
   hideAllPopovers();
-  const {ini, fim} = getEffectiveABCRange(); // usa intervalo efetivo para buscar no WebApp
+  const {ini, fim} = getEffectiveABCRange();
   try { await fetchABC(ini, fim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -641,7 +658,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   const apply=document.createElement("button"); apply.className="btn dark"; apply.textContent="Aplicar";
   cancel.onclick=onCancel;
   apply.onclick=()=>{ 
-    if(state.start && !state.end){ state.end = state.start; }   // 1 dia = intervalo de 1 dia
+    if(state.start && !state.end){ state.end = state.start; }
     if(state.start && state.end) onApply(state.start, state.end); 
   };
   foot.appendChild(cancel); foot.appendChild(apply);
@@ -717,6 +734,7 @@ function hideAllPopovers(){
 
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
+  $("#btnApagar").onclick=openApagarModal;
 
   // clicar fora (overlay) e ESC
   $("#overlay").onclick = ()=>{ hideAllPopovers(); hideNote(); };
