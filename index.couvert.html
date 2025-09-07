@@ -57,10 +57,12 @@
         font-weight:700;background:#fff;font-size:clamp(11px,3.2vw,13px)}
   .pill .tag{font-size:clamp(10px,2.9vw,11px);color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
 
-  /* details “a pagar” */
-  details.paylist{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  /* details “a pagar” — evita estourar a largura do card */
+  details.paylist{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff; overflow:hidden;}
   details.paylist > summary{list-style:none;padding:9px 10px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
+  .paylist-body{ padding:0 10px 10px 10px; overflow:hidden; }
+  .paylist-body .table-wrap{ overflow-x:auto; overflow-y:hidden; max-width:100%; -webkit-overflow-scrolling:touch; }
   .smalltable{width:100%;border-collapse:collapse;min-width:560px}
   .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:9px 8px;font-size:clamp(11px,3.1vw,13px);text-align:left;white-space:nowrap}
   .smallmuted{color:#6b7280;font-size:clamp(10px,2.9vw,12px)}
@@ -143,7 +145,7 @@
         </div>
         <details class="paylist" id="dlstApagar">
           <summary>A pagar (<span id="qtApagar">0</span>)</summary>
-          <div style="padding:0 10px 10px 10px">
+          <div class="paylist-body">
             <div class="table-wrap">
               <table class="smalltable" id="tblApagar">
                 <thead><tr><th>Vencimento</th><th>Empresa</th><th>Fornecedor</th><th style="text-align:right">Valor</th></tr></thead>
@@ -214,12 +216,21 @@ const ABC_URL   = "https://script.google.com/macros/s/AKfycbwMJJ_MV7AQX-Nw2CLGEC
 
 /*** STATE ***/
 const ANO = 2025;
+
+/* mapeia nomes vindos das abas/planilhas para nomes “canonizados” */
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
+  {match:["villa","barreiras"], to:"VILLA GOURMET BARREIRAS"}, /* mapeia barreiras explicitamente */
   {match:["villa","lem"], to:"VILLA GOURMET LEM"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
+
+/* excluir completamente “Barreiras” deste painel */
+function isExcludedEmpresa(name){
+  const s = String(name||"").toLowerCase();
+  return s.includes("barreiras");
+}
 
 let pagamentosAll = [];
 let abcAll = [];
@@ -308,7 +319,9 @@ async function fetchPagamentos(){
     valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
-  }));
+  }))
+  /* remove Barreiras deste painel */
+  .filter(p => !isExcludedEmpresa(p.empresa));
 }
 async function fetchABC(ini, fim){
   const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
@@ -325,7 +338,8 @@ async function fetchABC(ini, fim){
       const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
       return { data: dataIso, empresa: emp, faturamento };
     })
-    .filter(x=> x.data && parseISO(x.data).getFullYear() === ANO);
+    /* mantém só ano do painel e exclui Barreiras */
+    .filter(x=> x.data && parseISO(x.data).getFullYear() === ANO && !isExcludedEmpresa(x.empresa));
   abcLoaded = true;
 }
 
@@ -333,7 +347,10 @@ async function fetchABC(ini, fim){
 function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
-  const novas = uniq(a.concat(b));
+  let novas = uniq(a.concat(b));
+  /* ainda garante que Barreiras não apareça nos chips */
+  novas = novas.filter(n => !isExcludedEmpresa(n));
+
   if (empresasSelecionadas.size === 0) {
     empresasSelecionadas = new Set(novas);
   } else {
@@ -521,14 +538,12 @@ function aplicar(){
                   <td>${p.fornecedor||"-"}</td>
                   <td><button class="btn" style="padding:4px 8px" data-note="${(p.historico||"").replace(/"/g,'&quot;')}">ver</button></td>
                   <td>${brl(p.valor||0)}</td>`;
-    // botão "ver" (histórico em popup leve)
     tr.querySelector('button[data-note]').onclick = (ev)=>{
       showNote(ev.currentTarget.getAttribute('data-note')||"—", ev.currentTarget);
     };
-    // clique na linha → histórico completo do fornecedor (modal)
     tr.style.cursor="pointer";
     tr.addEventListener('click', (e)=>{ 
-      if(e.target && e.target.matches('button[data-note]')) return; // não abrir modal se clicou no "ver"
+      if(e.target && e.target.matches('button[data-note]')) return;
       openHistoricoFornecedor(p.fornecedor);
     });
     tb.appendChild(tr);
