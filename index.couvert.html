@@ -302,13 +302,20 @@ function remapEmpresaABCfromObj(o){
 }
 function fmtRange(a,b){ return `${fmtBR(a)} → ${fmtBR(b)}`; }
 
-/*** REGRAS DE INTERVALO EFETIVO (ABC) ***/
+// Intervalo efetivo = exatamente o escolhido no calendário (inclusivo)
 function getEffectiveABCRange(){
   if(!aIni || !aFim) return {ini:aIni, fim:aFim};
-  if (sameYMD(aIni, aFim)) return {ini: addDays(aIni, -1), fim: addDays(aFim, +1)};
-  const iniEff = (aIni.getDate()===1) ? addDays(aIni, -1) : aIni;
-  return {ini: iniEff, fim: aFim};
+
+  // garante ordem caso o usuário clique invertido
+  const s = aIni < aFim ? aIni : aFim;
+  const e = aIni < aFim ? aFim : aIni;
+
+  // zera horas e devolve limites inclusivos
+  const ini = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  const fim = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+  return {ini, fim};
 }
+
 
 /*** FETCH ***/
 async function fetchPagamentos(){
