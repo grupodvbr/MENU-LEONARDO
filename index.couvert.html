@@ -11,95 +11,97 @@
     --green:#16a34a; --red:#ef4444; --radius:16px; --shadow:0 14px 34px rgba(2,6,23,.08);
     --brand:#0b1220; --blue:#2563eb; --blue-100:#dbeafe;
   }
-
-  /* Tipografia fluida */
-  html{font-size:clamp(14px, 0.9vw + 10px, 16px)}
-  *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#0f172a;line-height:1.35}
+  *{box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word}
+  html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text)}
 
   header{background:var(--brand);color:#fff;padding:14px 16px;display:flex;align-items:center}
   header h1{font-size:clamp(14px,3.5vw,18px);margin:0;font-weight:800}
 
   .wrap{margin:10px auto;padding:0 12px;width:100%;max-width:100vw}
-  .grid{display:grid;gap:12px}
+  .grid{display:grid;gap:10px}
   .grid.cols-3{grid-template-columns:repeat(12,minmax(0,1fr))}
   .kpi-card{grid-column:span 4 / span 4}
 
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-  .muted{color:#64748b}
-  .kpi h3{margin:0 0 4px;font-size:clamp(12px,2.6vw,14px);color:#64748b}
-  .kpi .val{font-size:clamp(20px,5vw,26px);font-weight:800}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:12px}
+  .muted{color:var(--muted)}
+  .kpi h3{margin:0 0 2px;font-size:clamp(12px,3.3vw,14px);color:var(--muted)}
+  .kpi .val{font-size:clamp(18px,5.5vw,24px);font-weight:800}
 
-  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;font-size:clamp(12px,3vw,14px);cursor:pointer;font-weight:800}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;
+       font-size:clamp(12px,3.5vw,14px);cursor:pointer;font-weight:800}
   .btn.dark{background:#111827;color:#fff;border-color:#111827}
 
-  .table{width:100%;border-collapse:collapse;font-size:clamp(12px,2.8vw,13px)}
-  .table th,.table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:middle}
+  /* TABELAS (rolagem horizontal apenas nelas) */
+  .table-wrap{width:100%;overflow-x:auto;overflow-y:hidden}
+  .table{width:100%;border-collapse:collapse;font-size:clamp(11px,3.2vw,13px);min-width:720px}
+  .table th,.table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;white-space:nowrap}
   .table tr.clickable{cursor:pointer}
-  .table-wrap{width:100%;overflow:auto}
 
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:clamp(10px,2.4vw,11px);font-weight:700}
+  /* badge resultado */
+  .badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:clamp(10px,3vw,11px);font-weight:700}
   .lucr{background:#eafff0;color:#065f46;border:1px solid #bbf7d0}
   .prej{background:#ffecec;color:#7f1d1d;border:1px solid #fecaca}
 
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;font-weight:800;display:inline-flex;gap:8px;align-items:center}
-  .chip .amt{font-weight:800;color:#0b1220;opacity:.95}
+  /* chips de empresas */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .chip{border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:#fff;cursor:pointer;
+        font-weight:800;display:inline-flex;gap:8px;align-items:center}
+  .chip .amt{font-weight:800;color:#0b1220;opacity:.95;font-size:clamp(12px,3.5vw,14px)}
   .chip .dash{color:#94a3b8}
   .chip.active{background:#0b1220;color:#fff;border-color:#0b1220}
   .chip.active .amt{color:#fff}
 
+  /* quebras de pagamentos */
   .pay-break{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:700;background:#fff}
-  .pill .tag{font-size:clamp(10px,2.6vw,11px);color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 9px;
+        font-weight:700;background:#fff;font-size:clamp(11px,3.2vw,13px)}
+  .pill .tag{font-size:clamp(10px,2.9vw,11px);color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
 
-  details.paylist{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
-  details.paylist > summary{list-style:none;padding:10px 12px;cursor:pointer;font-weight:800}
+  /* details “a pagar” */
+  details.paylist{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  details.paylist > summary{list-style:none;padding:9px 10px;cursor:pointer;font-weight:800}
   details.paylist > summary::-webkit-details-marker{display:none}
-  .smalltable{width:100%;border-collapse:collapse}
-  .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:10px 8px;font-size:clamp(12px,2.8vw,13px);text-align:left}
-  .smallmuted{color:#6b7280;font-size:clamp(11px,2.6vw,12px)}
+  .smalltable{width:100%;border-collapse:collapse;min-width:560px}
+  .smalltable th,.smalltable td{border-top:1px solid var(--line);padding:9px 8px;font-size:clamp(11px,3.1vw,13px);text-align:left;white-space:nowrap}
+  .smallmuted{color:#6b7280;font-size:clamp(10px,2.9vw,12px)}
 
-  /* POPOVER + OVERLAY */
+  /* POPUP (calendário e nota/histórico) + overlay */
   .popover{position:fixed;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
-           padding:10px;z-index:60;display:none;width:min(94vw,380px);max-height:80vh;overflow:auto}
+           padding:10px;z-index:60;display:none;width:min(94vw,360px);max-height:80vh;overflow:auto}
   .overlay{position:fixed;inset:0;background:transparent;display:none;z-index:55}
+  .note-pop{position:fixed;z-index:80;display:none;background:#fff;border:1px solid var(--line);border-radius:12px;
+            box-shadow:var(--shadow);padding:10px;max-width:min(92vw,420px)}
 
   /* CALENDÁRIO */
   .cal{width:100%}
   .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
   .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
-  .cal .dow{font-size:clamp(11px,2.6vw,12px);color:#64748b;text-align:center}
-  .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
+  .cal .dow{font-size:clamp(10px,2.8vw,12px);color:var(--muted);text-align:center}
+  .cal .day{height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
   .cal .day:hover{background:#f1f5f9}
   .cal .day.out{opacity:.35}
   .cal .day.sel{background:var(--blue);color:#fff}
   .cal .day.range{background:var(--blue-100);color:#111827}
   .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
 
-  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
-           font-size:clamp(16px,4.4vw,18px);font-weight:800;color:#0b1220;z-index:100}
+  /* modal (histórico do fornecedor) */
+  .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;z-index:120}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);
+         box-shadow:var(--shadow);max-height:85vh;display:flex;flex-direction:column}
+  .sheet header{background:#fff;color:#000;padding:10px 12px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
+  .sheet header h3{margin:0;font-size:clamp(14px,4vw,16px);font-weight:800}
+  .sheet header small{color:#64748b}
+  .sheet .content{overflow:auto;padding:10px 12px}
+  .sheet .close{position:absolute;right:12px;top:10px}
 
-  /* MOBILE */
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
+           font-size:18px;font-weight:800;color:#0b1220;z-index:100}
+
   @media(max-width:760px){
     .wrap{padding:0 10px}
     .grid.cols-3{grid-template-columns:1fr}
     .kpi-card{grid-column:auto}
-    .card{padding:12px;border-radius:14px}
-    .kpi .val{font-size:clamp(20px,6vw,24px)}
-    .chips{gap:6px}
-    .chip{padding:6px 9px;font-size:clamp(12px,3.2vw,14px)}
-    .table th,.table td{padding:8px 6px}
-    .popover{width:96vw;left:2vw !important}
-    .cal .day{height:32px}
-  }
-
-  /* EXTRA PEQUENO */
-  @media(max-width:380px){
-    header{padding:12px}
-    .card{padding:10px}
-    .pill{padding:5px 8px}
-    .chip{padding:5px 8px}
+    .card{padding:10px;border-radius:14px}
   }
 </style>
 </head>
@@ -110,11 +112,11 @@
 
 <div class="wrap">
   <div class="card">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="btn" id="btnPR">Pagamentos: <span id="lblPR"></span></button>
       <button class="btn" id="btnAR">ABC: <span id="lblAR"></span></button>
     </div>
-    <div style="margin-top:10px">
+    <div style="margin-top:8px">
       <strong>Empresas:</strong>
       <div id="chipsEmpresas" class="chips"></div>
       <div id="empLoadMsg" class="muted" style="display:none">Carregando arrecadação (ABC) em segundo plano…</div>
@@ -126,7 +128,7 @@
       <div>
         <h3>Arrecadação (Couvert)</h3>
         <div class="val" id="kArrecadacao">⏳ carregando…</div>
-        <div id="abcStatus" class="muted" style="font-size:clamp(11px,2.6vw,12px)"></div>
+        <div id="abcStatus" class="muted" style="font-size:clamp(11px,3vw,12px)"></div>
       </div>
     </div>
 
@@ -173,14 +175,17 @@
     <h3>Pagamentos (detalhes)</h3>
     <div class="table-wrap">
       <table class="table" id="tblPagamentos">
-        <thead><tr><th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Valor</th></tr></thead>
+        <thead><tr>
+          <th>Data</th><th>Empresa</th><th>Fornecedor</th><th>Histórico</th><th>Valor</th>
+        </tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <div id="msgEmpty" class="muted" style="display:none;margin-top:8px">Nenhum pagamento encontrado nesse período/empresa.</div>
+    <div id="msgEmpty" class="muted" style="display:none;margin-top:6px">Nenhum pagamento encontrado nesse período/empresa.</div>
   </div>
 </div>
 
+<!-- Modal com histórico por fornecedor -->
 <div class="modal" id="modal">
   <div class="sheet" style="left:0;right:0;">
     <button class="btn close" onclick="closeModal()">Fechar</button>
@@ -199,6 +204,9 @@
 <div class="popover" id="popPR"></div>
 <div class="popover" id="popAR"></div>
 
+<!-- popup leve para mostrar “Histórico” do lançamento -->
+<div class="note-pop" id="notePop"></div>
+
 <script>
 /*** URLs ***/
 const SHEET_API = "https://script.google.com/macros/s/AKfycbxWaj8E9HFvxJLojit8u8dvTopG0RLTtbBXQdmD6U93dgBSiupHyu79idCkeFD0a4FZ6w/exec";
@@ -209,7 +217,7 @@ const ANO = 2025;
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
-  {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
+  {match:["villa","lem"], to:"VILLA GOURMET LEM"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
@@ -253,7 +261,13 @@ function parseISO(s){
   const iso = toISODate(s);
   if(!iso) return new Date(NaN);
   const [y,m,d] = iso.split("-").map(Number);
-  return new Date(y, m-1, d); // local, sem UTC
+  return new Date(y, m-1, d);
+}
+/* datas SEMPRE em dd/mm/aaaa para exibição */
+function fmtBR(x){
+  if(!x) return "-";
+  const d = x instanceof Date ? x : parseISO(x);
+  return isNaN(d) ? "-" : d.toLocaleDateString('pt-BR');
 }
 function sameYMD(a,b){return a&&b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();}
 function addDays(d, n){return new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);}
@@ -270,17 +284,12 @@ function remapEmpresaABCfromObj(o){
   const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
   return plain || (o.empresa||o.EMPRESA||"");
 }
-function fmtRange(a,b){
-  const f = d => new Date(d.getFullYear(),d.getMonth(),d.getDate()).toLocaleDateString('pt-BR');
-  return `${f(a)} → ${f(b)}`;
-}
+function fmtRange(a,b){ return `${fmtBR(a)} → ${fmtBR(b)}`; }
 
 /*** REGRAS DE INTERVALO EFETIVO (ABC) ***/
 function getEffectiveABCRange(){
   if(!aIni || !aFim) return {ini:aIni, fim:aFim};
-  if (sameYMD(aIni, aFim)) {
-    return {ini: addDays(aIni, -1), fim: addDays(aFim, +1)};
-  }
+  if (sameYMD(aIni, aFim)) return {ini: addDays(aIni, -1), fim: addDays(aFim, +1)};
   const iniEff = (aIni.getDate()===1) ? addDays(aIni, -1) : aIni;
   return {ini: iniEff, fim: aFim};
 }
@@ -362,7 +371,7 @@ function renderChips(){
   });
 }
 
-/*** MODAL ***/
+/*** MODAL (histórico por fornecedor) ***/
 function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
@@ -391,42 +400,70 @@ async function openHistoricoFornecedor(fornecedor){
 
     $("#mBody").innerHTML = `
       <div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
-      <table class="table" style="width:100%">
-        <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
-        <tbody>
-          ${arr.map(x=>`
-            <tr>
-              <td>${String(x.data||"").slice(0,10)}</td>
-              <td>${x.empresa||"-"}</td>
-              <td>${x.meio||"-"}</td>
-              <td>${x.hist||"-"}</td>
-              <td style="text-align:right">${brl(x.valor)}</td>
-            </tr>`).join("")}
-        </tbody>
-      </table>`;
+      <div class="table-wrap">
+        <table class="table" style="min-width:720px">
+          <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
+          <tbody>
+            ${arr.map(x=>`
+              <tr>
+                <td>${fmtBR(x.data)}</td>
+                <td>${x.empresa||"-"}</td>
+                <td>${x.meio||"-"}</td>
+                <td>${x.hist||"-"}</td>
+                <td style="text-align:right">${brl(x.valor)}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
   }catch(e){
     $("#mBody").innerHTML = `<div class="muted">Não foi possível carregar o histórico agora.</div>`;
     console.error(e);
   }
 }
 
+/*** POPUP leve para mostrar “Histórico” do lançamento ***/
+function showNote(text, anchor){
+  const pop = $("#notePop");
+  pop.innerHTML = `<div style="font-weight:800;margin-bottom:6px">Histórico</div>
+                   <div style="max-width:60ch;white-space:pre-wrap">${text || "—"}</div>`;
+  pop.style.display = 'block';
+  $("#overlay").style.display = 'block';
+
+  const r = anchor.getBoundingClientRect();
+  const PAD=8;
+  let left = r.left, top = r.bottom + 6;
+  const w = pop.offsetWidth || 280;
+  const h = pop.offsetHeight || 120;
+  if (left + w > window.innerWidth - PAD) left = window.innerWidth - w - PAD;
+  if (left < PAD) left = PAD;
+  if (top + h > window.innerHeight - PAD) top = r.top - h - 6;
+  if (top < PAD) top = PAD;
+  pop.style.position='fixed';
+  pop.style.left = left + 'px';
+  pop.style.top  = top  + 'px';
+}
+function hideNote(){ $("#notePop").style.display='none'; $("#overlay").style.display='none'; }
+
 /*** RENDER ***/
 function aplicar(){
   const allSelected = (empresasSelecionadas.size===empresas.length);
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
+  // PAGOS
   const pagos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
     return okEmp && d && inRange(d,pIni,pFim);
   });
 
+  // ABERTOS
   const abertos = pagamentosAll.filter(p=>{
     const okEmp = filtroEmp(p.empresa);
     const d = !p.data_pagamento && p.vencimento ? parseISO(p.vencimento) : null;
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
+  // ABC (com intervalo efetivo)
   const {ini:effIni, fim:effFim} = getEffectiveABCRange();
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
@@ -434,6 +471,7 @@ function aplicar(){
     return okEmp && inRange(d,effIni,effFim);
   });
 
+  // Agrupa por data
   const dias = new Map();
   for(const x of arrsFiltrados){
     const key = String(x.data).slice(0,10);
@@ -441,12 +479,15 @@ function aplicar(){
   }
   const totalArr = Array.from(dias.values()).reduce((s,v)=>s+v,0);
 
+  // Totais de pagamentos
   const somaPago   = pagos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaApagar = abertos.reduce((s,p)=>s+cleanNumber(p.valor),0);
   const somaTotal  = somaPago + somaApagar;
 
+  // Resultado
   const resultado  = totalArr - somaTotal;
 
+  // KPIs
   $("#kArrecadacao").textContent = abcLoaded ? brl(totalArr) : "⏳ carregando…";
   $("#abcStatus").textContent    = abcLoaded ? `(${dias.size} dia(s) no período)` : "Arrecadação sendo carregada em segundo plano";
   $("#kPagamentos").textContent  = brl(somaTotal);
@@ -455,6 +496,7 @@ function aplicar(){
   $("#kTotal").textContent       = brl(somaTotal);
   $("#kResultado").innerHTML     = `${brl(resultado)} <span class="badge ${resultado>=0?"lucr":"prej"}">${resultado>=0?"LUCRO":"PREJUÍZO"}</span>`;
 
+  // A pagar (lista)
   const tbA=$("#tblApagar tbody"); tbA.innerHTML="";
   $("#qtApagar").textContent = abertos.length;
   $("#msgApagar").style.display = abertos.length? "none":"block";
@@ -462,26 +504,37 @@ function aplicar(){
     .forEach(p=>{
       const tr=document.createElement("tr");
       tr.innerHTML = `
-        <td>${p.vencimento||"-"}</td>
+        <td>${fmtBR(p.vencimento)}</td>
         <td>${p.empresa||"-"}</td>
         <td>${p.fornecedor||"-"}</td>
         <td style="text-align:right">${brl(p.valor||0)}</td>`;
       tbA.appendChild(tr);
     });
 
+  // Detalhes pagos
   const tb=$("#tblPagamentos tbody"); tb.innerHTML="";
   $("#msgEmpty").style.display = pagos.length? "none":"block";
   pagos.forEach(p=>{
     const tr=document.createElement("tr");
-    tr.className="clickable";
-    tr.innerHTML=`<td>${p.data_pagamento||"-"}</td>
+    tr.innerHTML=`<td>${fmtBR(p.data_pagamento)}</td>
                   <td>${p.empresa||"-"}</td>
                   <td>${p.fornecedor||"-"}</td>
+                  <td><button class="btn" style="padding:4px 8px" data-note="${(p.historico||"").replace(/"/g,'&quot;')}">ver</button></td>
                   <td>${brl(p.valor||0)}</td>`;
-    tr.onclick=()=>openHistoricoFornecedor(p.fornecedor);
+    // botão "ver" (histórico em popup leve)
+    tr.querySelector('button[data-note]').onclick = (ev)=>{
+      showNote(ev.currentTarget.getAttribute('data-note')||"—", ev.currentTarget);
+    };
+    // clique na linha → histórico completo do fornecedor (modal)
+    tr.style.cursor="pointer";
+    tr.addEventListener('click', (e)=>{ 
+      if(e.target && e.target.matches('button[data-note]')) return; // não abrir modal se clicou no "ver"
+      openHistoricoFornecedor(p.fornecedor);
+    });
     tb.appendChild(tr);
   });
 
+  // Resumo por empresa
   const rb=$("#tblResumoEmp tbody"); rb.innerHTML="";
   empresas.forEach(emp=>{
     const pPago = pagamentosAll.filter(p=>{
@@ -513,7 +566,7 @@ function aplicar(){
 /*** Aplicar filtros ***/
 async function applyFilters(){
   hideAllPopovers();
-  const {ini, fim} = getEffectiveABCRange();
+  const {ini, fim} = getEffectiveABCRange(); // usa intervalo efetivo para buscar no WebApp
   try { await fetchABC(ini, fim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
@@ -650,8 +703,9 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
-  $("#overlay").onclick = hideAllPopovers;
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
+  // clicar fora (overlay) e ESC
+  $("#overlay").onclick = ()=>{ hideAllPopovers(); hideNote(); };
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ hideAllPopovers(); hideNote(); } });
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
