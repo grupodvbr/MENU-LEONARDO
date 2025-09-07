@@ -214,22 +214,17 @@ let aIni=null,aFim=null; // ABC
 const $ = s=>document.querySelector(s);
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function pad2(n){return String(n).padStart(2,'0');}
-function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);} // inclusivo
-function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
 function cleanNumber(v){
   if(v==null||v==="") return 0;
   if(typeof v==="number") return v;
-  const s=String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",","=");
-  return parseFloat(s.replace("=", "."))||0;
+  return parseFloat(String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",", "."))||0;
 }
-
-/* ======== DATAS SEM UTC (correção de fuso) ======== */
 function toISODate(s){
   if(!s) return "";
   if (typeof s === "string") {
     const str = s.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;                 // "2025-08-02"
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {                          // "02/08/2025"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
       const [d,m,y] = str.split("/").map(Number);
       return `${y}-${pad2(m)}-${pad2(d)}`;
     }
@@ -245,28 +240,38 @@ function parseISO(s){
   const iso = toISODate(s);
   if(!iso) return new Date(NaN);
   const [y,m,d] = iso.split("-").map(Number);
-  return new Date(y, m-1, d); // sempre local meia-noite
+  return new Date(y, m-1, d); // local, sem UTC
 }
-function isoFromStr(s){ return toISODate(s); }
-
-function fmtRange(a,b){
-  const f = d => new Date(d.getFullYear(),d.getMonth(),d.getDate()).toLocaleDateString('pt-BR');
-  return `${f(a)} → ${f(b)}`;
-}
-function pickNumber(obj, keys){
-  for(const k of keys){ if(obj[k] != null && obj[k] !== "") return cleanNumber(obj[k]); }
-  return 0;
-}
+function sameYMD(a,b){return a&&b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();}
+function addDays(d, n){return new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);}
+function inRange(d,a,b){return (!a||d>=a) && (!b||d<=b);} // inclusivo
+function uniq(a){return [...new Set(a)].filter(Boolean).sort();}
+function pickNumber(obj, keys){for(const k of keys){if(obj[k]!=null&&obj[k]!=="")return cleanNumber(obj[k]);}return 0;}
 function remapEmpresaABCfromObj(o){
   const candidates = [
-    o.empresa, o.EMPRESA, o.Empresa,
-    o.sheet, o.SHEET, o.aba, o.ABA, o.planilha, o.PLANILHA, o.origem, o.ORIGEM
+    o.empresa, o.EMPRESA, o.Empresa, o.sheet, o.SHEET, o.aba, o.ABA,
+    o.planilha, o.PLANILHA, o.origem, o.ORIGEM
   ].filter(Boolean).map(s=>String(s).toLowerCase());
-
   const full = candidates.join(" ");
   for(const rule of EMPRESA_REMAP){ if(rule.match.every(m => full.includes(m))) return rule.to; }
   const plain = (candidates[0]||"").replace(/^abc\s+de\s+vendas\s+/i,"").trim();
   return plain || (o.empresa||o.EMPRESA||"");
+}
+function fmtRange(a,b){
+  const f = d => new Date(d.getFullYear(),d.getMonth(),d.getDate()).toLocaleDateString('pt-BR');
+  return `${f(a)} → ${f(b)}`;
+}
+
+/*** REGRAS DE INTERVALO EFETIVO (ABC) ***/
+// - 1 dia selecionado: expande para [dia-1, dia+1]
+// - intervalo >= 2 dias: se começa em dia 1, inclui também o último dia do mês anterior
+function getEffectiveABCRange(){
+  if(!aIni || !aFim) return {ini:aIni, fim:aFim};
+  if (sameYMD(aIni, aFim)) {
+    return {ini: addDays(aIni, -1), fim: addDays(aFim, +1)};
+  }
+  const iniEff = (aIni.getDate()===1) ? addDays(aIni, -1) : aIni;
+  return {ini: iniEff, fim: aFim};
 }
 
 /*** FETCH ***/
@@ -278,15 +283,13 @@ async function fetchPagamentos(){
   pagamentosAll = list.map(p=>({
     empresa: p.empresa || p.Empresa || "",
     fornecedor: p.fornecedor || p["Cliente / Fornecedor"] || "",
-    vencimento: isoFromStr(p.Vencimento || p.vencimento || p["Vencimento"]),
-    data_pagamento: p.data_pagamento || isoFromStr(p.Liquidação || p.Liquidacao || p.liquidacao),
+    vencimento: toISODate(p.Vencimento || p.vencimento || p["Vencimento"]),
+    data_pagamento: p.data_pagamento || toISODate(p.Liquidação || p.Liquidacao || p.liquidacao),
     valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
     meio_pagamento: p.meio_pagamento || p["Meio de Pagamento"] || "",
     historico: p.historico || p["Histórico"] || ""
   }));
 }
-
-/* ABC: totais da COLUNA G (linhas “Total por Data”) */
 async function fetchABC(ini, fim){
   const qs = (ini && fim) ? `?ini=${toISODate(ini)}&fim=${toISODate(fim)}` : "";
   let r = await fetch(ABC_URL + qs);
@@ -302,11 +305,7 @@ async function fetchABC(ini, fim){
       const faturamento = pickNumber(o, ["total_dia","TOTAL_DIA","total","TOTAL"]);
       return { data: dataIso, empresa: emp, faturamento };
     })
-    .filter(x=>{
-      if(!x.data) return false;
-      return parseISO(x.data).getFullYear() === ANO;
-    });
-
+    .filter(x=> x.data && parseISO(x.data).getFullYear() === ANO);
   abcLoaded = true;
 }
 
@@ -323,17 +322,12 @@ function coletarEmpresas(){
   }
   empresas = novas;
 }
-function startForABC(){
-  // REGRA ESPECIAL: se o 1º dia foi selecionado, inclui também o último dia do mês anterior
-  if (aIni && aIni.getDate() === 1) return new Date(aIni.getFullYear(), aIni.getMonth(), 0);
-  return aIni;
-}
 function sumArrecadacaoEmpresa(emp){
-  const sIni = startForABC();
+  const {ini, fim} = getEffectiveABCRange();
   return abcAll
     .filter(x=>{
       const d = parseISO(x.data);
-      return x.empresa===emp && inRange(d,sIni,aFim);
+      return x.empresa===emp && inRange(d,ini,fim);
     })
     .reduce((s,x)=>s+cleanNumber(x.faturamento),0);
 }
@@ -375,7 +369,7 @@ async function openHistoricoFornecedor(fornecedor){
       const f = (p.fornecedor || p["Cliente / Fornecedor"] || "").trim();
       return f === fornecedor;
     }).map(p=>({
-      data: isoFromStr(p.data_pagamento || p.Liquidação || ""),
+      data: toISODate(p.data_pagamento || p.Liquidação || ""),
       empresa: p.empresa || p.Empresa || "",
       valor: cleanNumber(p["Valor Bruto"] ?? p.valor ?? 0),
       meio: p.meio_pagamento || p["Meio de Pagamento"] || "",
@@ -424,12 +418,12 @@ function aplicar(){
     return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
   });
 
-  // ABC (total por DIA no período + empresas filtradas) — com a REGRA do dia 1
-  const effAIni = startForABC();
+  // ABC (com intervalo efetivo)
+  const {ini:effIni, fim:effFim} = getEffectiveABCRange();
   const arrsFiltrados = abcAll.filter(x=>{
     const d = parseISO(x.data);
     const okEmp = x.empresa ? filtroEmp(x.empresa) : true;
-    return okEmp && inRange(d,effAIni,aFim);
+    return okEmp && inRange(d,effIni,effFim);
   });
 
   // Agrupa por data
@@ -517,10 +511,9 @@ function aplicar(){
 
 /*** Aplicar filtros ***/
 async function applyFilters(){
-  hideAllPopovers(); // fecha só ao aplicar/fora
-  // Quando buscar no WebApp, também expandimos o INI se começar no dia 1
-  const fetchIniABC = (aIni && aIni.getDate() === 1) ? new Date(aIni.getFullYear(), aIni.getMonth(), 0) : aIni;
-  try { await fetchABC(fetchIniABC, aFim); } catch(e){ console.warn(e); }
+  hideAllPopovers();
+  const {ini, fim} = getEffectiveABCRange(); // usa intervalo efetivo para buscar no WebApp
+  try { await fetchABC(ini, fim); } catch(e){ console.warn(e); }
   coletarEmpresas(); renderChips(); aplicar();
 }
 
@@ -542,7 +535,7 @@ function buildRangeCalendar(container, state, onApply, onCancel){
   const grid = document.createElement("div"); grid.className="cal-grid";
   "DSTQQSS".split("").forEach(l=>{ const d=document.createElement("div"); d.className="dow"; d.textContent=l; grid.appendChild(d); });
 
-  function isSameDay(a,b){return a&&b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();}
+  function isSameDay(a,b){return sameYMD(a,b);}
   function inSelRange(d){
     if(!state.start||!state.end) return false;
     const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate());
@@ -665,9 +658,8 @@ function hideAllPopovers(){
 
   try{
     await fetchPagamentos();
-    // já puxa o último dia do mês anterior se o mês abriu no dia 1
-    const fetchIniABC = (aIni.getDate() === 1) ? new Date(aIni.getFullYear(), aIni.getMonth(), 0) : aIni;
-    await fetchABC(fetchIniABC,aFim);
+    const {ini:effIni, fim:effFim} = getEffectiveABCRange();
+    await fetchABC(effIni, effFim);
     coletarEmpresas(); renderChips(); aplicar();
     $("#loading").style.display="none";
   }catch(e){
