@@ -65,22 +65,20 @@
            padding:10px;z-index:60;display:none;width:min(94vw,380px);max-height:80vh;overflow:auto}
   .overlay{position:fixed;inset:0;background:transparent;display:none;z-index:55}
 
-  /* -------- MODAL (POP-UP) -------- */
-  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.45);z-index:90}
-  .modal .sheet{
-    width:min(92vw, 900px);
-    max-height:82vh;
-    background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
-    display:flex;flex-direction:column;overflow:hidden;
-  }
-  .modal header{display:flex;align-items:flex-start;justify-content:space-between;background:#fff;color:var(--text);
-    padding:12px 14px;border-bottom:1px solid var(--line)}
-  .modal header h3{margin:0;font-size:clamp(14px,3.2vw,18px);font-weight:800}
-  .modal header small{color:var(--muted)}
-  .modal .content{padding:12px;overflow:auto}
-  .modal .btn.close{
-    position:absolute;right:14px;top:10px;border-radius:10px;padding:6px 10px;font-weight:800
-  }
+  /* CALENDÁRIO */
+  .cal{width:100%}
+  .cal .cal-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
+  .cal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px}
+  .cal .dow{font-size:clamp(11px,2.6vw,12px);color:#64748b;text-align:center}
+  .cal .day{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-weight:700}
+  .cal .day:hover{background:#f1f5f9}
+  .cal .day.out{opacity:.35}
+  .cal .day.sel{background:var(--blue);color:#fff}
+  .cal .day.range{background:var(--blue-100);color:#111827}
+  .cal .foot{display:flex;justify-content:flex-end;gap:8px;padding:8px}
+
+  #loading{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;
+           font-size:clamp(16px,4.4vw,18px);font-weight:800;color:#0b1220;z-index:100}
 
   /* MOBILE */
   @media(max-width:760px){
@@ -183,21 +181,18 @@
   </div>
 </div>
 
-<!-- MODAL POP-UP -->
-<div class="modal" id="modal" aria-hidden="true">
-  <div class="sheet">
-    <button class="btn close" aria-label="Fechar" onclick="closeModal()">✕</button>
+<div class="modal" id="modal">
+  <div class="sheet" style="left:0;right:0;">
+    <button class="btn close" onclick="closeModal()">Fechar</button>
     <header>
-      <div>
-        <h3 id="mTitle">Histórico</h3>
-        <small id="mSub"></small>
-      </div>
+      <h3 id="mTitle">Histórico</h3>
+      <small id="mSub"></small>
     </header>
     <div class="content" id="mBody"></div>
   </div>
 </div>
 
-<!-- overlay para clique-fora dos calendários -->
+<!-- overlay para clique-fora -->
 <div class="overlay" id="overlay"></div>
 
 <!-- popovers dos calendários -->
@@ -214,7 +209,7 @@ const ANO = 2025;
 const EMPRESA_REMAP = [
   {match:["mercatto"], to:"MERCATTO DELÍCIA"},
   {match:["delicia"],  to:"DELICIA GOURMET"},
-  {match:["villa","lem"], to:"VILLA GOURMET LEM"},
+  {match:["villa","lem"],       to:"VILLA GOURMET LEM"},
   {match:["villa"], to:"VILLA GOURMET LEM"},
 ];
 
@@ -367,17 +362,14 @@ function renderChips(){
   });
 }
 
-/*** MODAL (POP-UP) ***/
-function openModal(){ $("#modal").style.display="flex"; $("#modal").setAttribute("aria-hidden","false"); }
-function closeModal(){ $("#modal").style.display="none"; $("#modal").setAttribute("aria-hidden","true"); $("#mBody").innerHTML=""; }
-
-/* HISTÓRICO EM POP-UP + TOTAIS POR EMPRESA */
+/*** MODAL ***/
+function openModal(){ $("#modal").style.display="block"; }
+function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
   $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
   $("#mBody").innerHTML = `<div class="muted" style="padding:8px 2px">⏳ Carregando histórico…</div>`;
   openModal();
-
   try{
     const url = `${SHEET_API}?action=histFornecedor&ano=${ANO}&fornecedor=${encodeURIComponent(fornecedor)}`;
     const r = await fetch(url);
@@ -395,43 +387,23 @@ async function openHistoricoFornecedor(fornecedor){
       hist: p.historico || p["Histórico"] || ""
     })).sort((a,b)=> parseISO(b.data) - parseISO(a.data));
 
-    const totalGeral = arr.reduce((s,x)=>s+x.valor,0);
-
-    // Totais por empresa
-    const porEmpresa = {};
-    for(const x of arr){ porEmpresa[x.empresa] = (porEmpresa[x.empresa]||0) + x.valor; }
-    const linhasTotais = Object.entries(porEmpresa)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([emp,tot])=>`<tr><td>${emp||"-"}</td><td style="text-align:right"><b>${brl(tot)}</b></td></tr>`)
-      .join("");
+    const total = arr.reduce((s,x)=>s+x.valor,0);
 
     $("#mBody").innerHTML = `
-      <div class="table-wrap" style="margin-bottom:8px">
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin:6px 0">
-          <span class="pill"><span class="tag">Total geral</span> ${brl(totalGeral)}</span>
-        </div>
-        <h4 style="margin:8px 0 6px 0">Totais por empresa</h4>
-        <table class="smalltable" style="width:100%;margin-bottom:10px">
-          <thead><tr><th>Empresa</th><th style="text-align:right">Total</th></tr></thead>
-          <tbody>${linhasTotais || `<tr><td colspan="2" class="smallmuted">Sem valores</td></tr>`}</tbody>
-        </table>
-      </div>
-
-      <div class="table-wrap">
-        <table class="table" style="width:100%">
-          <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
-          <tbody>
-            ${arr.map(x=>`
-              <tr>
-                <td>${String(x.data||"").slice(0,10)}</td>
-                <td>${x.empresa||"-"}</td>
-                <td>${x.meio||"-"}</td>
-                <td>${x.hist||"-"}</td>
-                <td style="text-align:right">${brl(x.valor)}</td>
-              </tr>`).join("")}
-          </tbody>
-        </table>
-      </div>`;
+      <div style="margin-bottom:8px"><b>Total no ano:</b> ${brl(total)}</div>
+      <table class="table" style="width:100%">
+        <thead><tr><th>Data</th><th>Empresa</th><th>Meio</th><th>Histórico</th><th>Valor</th></tr></thead>
+        <tbody>
+          ${arr.map(x=>`
+            <tr>
+              <td>${String(x.data||"").slice(0,10)}</td>
+              <td>${x.empresa||"-"}</td>
+              <td>${x.meio||"-"}</td>
+              <td>${x.hist||"-"}</td>
+              <td style="text-align:right">${brl(x.valor)}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>`;
   }catch(e){
     $("#mBody").innerHTML = `<div class="muted">Não foi possível carregar o histórico agora.</div>`;
     console.error(e);
@@ -678,16 +650,8 @@ function hideAllPopovers(){
   $("#btnPR").onclick=openPR;
   $("#btnAR").onclick=openAR;
 
-  // fechar pop-up clicando fora
-  $("#modal").addEventListener("click", (e)=>{
-    if(e.target === $("#modal")) closeModal();
-  });
-
-  // clicar fora (overlay dos popovers) e ESC
   $("#overlay").onclick = hideAllPopovers;
-  document.addEventListener('keydown', e=>{
-    if(e.key==='Escape'){ hideAllPopovers(); closeModal(); }
-  });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideAllPopovers(); });
 
   $("#lblPR").textContent = fmtRange(pIni,pFim);
   $("#lblAR").textContent = fmtRange(aIni,aFim);
