@@ -376,7 +376,7 @@ function openModal(){ $("#modal").style.display="block"; }
 function closeModal(){ $("#modal").style.display="none"; $("#mBody").innerHTML=""; }
 async function openHistoricoFornecedor(fornecedor){
   $("#mTitle").textContent = fornecedor;
-  $("#mSub").textContent = `Histórico de pagamentos em ${ANO}`;
+  $("#mSub").textContent = `Pagamentos em ${ANO}`;
   $("#mBody").innerHTML = `<div class="muted" style="padding:8px 2px">⏳ Carregando histórico…</div>`;
   openModal();
   try{
