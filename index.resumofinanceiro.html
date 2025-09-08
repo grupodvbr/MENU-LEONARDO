@@ -147,13 +147,33 @@
     .kpi-socio { border-left:6px solid #3b82f6; }
     .kpi-erro  { border-left:6px solid #ef4444; }
 
+    /* layout do gráfico + painel de comparação */
+    .anual-grid{
+      display:grid; grid-template-columns: 1fr 280px; gap:12px; align-items:start;
+    }
     #graficoAnualWrap{ height: 380px; border:1px solid var(--line); border-radius:12px; padding:10px }
     #graficoAnual{ width:100% !important; height:100% !important; }
+
+    .compare-panel{
+      border:1px solid var(--line); border-radius:12px; padding:10px; background:#fafafa;
+      max-height: 380px; overflow:auto;
+    }
+    .compare-panel h4{ margin:0 0 8px; font-size:.95rem }
+    .compare-actions{ display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap }
+    .mini-btn{
+      border:none; background:#111827; color:#fff; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:.8rem
+    }
+    .checklist{ display:grid; grid-template-columns: 1fr; gap:6px }
+    .check-item{ display:flex; gap:8px; align-items:center; font-size:.92rem }
 
     @media (max-width: 1200px){
       .filtros{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
       #painel{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grafico-desktop{ height: 280px; }
+    }
+    @media (max-width: 900px){
+      .anual-grid{ grid-template-columns: 1fr; }
+      #graficoAnualWrap{ height: 320px; }
     }
     @media (max-width: 768px){
       .filtros{ grid-template-columns: 1fr; }
@@ -161,7 +181,6 @@
       .conteudo{ padding: 16px 14px 24px; }
       .grafico-desktop{ height: 240px; }
       .kpi-row{ grid-template-columns: 1fr; }
-      #graficoAnualWrap{ height: 320px; }
     }
   </style>
 </head>
@@ -217,8 +236,21 @@
         <small id="kpiErroMes">Mês atual: R$ 0,00</small>
       </div>
     </div>
-    <div id="graficoAnualWrap">
-      <canvas id="graficoAnual"></canvas>
+
+    <!-- NOVO: grade com gráfico + painel de comparação -->
+    <div class="anual-grid">
+      <div id="graficoAnualWrap">
+        <canvas id="graficoAnual"></canvas>
+      </div>
+
+      <aside class="compare-panel">
+        <h4>Comparar empresas</h4>
+        <div class="compare-actions">
+          <button class="mini-btn" id="btnCompareAll">Marcar todas</button>
+          <button class="mini-btn" id="btnCompareNone">Limpar</button>
+        </div>
+        <div id="compareList" class="checklist"></div>
+      </aside>
     </div>
   </div>
 </div>
@@ -226,7 +258,7 @@
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
 
-// Dicionário de emojis (mantém ambos para compatibilidade, mas exibimos "Erro de garçons")
+// Dicionário de emojis
 const emojis = {
   "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
   "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
@@ -238,10 +270,14 @@ const emojis = {
 
 let dados = [];
 let graficoAnualRef = null;
+let empresaFoco = null;          // empresa que abriu o modal
+let selecionadas = new Set();    // empresas marcadas na comparação
 
 const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const normalize = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+
+function colorFor(i){ return `hsl(${(i*55)%360} 70% 50%)`; } // paleta simples e estável
 
 // Nome exibido para categorias (unifica PREJUÍZO/DESPERDÍCIO em "ERROS DE GARÇONS")
 function displayName(catNorm){
@@ -372,12 +408,29 @@ function desenharGrafico(canvas, agrupado) {
   });
 }
 
+/* ======= Helpers para o comparador ======= */
+function empresasUnicas(){
+  return [...new Set(dados.map(d=>d.Empresa))].sort();
+}
+function totaisMensaisPorEmpresa(emp, ano){
+  const arr = Array(12).fill(0);
+  dados.forEach(r=>{
+    if(r.Empresa!==emp) return;
+    if(!String(r.Data).startsWith(String(ano))) return;
+    const v = parseFloat(r.Valor)||0;
+    const m = parseInt(String(r.Data).split('-')[1],10)-1;
+    if(m>=0 && m<12) arr[m]+=v;
+  });
+  return arr;
+}
+
 /* ===== Evolução do Ano Vigente (Modal) ===== */
 function abrirEvolucaoAnual(empresa){
+  empresaFoco = empresa;
   const ano = new Date().getFullYear();
   const mesAtualIdx = new Date().getMonth(); // 0-11
 
-  // filtra por empresa e ano vigente
+  // filtra por empresa foco e ano vigente
   const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
 
   // soma total por mês (independente de categoria)
@@ -415,42 +468,122 @@ function abrirEvolucaoAnual(empresa){
   document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
   document.getElementById('kpiErroMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(erroMes)}`;
 
-  // Gráfico anual
-  const ctx = document.getElementById('graficoAnual').getContext('2d');
-  if (graficoAnualRef) graficoAnualRef.destroy();
-  graficoAnualRef = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: MONTHS,
-      datasets: [{
-        label: 'Total vendido por mês',
-        data: porMes,
-        backgroundColor: MONTHS.map((_,i)=> i===mesAtualIdx ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
-        borderColor: '#2563eb',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display:false },
-        title: { display:true, text:`Total vendido por mês — ${empresa}` },
-        tooltip: {
-          callbacks:{
-            label: ctx => 'R$ ' + (Number(ctx.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})
-          }
-        }
-      },
-      scales: { y: { beginAtZero:true } }
-    }
-  });
+  // Monta checklist de empresas para comparação (marca a empresa foco por padrão)
+  montarChecklistComparacao(empresa);
+
+  // Render inicial do gráfico (empresa única → barras)
+  renderGraficoComparacao(ano);
 
   document.getElementById('modalAnual').classList.add('open');
+}
+
+function montarChecklistComparacao(empresaPadrao){
+  const list = document.getElementById('compareList');
+  list.innerHTML = '';
+  const todas = empresasUnicas();
+
+  // se vazio, reseta seleção para a empresa foco
+  if(selecionadas.size===0) selecionadas = new Set([empresaPadrao]);
+  else if(!selecionadas.size || ![...selecionadas].some(e=>todas.includes(e))){
+    selecionadas = new Set([empresaPadrao]);
+  }
+
+  todas.forEach((emp, idx)=>{
+    const id = `cmp_${idx}`;
+    const wrap = document.createElement('label');
+    wrap.className = 'check-item';
+    wrap.innerHTML = `
+      <input type="checkbox" id="${id}" value="${emp}" ${selecionadas.has(emp)?'checked':''}/>
+      <span>${emp}</span>
+    `;
+    wrap.querySelector('input').addEventListener('change', (e)=>{
+      if(e.target.checked) selecionadas.add(emp); else selecionadas.delete(emp);
+      const ano = new Date().getFullYear();
+      renderGraficoComparacao(ano);
+    });
+    list.appendChild(wrap);
+  });
+
+  document.getElementById('btnCompareAll').onclick = ()=>{
+    todas.forEach(emp=>selecionadas.add(emp));
+    montarChecklistComparacao(empresaFoco); // re-render para refletir checks
+    renderGraficoComparacao(new Date().getFullYear());
+  };
+  document.getElementById('btnCompareNone').onclick = ()=>{
+    selecionadas.clear();
+    // mantém pelo menos a empresa foco marcada
+    selecionadas.add(empresaFoco);
+    montarChecklistComparacao(empresaFoco);
+    renderGraficoComparacao(new Date().getFullYear());
+  };
+}
+
+function renderGraficoComparacao(ano){
+  const ctx = document.getElementById('graficoAnual').getContext('2d');
+  const marcas = [...selecionadas];
+  if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
+
+  if (marcas.length <= 1){
+    // gráfico de barras da empresa foco (ou única marcada)
+    const emp = marcas[0] || empresaFoco;
+    const porMes = totaisMensaisPorEmpresa(emp, ano);
+    graficoAnualRef = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: MONTHS,
+        datasets: [{
+          label: 'Total vendido por mês',
+          data: porMes,
+          backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
+          borderColor: '#2563eb',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display:false },
+          title: { display:true, text:`Total vendido por mês — ${emp}` },
+          tooltip: {
+            callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
+          }
+        },
+        scales: { y: { beginAtZero:true } }
+      }
+    });
+  } else {
+    // gráfico de linhas comparativo
+    const datasets = marcas.map((emp, i)=>({
+      label: emp,
+      data: totaisMensaisPorEmpresa(emp, ano),
+      borderColor: colorFor(i),
+      backgroundColor: colorFor(i),
+      fill: false,
+      tension: .25
+    }));
+    graficoAnualRef = new Chart(ctx, {
+      type: 'line',
+      data: { labels: MONTHS, datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:true },
+          title:{ display:true, text:`Evolução comparada por mês — ${ano}` },
+          tooltip:{
+            callbacks:{ label: c => `${c.dataset.label}: R$ ${(Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}` }
+          }
+        },
+        scales:{ y:{ beginAtZero:true } }
+      }
+    });
+  }
 }
 
 function fecharModal(){
   document.getElementById('modalAnual').classList.remove('open');
   if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
+  // mantém seleção para próxima abertura, se quiser resetar basta limpar:
+  // selecionadas.clear();
 }
 
 /* ===== Exportar PDF ===== */
