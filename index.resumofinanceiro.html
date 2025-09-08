@@ -237,7 +237,7 @@
       </div>
     </div>
 
-    <!-- NOVO: grade com gráfico + painel de comparação -->
+    <!-- grade com gráfico + painel de comparação -->
     <div class="anual-grid">
       <div id="graficoAnualWrap">
         <canvas id="graficoAnual"></canvas>
@@ -257,6 +257,15 @@
 
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec';
+
+// ========= Ajustes globais Chart.js (bolinha maior + raio de alcance + touch) =========
+const POINT_RADIUS = 6, HOVER_RADIUS = 10, HIT_RADIUS = 28;
+Chart.defaults.elements.point.radius = POINT_RADIUS;
+Chart.defaults.elements.point.hoverRadius = HOVER_RADIUS;
+Chart.defaults.elements.point.hitRadius = HIT_RADIUS;
+Chart.defaults.interaction.mode = 'nearest';
+Chart.defaults.interaction.intersect = false;
+Chart.defaults.events = ['mousemove','mouseout','click','touchstart','touchmove','touchend'];
 
 // Dicionário de emojis
 const emojis = {
@@ -402,6 +411,8 @@ function desenharGrafico(canvas, agrupado) {
     options: {
       maintainAspectRatio: false,
       responsive: true,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
       plugins: { legend: { display: false }, title: { display: true, text: 'Distribuição por Categoria' } },
       scales: { x: { ticks: { display: false }, grid: { display: false } }, y: { beginAtZero: true } }
     }
@@ -427,6 +438,10 @@ function totaisMensaisPorEmpresa(emp, ano){
 /* ===== Evolução do Ano Vigente (Modal) ===== */
 function abrirEvolucaoAnual(empresa){
   empresaFoco = empresa;
+
+  // sempre recomeça com apenas a empresa clicada marcada
+  selecionadas = new Set([empresa]);
+
   const ano = new Date().getFullYear();
   const mesAtualIdx = new Date().getMonth(); // 0-11
 
@@ -441,10 +456,10 @@ function abrirEvolucaoAnual(empresa){
     if (m>=0 && m<12) porMes[m] += valor;
   });
 
-  // Destaques: Bonificação, Consumo Sócio, Erro de garçons (aceitando PREJUÍZO/DESPERDÍCIO como erro)
+  // Destaques: Bonificação, Consumo Sócio, Erro de garçons
   const isBonus = c => normalize(c) === 'BONIFICACAO';
   const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
-  const isErro  = c => normalize(c) === 'ERROS DE GARCONS' || normalize(c) === 'PREJUIZO' || normalize(c) === 'DESPERDICIO';
+  const isErro  = c => ['ERROS DE GARCONS','PREJUIZO','DESPERDICIO'].includes(normalize(c));
 
   let bonusAno=0, socioAno=0, erroAno=0;
   let bonusMes=0, socioMes=0, erroMes=0;
@@ -468,7 +483,7 @@ function abrirEvolucaoAnual(empresa){
   document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
   document.getElementById('kpiErroMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(erroMes)}`;
 
-  // Monta checklist de empresas para comparação (marca a empresa foco por padrão)
+  // Monta checklist de empresas para comparação
   montarChecklistComparacao(empresa);
 
   // Render inicial do gráfico (empresa única → barras)
@@ -481,12 +496,6 @@ function montarChecklistComparacao(empresaPadrao){
   const list = document.getElementById('compareList');
   list.innerHTML = '';
   const todas = empresasUnicas();
-
-  // se vazio, reseta seleção para a empresa foco
-  if(selecionadas.size===0) selecionadas = new Set([empresaPadrao]);
-  else if(!selecionadas.size || ![...selecionadas].some(e=>todas.includes(e))){
-    selecionadas = new Set([empresaPadrao]);
-  }
 
   todas.forEach((emp, idx)=>{
     const id = `cmp_${idx}`;
@@ -506,13 +515,12 @@ function montarChecklistComparacao(empresaPadrao){
 
   document.getElementById('btnCompareAll').onclick = ()=>{
     todas.forEach(emp=>selecionadas.add(emp));
-    montarChecklistComparacao(empresaFoco); // re-render para refletir checks
+    montarChecklistComparacao(empresaFoco);
     renderGraficoComparacao(new Date().getFullYear());
   };
   document.getElementById('btnCompareNone').onclick = ()=>{
     selecionadas.clear();
-    // mantém pelo menos a empresa foco marcada
-    selecionadas.add(empresaFoco);
+    selecionadas.add(empresaFoco); // mantém foco
     montarChecklistComparacao(empresaFoco);
     renderGraficoComparacao(new Date().getFullYear());
   };
@@ -541,10 +549,13 @@ function renderGraficoComparacao(ano){
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
         plugins: {
           legend: { display:false },
           title: { display:true, text:`Total vendido por mês — ${emp}` },
           tooltip: {
+            position: 'nearest',
             callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
           }
         },
@@ -559,17 +570,24 @@ function renderGraficoComparacao(ano){
       borderColor: colorFor(i),
       backgroundColor: colorFor(i),
       fill: false,
-      tension: .25
+      tension: .25,
+      pointRadius: POINT_RADIUS,
+      pointHoverRadius: HOVER_RADIUS,
+      pointHitRadius: HIT_RADIUS
     }));
     graficoAnualRef = new Chart(ctx, {
       type: 'line',
       data: { labels: MONTHS, datasets },
       options: {
         responsive:true, maintainAspectRatio:false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        elements: { point: { radius: POINT_RADIUS, hoverRadius: HOVER_RADIUS, hitRadius: HIT_RADIUS } },
+        events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
         plugins:{
           legend:{ display:true },
           title:{ display:true, text:`Evolução comparada por mês — ${ano}` },
           tooltip:{
+            position: 'nearest',
             callbacks:{ label: c => `${c.dataset.label}: R$ ${(Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}` }
           }
         },
@@ -580,10 +598,12 @@ function renderGraficoComparacao(ano){
 }
 
 function fecharModal(){
+  // fecha modal e limpa tudo
   document.getElementById('modalAnual').classList.remove('open');
   if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
-  // mantém seleção para próxima abertura, se quiser resetar basta limpar:
-  // selecionadas.clear();
+  selecionadas.clear();                   // limpa filtros de comparação
+  document.getElementById('compareList').innerHTML = ''; // limpa UI de checks
+  empresaFoco = null;                    // zera foco; ao abrir novamente virá da empresa clicada
 }
 
 /* ===== Exportar PDF ===== */
